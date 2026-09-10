@@ -1,70 +1,54 @@
-# Getting Started with Create React App
+﻿# Axie Dungeons
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A playable Phaser 3 and React prototype: explore Momo’s Lagoon, clear two small encounters, rescue Momo, and welcome her to your village.
 
-## Available Scripts
+## Run locally
 
-In the project directory, you can run:
+```sh
+npm install
+npm start
+```
 
-### `npm start`
+Open the development server shown in the terminal, normally `http://localhost:3000`.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```sh
+npm run build
+npm test -- --watch=false --runInBand
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+The production build is written to `build/`. On PowerShell systems that block `npm.ps1`, use `npm.cmd` for these commands.
 
-### `npm test`
+## Play
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. Click Momo’s Lagoon on the map or **Enter dungeon**.
+2. Advance through two clearings and reach Momo’s sanctuary. Health carries between encounters.
+3. Play one card each turn, then avoid the incoming wave.
+4. Defeat Momo, continue to the village, and return to the map for another expedition.
 
-### `npm run build`
+| Action | Controls |
+| --- | --- |
+| Enter or advance | On-screen button; Enter; Space or Right Arrow on the dungeon path |
+| Play an ability | Click its card or press **1**, **2**, **3** |
+| Dodge left | **A**, Left Arrow, or tap the left lane |
+| Dodge center | **S**, Down Arrow, or tap the center lane |
+| Dodge right | **D**, Right Arrow, or tap the right lane |
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+A dodge phase lasts three seconds. During its final second, exactly one lane lights up blue. Your position when the wave lands determines the result: an unlit lane avoids all damage. Guard can reduce a hit; Moon Beam restores health up to 100 HP. Momo’s permanent **+5% Dodge Accuracy** bonus extends dodge timing and the warning window by 5%; it never randomly changes an outcome or stacks from rescuing Momo again.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Retrying after defeat restarts the current encounter with full health. Returning to the map and entering again starts a new expedition from the first room. Rescued friends and bonuses last for the current session and survive retries or new expeditions. Refreshing the page starts a fresh session.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Project structure
 
-### `npm run eject`
+- `src/App.js`, `src/App.css`: responsive React interface, ability buttons, navigation, and help.
+- `src/main.js`: Phaser configuration and `createGame(parent, onState)` bridge, exposing `command`, `getState`, and `destroy`.
+- `src/scenes/`: map, traversal, combat, rescue, village, and defeat scenes.
+- `src/entities/DodgeSystem.js`: scene-owned lane input, warning timing, deterministic hit resolution, and cleanup.
+- `src/data/`: reusable player cards, enemy definitions, and the three-room dungeon.
+- `src/game/state.js`: in-memory expedition progress, village roster, and bonuses.
+- `src/game/art.js`: local Phaser vector scenery and Axie illustrations.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Combat follows `PLAYER_TURN → PLAYER_ATTACK_ANIM → BOSS_TELEGRAPH → DODGE_PHASE → RESOLVE_DODGE`. A defeated enemy clears the room immediately; defeating the guardian opens the rescue scene. Zero player health opens defeat.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Tests cover the UI-to-game commands, modal keyboard behavior, combat transitions, lane timing and input, rescue deduplication, and progress across retries. Phaser renders to a 1200 × 660 canvas that scales to its container; React provides additional accessible controls outside the canvas.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+This vertical slice contains one dungeon, one boss, one dodge pattern, and one village friend. It intentionally has no backend, wallet, blockchain integration, save system, procedural generation, audio, or PvP.
