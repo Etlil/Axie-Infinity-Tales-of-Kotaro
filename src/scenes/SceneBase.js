@@ -58,8 +58,17 @@ export default class SceneBase extends Phaser.Scene {
   }
 
   bindKey(event, callback) {
-    this.input.keyboard.on(event, callback);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.input.keyboard.off(event, callback));
+    const keyboard = this.input.keyboard;
+    const handler = (keyboardEvent) => {
+      const target = keyboardEvent?.target;
+      if (target?.isContentEditable || target?.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+      // Enter and Space already activate focused HTML controls. Let that one
+      // action run without also taking the scene's navigation shortcut.
+      if (['keydown-ENTER', 'keydown-SPACE'].includes(event) && target?.closest?.('button, a, [role="button"]')) return;
+      callback(keyboardEvent);
+    };
+    keyboard.on(event, handler);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => keyboard.off(event, handler));
   }
 
   onCommand() {}

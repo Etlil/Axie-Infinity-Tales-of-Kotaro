@@ -16,7 +16,16 @@ npm run build
 npm test -- --watch=false --runInBand
 ```
 
-The production build is written to `build/`. On PowerShell systems that block `npm.ps1`, use `npm.cmd` for these commands.
+The production build is written to `build/`. On PowerShell systems that block script execution, use `npm.cmd` instead of `npm` and `npx.cmd` instead of `npx`.
+
+To run the browser checks for rescue, defeat/retry, and mobile controls:
+
+```sh
+npx playwright install chromium --only-shell
+npm run test:e2e
+```
+
+The browser tests start a local server when needed and write screenshots to `test-results/`.
 
 ## Play
 

@@ -6,17 +6,23 @@ async function enter(page) {
 }
 
 async function fight(page, shouldDodge, screenshot) {
+  await expect(page.locator('.in-combat')).toBeVisible();
   for (let turn = 0; turn < 12; turn += 1) {
     await page.waitForFunction(() => document.querySelector('.ability-card:not(:disabled)') || !document.querySelector('.in-combat'));
     if (!await page.locator('.in-combat').count()) return;
     await page.getByRole('button', { name: /Leaf Strike/ }).click();
-    await page.waitForFunction(() => document.querySelector('.lane-button.danger') || !document.querySelector('.in-combat'));
-    if (!await page.locator('.in-combat').count()) return;
-    if (shouldDodge) {
-      await page.locator('.lane-button:not(.danger)').first().click();
-    } else {
-      await page.locator('.lane-button.danger').click();
-    }
+    // React's real lane buttons dispatch to Phaser. Choose in the browser's
+    // animation frame so automation transport/scrolling cannot use up the
+    // one-second reaction window on a busy test machine.
+    const outcome = await page.waitForFunction(dodge => {
+      if (!document.querySelector('.in-combat')) return 'cleared';
+      if (!document.querySelector('.lane-button.danger')) return false;
+      const lane = document.querySelector(dodge ? '.lane-button:not(.danger)' : '.lane-button.danger');
+      if (!lane || lane.disabled) return false;
+      lane.click();
+      return 'wave';
+    }, shouldDodge);
+    if (await outcome.jsonValue() === 'cleared') return;
     if (screenshot && turn === 0) await page.screenshot({ path: `test-results/${screenshot}.png`, fullPage: true });
     await page.waitForFunction(() => !document.querySelector('.lane-button.danger'));
   }
@@ -31,6 +37,7 @@ test('complete rescue loop, safe dodges, persistent village bonus and replay', a
   await expect(page.getByRole('heading', { name: 'Small steps. Big adventures.' })).toBeVisible();
   await page.screenshot({ path: 'test-results/map-desktop.png', fullPage: true });
   await page.getByRole('button', { name: 'How to play' }).click();
+  await page.getByRole('heading', { name: 'A small guide to a big adventure.' }).click();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.keyboard.press('Escape');
@@ -42,7 +49,7 @@ test('complete rescue loop, safe dodges, persistent village bonus and replay', a
     await fight(page, true, room === 2 ? 'combat-desktop' : null);
   }
   await expect(page.getByRole('heading', { name: 'Momo is rescued!' })).toBeVisible();
-  await expect(page.locator('.traveler-health')).toContainText('100');
+  await expect(page.locator('.traveler-health')).toHaveText('100 / 100 HP');
   await page.screenshot({ path: 'test-results/rescue-desktop.png', fullPage: true });
   await page.getByRole('button', { name: 'Continue to village' }).click();
   await expect(page.getByText('Happily rescued')).toBeVisible();
@@ -69,7 +76,7 @@ test('failed dodges reach defeat and retry restores health at the same encounter
   await expect(page.getByRole('heading', { name: 'A wave too far.' })).toBeVisible();
   await page.getByRole('button', { name: 'Try encounter again' }).click();
   await expect(page.getByRole('heading', { name: 'Momo', exact: true })).toBeVisible();
-  await expect(page.locator('.traveler-health')).toContainText('100');
+  await expect(page.locator('.traveler-health')).toHaveText('100 / 100 HP');
   await expect(page.getByRole('button', { name: /Leaf Strike/ })).toBeEnabled();
 });
 
@@ -79,11 +86,13 @@ test('mobile layout, village navigation and keyboard cards', async ({ page }) =>
   await expect(page.locator('canvas')).toHaveCount(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await page.screenshot({ path: 'test-results/map-mobile.png', fullPage: true });
-  await page.getByRole('button', { name: /My village/ }).click();
+  await page.getByRole('button', { name: /My village/ }).focus();
+  await page.keyboard.press('Enter');
   await expect(page.getByRole('heading', { name: 'Our little village' })).toBeVisible();
   await page.getByRole('button', { name: 'Return to dungeon map' }).click();
   await enter(page);
   await page.getByRole('button', { name: 'Enter room 1' }).click();
+  await expect(page.getByRole('button', { name: /Leaf Strike/ })).toBeEnabled();
   await page.keyboard.press('1');
   await expect(page.getByRole('button', { name: /Leaf Strike/ })).toBeDisabled();
   await page.waitForFunction(() => document.querySelector('.lane-button.danger'));
