@@ -1,5 +1,6 @@
 import SceneBase, { floatingText } from './SceneBase';
 import { backdrop, fighter, slash, paintBurst } from '../game/world';
+import { bodyPartAttack } from '../game/bodyPartAttacks';
 import DodgeSystem from '../entities/DodgeSystem';
 
 const LANES = [360, 600, 840];
@@ -21,8 +22,8 @@ export default class CombatScene extends SceneBase {
     LANES.forEach((x, index) => this.add.zone(x, 592, 218, 160).setDepth(10).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.dodge.moveLane(index)));
     this.dodge = new DodgeSystem(this, { bonus: this.state.bonus, initialLane: 1,
       onUpdate: view => this.onDodgeUpdate(view), onResolve: result => this.resolveDodge(result) });
-    this.state.cards.forEach((card, index) => this.bindKey('keydown-' + ['ONE', 'TWO', 'THREE'][index], () => this.playCard(card.id)));
-    this.bindKey('keydown-FOUR', () => this.playCard(this.state.ultimate.id));
+    this.state.cards.forEach((card, index) => this.bindKey('keydown-' + ['ONE', 'TWO', 'THREE', 'FOUR'][index], () => this.playCard(card.id)));
+    this.bindKey('keydown-FIVE', () => this.playCard(this.state.ultimate.id));
     this.events.once('shutdown', () => this.dodge.destroy());
   }
   paintLanes() {
@@ -53,13 +54,19 @@ export default class CombatScene extends SceneBase {
     this.session.patch({ phase: 'PLAYER_ATTACK_ANIM', message: card.name + '! ' + card.damage + ' damage.',
       guard: card.guard || 0, charge: ultimate ? 0 : Math.min(3, this.state.charge + 1),
       playerHP: Math.min(this.state.playerMaxHP, this.state.playerHP + (card.heal || 0)) });
-    this.player.playAction(ultimate ? 'ultimate' : 'attack');
+    // A fast tap may arrive during the previous return-to-position tween.
+    this.tweens.killTweensOf(this.player);
+    this.player.setPosition(320,460).setScale(1.35).setAngle(0);
+    this.player.playAction(ultimate ? 'ultimate' : 'attack', card.part);
     if (card.guard && this.player.shield) this.player.bringToTop(this.player.shield);
-    this.tweens.add({ targets: this.player, x: ultimate ? 605 : 490, duration: 190, yoyo: true, hold: 120, ease: 'Sine.easeOut' });
-    this.time.delayedCall(240, () => {
+    const pose = ultimate ? (card.part === 'tail' ? { x: 420, angle: -30 } : { x: 605 }) : card.part === 'horn' ? { x: 430, y: 442, angle: 12 }
+      : card.part === 'mouth' ? { x: 390, scaleX: 1.48, scaleY: 1.23 }
+      : card.part === 'back' ? { x: 490, angle: -10 } : { x: 340, angle: -22, scaleX: 1.25, scaleY: 1.43 };
+    this.tweens.add({ targets: this.player, ...pose, duration: 190, yoyo: true, hold: 120, ease: 'Sine.easeOut' });
+    if (!ultimate || card.part === 'tail') this.time.delayedCall(120, () => bodyPartAttack(this, this.player, card, { x: 850, y: 420 }));
+    this.time.delayedCall(360, () => {
       this.session.patch({ enemyHP: Math.max(0, this.state.enemyHP - card.damage) });
-      if (this.state.activeCharacter === 'buba' && (ultimate || card.kind === 'heal')) paintBurst(this, 850, 405);
-      else slash(this, 850, 420, ultimate ? 0xe2c8ff : 0xc9eeff, ultimate);
+      if (ultimate && card.part === 'back') slash(this, 850, 420, 0xe2c8ff, true);
       if (card.guard) {
         const ring = this.add.ellipse(320, 455, 175, 205).setStrokeStyle(5, 0xbddcff, .8).setDepth(12);
         this.tweens.add({ targets: ring, alpha: 0, duration: 750, onComplete: () => ring.destroy() });

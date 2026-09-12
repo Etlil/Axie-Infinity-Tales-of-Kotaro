@@ -46,14 +46,24 @@ export function fighter(scene,x,y,kind='kotaro',scale=1,facing='right') {
     root.moveBelow(weapon,sprite);root.moveBelow(shield,sprite);
   } else weapon.setVisible(false);
   root.setScale(scale);root.sprite=sprite;root.weapon=weapon;root.kind=kind;
-  root.playAction=(action='idle')=>{
-    const key=kind+'-'+action;
+  // Local attachment points follow the fighter's position, scale, and rotation.
+  const points = kind === 'buba'
+    ? { horn: [5,-64], mouth: [48,16], back: [-40,-28], tail: [-79,29] }
+    : { horn: [22,-76], mouth: [48,19], back: [-43,-32], tail: [-72,35] };
+  root.partPosition = part => {
+    const [px,py] = points[part];
+    return root.getWorldTransformMatrix().transformPoint(facing === 'right' ? px : -px, py);
+  };
+  root.playAction=(action='idle',part)=>{
+    // Horn, mouth, and tail attacks use their own body motion instead of drawing a sword.
+    const bodyMotion = (action==='attack'||action==='ultimate') && part && part!=='back';
+    const key=kind+'-'+(bodyMotion ? 'idle' : action);
     if(!scene.anims.exists(key))return;
     sprite.removeAllListeners('animationcomplete');
     sprite.play(key,true);
     if(kind==='buba'&&action==='idle'){root.moveBelow(weapon,sprite);root.moveBelow(root.shield,sprite);}
     if(action!=='idle'&&action!=='run')sprite.once('animationcomplete',()=>{if(sprite.active)sprite.play(kind+'-idle');});
-    if(action==='attack'||action==='ultimate'){
+    if((action==='attack'||action==='ultimate') && !bodyMotion){
       root.bringToTop(weapon);
       weapon.setVisible(true);scene.tweens.add({targets:weapon,angle:facing==='right'?110:-110,duration:190,yoyo:true,onComplete:()=>{if(kind==='kotaro')weapon.setVisible(false);}});
     }

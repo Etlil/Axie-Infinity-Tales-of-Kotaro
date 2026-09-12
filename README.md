@@ -41,8 +41,8 @@ For a public web release, run `npm run build` and serve the `build/` directory t
 | Action | Touch / mouse | Keyboard |
 | --- | --- | --- |
 | Story | Continue button | Enter |
-| Ability | Tap one of three cards | 1, 2, 3 |
-| Ultimate | Tap the charged ultimate | 4 |
+| Ability | Tap Horn, Mouth, Back, or Tail | 1, 2, 3, 4 |
+| Ultimate | Tap the charged ultimate | 5 |
 | Dodge | Tap Left, Center, or Right | A / S / D, or Left / Down / Right |
 | Stage | Select a node and Enter encounter | Enter selected stage |
 | Close a panel | Close button or backdrop | Escape |
@@ -50,6 +50,17 @@ For a public web release, run `npm run build` and serve the `build/` directory t
 | Resume / retreat | Choose an action in the pause menu | Tab to the action and press Enter |
 
 The pause menu freezes the encounter, including dodge timers, animations, and queued attacks. Battles also pause when the browser tab becomes hidden; resume when you return. Panel headers stay visible while their contents scroll, including rank rewards on short landscape screens. Touch controls respect display safe areas.
+
+Each companion has four body-part attacks, with matching attachment-point animations:
+
+| Part | Kotaro | Buba |
+| --- | --- | --- |
+| Horn | Horn Lance | Leaf Horn |
+| Mouth | Moon Fang (heal 8) | Beast Bite |
+| Back | Blade Guard (14 shield) | Shield Bash (16 shield) |
+| Tail | Tail Sweep | Brush Tail (heal 6) |
+
+The four cards sit side by side in landscape and form a compact two-by-two hand in portrait. The ultimate remains a separate charged ability.
 
 Each enemy attack has a three-second dodge phase. The danger lane is revealed in the final second; move to an unmarked lane before impact to take no damage. Guard reduces a hit and recovery abilities heal up to the character’s maximum HP. Three abilities charge an ultimate: Kotaro’s **Moonlit Eclipse** or Buba’s paintbrush **Paintstorm**.
 

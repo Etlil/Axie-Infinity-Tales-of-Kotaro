@@ -109,24 +109,26 @@
 .encounter-heading h1 { font-size: 26px; margin-top: 4px; }
 .enemy-intent { margin-top: 8px; padding: 5px 12px; font-size: 11px; }
 .scene-combat .world-stage { width: min(100vw, 165dvh); height: min(66.667vw, 110dvh); top: 42%; }
-.battle-controls { width: min(700px, calc(100% - 48px)); bottom: var(--safe-bottom); padding: 0; border: 0; background: none; box-shadow: none; }
+.battle-controls { width: min(810px, calc(100% - 48px)); bottom: var(--safe-bottom); padding: 0; border: 0; background: none; box-shadow: none; }
 .battle-status { min-height: 29px; margin-bottom: 9px; gap: 10px; display: flex; align-items: center; }
 .battle-status > strong { font-size: 10px; padding: 4px 9px; color: #fff2cb; background: #355344ed; border: 1px solid #e4d2978c; box-shadow: 0 2px #19362a; border-radius: 9px; }
 .battle-status > span { color: #fff0cf; font-size: 11px; line-height: 1.3; text-shadow: 0 1px #243b2a; }
 .battle-status > b { color: #ffdf79; margin-left: auto; text-shadow: 0 2px #765037; }
-.ability-cards { width: calc(100% - 104px); gap: 12px; align-items: stretch; }
-.ability-card { display: block; position: relative; min-height: 156px; padding: 10px 10px 0; border-width: 3px; border-radius: 17px; text-align: center; overflow-wrap: normal; }
+.ability-cards { width: calc(100% - 104px); grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: stretch; }
+.ability-part { display: block; color: #6d4c32; font: 900 10px var(--body-font); text-transform: uppercase; letter-spacing: 1.4px; margin-bottom: 7px; }
+.ability-part kbd { position: absolute; top: 6px; right: 7px; font-size: 9px; letter-spacing: 0; }
+.ability-card { display: block; position: relative; min-height: 180px; padding: 10px 10px 0; border-width: 3px; border-radius: 17px; text-align: center; overflow-wrap: normal; }
 .ability-top { display: flex; flex-direction: row; justify-content: space-between; align-items: center; margin-bottom: 8px; min-height: 42px; }
 .ability-symbol { display: grid; width: 42px; height: 42px; border-radius: 13px; }
 .ability-symbol svg { width: 26px; height: 26px; }
 .ability-top > span:nth-child(2) { font-size: 34px; flex-direction: column; gap: 0; line-height: .95; }
 .ability-top small { font-size: 8px; margin-top: 3px; }
 .ability-top kbd { top: 4px; right: 5px; font-size: 9px; }
-.ability-card > strong { display: block; font-size: 22px; min-height: 25px; margin: 5px 0; line-height: 1.05; }
+.ability-card > strong { display: block; font-size: 21px; min-height: 25px; margin: 5px 0; line-height: 1.05; }
 .ability-card > .ability-description { display: block; font-size: 10px; min-height: 27px; line-height: 1.35; }
 .ability-label { margin: 8px -10px 0; padding: 6px 4px; font-size: 9px; letter-spacing: .5px; }
 .ultimate-button {
-  position: absolute; bottom: 11px; right: 0; width: 84px; height: 84px; min-height: 84px;
+  position: absolute; bottom: 32px; right: 0; width: 84px; height: 84px; min-height: 84px;
   margin: 0; padding: 8px; border: 4px solid #d4b66f; border-radius: 50%; display: flex;
   flex-direction: column; justify-content: center; gap: 3px;
   background: radial-gradient(circle at 40% 25%, #ceabeb, #875eae 68%);
@@ -135,7 +137,8 @@
 .ultimate-button > svg { width: 29px; height: 29px; fill: #fff0b7; color: #fff0ce; filter: drop-shadow(0 2px #644775); }
 .ultimate-button strong { position: absolute; left: -10px; right: -10px; bottom: -29px; font: 400 12px var(--display-font); text-shadow: 0 2px #3f314b, 1px 0 #3f314b, -1px 0 #3f314b; }
 .ultimate-caption { display: block; font: 400 18px var(--display-font); }
-.ultimate-button > small, .ultimate-button .charge-orbs, .ultimate-button kbd { display: none; }
+.ultimate-button > small, .ultimate-button .charge-orbs { display: none; }
+.ultimate-button kbd { display: block; position: absolute; top: -7px; right: 0; border: 1px solid #e6ca8c; border-radius: 5px; background: #60486e; padding: 1px 4px; font-size: 10px; }
 .ultimate-button.ready { animation: ultimate-glow 1.5s ease-in-out infinite; }
 @keyframes ultimate-glow { 50% { box-shadow: inset 0 0 0 3px #8a4f9b, 0 4px #543755, 0 0 18px 6px #ffe6a56b; } }
 .battle-controls.dodging { width: min(650px, calc(100% - 48px)); }
@@ -248,18 +251,19 @@
   .encounter-heading > .eyebrow { font-size: 7px; }
   .enemy-intent { font-size: 9px; padding: 4px 9px; margin-top: 6px; }
   .scene-combat .world-stage { width: 160dvh; height: 106.667dvh; top: 31%; }
-  .battle-controls { width: min(580px, calc(100% - 60px)); bottom: calc(var(--safe-bottom) + 2px); }
+  .battle-controls { width: min(680px, calc(100% - 48px)); bottom: calc(var(--safe-bottom) + 2px); }
   .battle-status { min-height: 23px; margin-bottom: 7px; gap: 10px; }
   .battle-status > strong { font-size: 8px; padding: 4px 7px; }
   .battle-status > span { font-size: 9px; }
-  .ability-cards { width: calc(100% - 91px); gap: 9px; }
-  .ability-card { min-height: 104px; padding: 7px 8px 0; border-radius: 13px; border-width: 2px; }
+  .ability-cards { width: calc(100% - 91px); gap: 8px; }
+  .ability-part { font-size: 8px; margin-bottom: 4px; letter-spacing: 1px; }
+  .ability-card { min-height: 116px; padding: 7px 8px 0; border-radius: 13px; border-width: 2px; }
   .ability-top { min-height: 33px; margin-bottom: 4px; }
   .ability-symbol { width: 33px; height: 33px; border-radius: 11px; }
   .ability-symbol svg { width: 22px; height: 22px; }
   .ability-top > span:nth-child(2) { font-size: 27px; }
   .ability-top small { font-size: 6px; }
-  .ability-card > strong { font-size: 18px; min-height: 18px; margin: 4px 0 5px; }
+  .ability-card > strong { font-size: 17px; min-height: 36px; margin: 4px 0; }
   .ability-card > .ability-description { display: none; }
   .ability-label { font-size: 8px; padding: 5px; margin: 5px -8px 0; }
   .ultimate-button { width: 73px; height: 73px; min-height: 73px; bottom: 22px; border-width: 3px; gap: 1px; }
@@ -370,17 +374,18 @@
   .battle-status > strong { font-size: 9px; padding: 5px 8px; }
   .battle-status > span { flex-basis: 100%; font-size: 11px; }
   .battle-status > b { font-size: 17px; }
-  .ability-cards { width: 100%; gap: 8px; }
-  .ability-card { min-height: 132px; padding: 9px 8px 0; border-width: 2px; border-radius: 15px; }
-  .ability-top { min-height: 40px; margin-bottom: 8px; }
+  .ability-cards { width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .ability-card { display: grid; grid-template-columns: 38px 1fr; column-gap: 9px; min-height: 88px; padding: 8px 10px; border-width: 2px; border-radius: 15px; text-align: left; }
+  .ability-part { grid-column: 2; grid-row: 1; margin: 0; font-size: 8px; }
+  .ability-top { grid-column: 1; grid-row: 1 / 4; flex-direction: column; justify-content: center; gap: 4px; min-height: 0; margin: 0; }
   .ability-symbol { width: 33px; height: 33px; border-radius: 12px; }
   .ability-symbol svg { width: 23px; height: 23px; }
-  .ability-top > span:nth-child(2) { font-size: 31px; }
+  .ability-top > span:nth-child(2) { font-size: 24px; }
   .ability-top small { font-size: 7px; }
-  .ability-card > strong { font-size: 18px; min-height: 38px; margin: 7px 0; line-height: 1.05; }
+  .ability-card > strong { grid-column: 2; grid-row: 2; font-size: 19px; min-height: 0; margin: 3px 0; padding: 0; line-height: 1.05; }
   .ability-card > .ability-description { display: none; }
-  .ability-label { font-size: 9px; margin: 7px -8px 0; padding: 6px 2px; }
-  .ultimate-button { width: 69px; height: 69px; min-height: 69px; bottom: 215px; border-width: 3px; right: 3px; gap: 1px; }
+  .ability-label { grid-column: 2; grid-row: 3; font-size: 8px; margin: 0; padding: 0; border: 0; background: none; text-align: left; letter-spacing: .3px; }
+  .ultimate-button { width: 69px; height: 69px; min-height: 69px; bottom: 262px; border-width: 3px; right: 3px; gap: 1px; }
   .ultimate-button > svg { width: 25px; height: 25px; }
   .ultimate-caption { font-size: 17px; }
   .ultimate-button strong { font-size: 11px; bottom: -25px; }
@@ -461,14 +466,14 @@
   .encounter-heading h1 { font-size: 23px; }
   .scene-combat .world-stage { top: 40%; }
   .battle-controls { bottom: calc(var(--safe-bottom) + 12px); }
-  .ability-card { min-height: 116px; padding-top: 7px; }
-  .ability-top { min-height: 31px; margin-bottom: 5px; }
+  .ability-card { min-height: 83px; padding-top: 7px; }
+  .ability-top { min-height: 0; margin-bottom: 0; }
   .ability-symbol { width: 29px; height: 29px; }
   .ability-top > span:nth-child(2) { font-size: 27px; }
-  .ability-card > strong { font-size: 16px; min-height: 33px; margin: 5px 0; }
-  .ability-label { font-size: 8px; padding: 5px; }
+  .ability-card > strong { font-size: 17px; min-height: 0; margin: 3px 0; }
+  .ability-label { font-size: 8px; padding: 0; }
   .battle-status > span { font-size: 10px; }
-  .ultimate-button { width: 59px; height: 59px; min-height: 59px; bottom: 183px; }
+  .ultimate-button { width: 59px; height: 59px; min-height: 59px; bottom: 239px; right: calc(50% - 30px); }
   .ultimate-button > svg { width: 22px; height: 22px; }
   .ultimate-caption { font-size: 14px; }
   .ultimate-button strong { font-size: 10px; bottom: -22px; }
@@ -494,12 +499,12 @@
   .health span { font-size: 9px; }
   .battle-header { gap: 7px; padding-right: 61px; }
   .ability-cards { gap: 7px; }
-  .ability-card { padding-left: 6px; padding-right: 6px; }
-  .ability-card > strong { font-size: 14px; min-height: 30px; }
+  .ability-card { padding-left: 7px; padding-right: 7px; column-gap: 6px; grid-template-columns: 31px 1fr; }
+  .ability-card > strong { font-size: 16px; min-height: 0; }
   .ability-top > span:nth-child(2) { font-size: 25px; }
   .ability-symbol { width: 25px; height: 25px; }
   .ability-symbol svg { width: 18px; height: 18px; }
-  .ability-label { margin-left: -6px; margin-right: -6px; font-size: 7px; }
+  .ability-label { margin: 0; font-size: 7px; }
   .map-title h1 { font-size: 19px; }
   .stage-detail h2 { font-size: 24px; }
   .stage-detail { padding: 10px; }
@@ -514,8 +519,9 @@
 @media (orientation: landscape) and (max-height: 350px) {
   .quest-card { top: 76px; min-height: 58px; }
   .village-caption { display: none; }
-  .battle-controls { width: min(540px, calc(100% - 48px)); }
-  .ability-card { min-height: 90px; padding-top: 5px; }
+  .battle-controls { width: min(620px, calc(100% - 32px)); }
+  .ability-cards { width: calc(100% - 82px); gap: 6px; }
+  .ability-card { min-height: 106px; padding-top: 5px; }
   .ability-top { min-height: 26px; margin-bottom: 2px; }
   .ability-symbol { width: 28px; height: 28px; }
   .ability-card > strong { font-size: 16px; margin: 3px 0; }
@@ -528,6 +534,6 @@
   .lane-button { min-height: 64px; }
 }
 @media (pointer: coarse) {
-  .ability-top kbd, .ultimate-button kbd { display: none; }
+  .ability-part kbd, .ultimate-button kbd { display: none; }
   .ability-card:hover:enabled, .dock-item:hover, .village-dock > .gold-button:hover { transform: none; }
 }

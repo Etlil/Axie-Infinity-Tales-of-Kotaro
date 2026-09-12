@@ -21,11 +21,26 @@ test('first launch introduces Atia and unmount releases the engine',()=>{
 });
 test('cards dispatch the selected ability and lock throughout animations',()=>{
  render(<App/>);publish({scene:'combat',phase:'PLAYER_TURN',enemy:bosses.buba,enemyHP:120});
- fireEvent.click(screen.getByRole('button',{name:/Twin Slash/}));
- expect(command).toHaveBeenCalledWith('playCard','twin-slash');
+ fireEvent.click(screen.getByRole('button',{name:/Horn Lance/}));
+ expect(command).toHaveBeenCalledWith('playCard','horn-lance');
  expect(screen.getByRole('button',{name:/Moonlit Eclipse/})).toBeDisabled();
  publish({scene:'combat',phase:'PLAYER_ATTACK_ANIM',enemy:bosses.buba});
- ['Twin Slash','Frostguard','Moonstep'].forEach(name=>expect(screen.getByRole('button',{name:new RegExp(name)})).toBeDisabled());
+ ['Horn Lance','Moon Fang','Blade Guard','Tail Sweep'].forEach(name=>expect(screen.getByRole('button',{name:new RegExp(name)})).toBeDisabled());
+});
+test.each(['kotaro','buba'])('%s exposes four labeled body-part attacks and a separate ultimate',activeCharacter=>{
+ const view=render(<App/>);publish({scene:'combat',phase:'PLAYER_TURN',activeCharacter,enemy:bosses.buba,charge:3});
+ const cards=[...view.container.querySelectorAll('.ability-card')];
+ expect(cards.map(card=>card.dataset.part)).toEqual(['horn','mouth','back','tail']);
+ cards.forEach((card,index)=>{
+  expect(card).toHaveTextContent(card.dataset.part);
+  expect(card).toHaveAttribute('aria-keyshortcuts',String(index+1));
+  fireEvent.click(card);
+ });
+ const state=derive({...initialState(),activeCharacter});
+ expect(command.mock.calls.filter(([action])=>action==='playCard')).toEqual(state.cards.map(card=>['playCard',card.id]));
+ const ultimate=screen.getByRole('button',{name:new RegExp(state.ultimate.name)});
+ expect(ultimate).toHaveAttribute('aria-keyshortcuts','5');
+ fireEvent.click(ultimate);expect(command).toHaveBeenLastCalledWith('playCard',state.ultimate.id);
 });
 test('touch lanes show both position and explicit danger during the dodge phase',()=>{
  render(<App/>);publish({scene:'combat',phase:'DODGE_PHASE',enemy:bosses.buba,lane:1,dangerLane:1,warningActive:true});
@@ -33,7 +48,7 @@ test('touch lanes show both position and explicit danger during the dodge phase'
  expect(screen.getByRole('button',{name:'Center lane'})).toHaveClass('danger');
  fireEvent.click(screen.getByRole('button',{name:'Left lane'}));
  expect(command).toHaveBeenCalledWith('moveLane',0);
- expect(screen.queryByRole('button',{name:/Twin Slash/})).not.toBeInTheDocument();
+ expect(screen.queryByRole('button',{name:/Horn Lance/})).not.toBeInTheDocument();
 });
 test('Momo must be purified with the amulet before returning home',()=>{
  render(<App/>);publish({scene:'victory',result:{kind:'purify'},amulet:true});

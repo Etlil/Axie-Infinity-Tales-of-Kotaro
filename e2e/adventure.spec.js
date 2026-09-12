@@ -14,7 +14,7 @@ async function fight(page, { dodge = true, weak = false, shot = null } = {}) {
     if (!await page.locator('.scene-combat').count()) return;
     const ultimate = page.locator('.ultimate-button:not(:disabled)');
     if (!weak && await ultimate.count()) await ultimate.click();
-    else await page.locator('.ability-card').nth(weak ? 2 : 0).click();
+    else await page.locator(weak ? '.ability-card.card-heal' : '.ability-card').first().click();
     // Resolve a real React lane button in-frame; transport delays must not
     // consume the one-second reaction window. A separate touch test taps lanes.
     const outcome = await page.waitForFunction(dodge => {
@@ -42,6 +42,47 @@ async function visibleControls(page, selector) {
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
 }
+
+test('four body-part keyboard attacks work for both companions; key 5 uses the charged ultimate',async({page})=>{
+  test.setTimeout(150000);
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await savedVillage(page,{completedStages:[0,1],xp:135});
+  for (const hero of ['kotaro','buba']) {
+    if (hero==='buba') {
+      await page.getByRole('button',{name:'Team',exact:true}).click();
+      await page.getByRole('button',{name:'Choose Buba',exact:true}).click();
+    }
+    await page.getByRole('button',{name:'Adventure',exact:true}).click();
+    await page.getByRole('button',{name:/Stage 3:/}).click();
+    await page.getByRole('button',{name:'Enter encounter',exact:true}).click();
+    await expect(page.locator('.ability-card')).toHaveCount(4);
+    await page.keyboard.press('5');
+    await expect(page.locator('.ability-card').first()).toBeEnabled();
+    for (const [index,part] of ['horn','mouth','back','tail'].entries()) {
+      const card=page.locator('.ability-card').nth(index);
+      await expect(card).toBeEnabled();
+      await expect(card).toHaveAttribute('data-part',part);
+      const name=await card.locator('strong').textContent();
+      await page.keyboard.press(String(index+1));
+      await expect(page.getByRole('status')).toContainText(name+'!');
+      await expect(card).toBeDisabled();
+      await page.waitForFunction(()=>{
+        const safe=document.querySelector('.lane-button:not(.danger)');
+        if (!document.querySelector('.lane-button.danger')) return false;
+        safe.click();return true;
+      });
+      await expect(card).toBeEnabled({timeout:10000});
+    }
+    await expect(page.locator('.ultimate-button')).toBeEnabled();
+    await page.keyboard.press('5');
+    await expect(page.getByRole('status')).toContainText(hero==='buba'?'Paintstorm!':'Moonlit Eclipse!');
+    await expect(page.locator('.ultimate-button')).toBeDisabled();
+    await page.getByRole('button',{name:'Pause encounter'}).click();
+    await page.getByRole('button',{name:'Retreat from encounter'}).click();
+    await expect(page.locator('.scene-village')).toBeVisible();
+  }
+  expect(errors).toEqual([]);
+});
 
 test('complete prologue, Buba unlock, rank rewards, route, amulet rescue and durable save', async ({page}) => {
   test.setTimeout(240000);
@@ -79,7 +120,7 @@ test('complete prologue, Buba unlock, rank rewards, route, amulet rescue and dur
   for(let i=0;i<3;i++){
     await page.getByRole('button',{name:'Stage '+(i+1)+': '+['Whispering Woods','The Hollow Crossing','Momo’s Lagoon'][i],exact:true}).click();
     await page.getByRole('button',{name:'Enter encounter',exact:true}).click();
-    await expect(page.locator('.ability-card').first()).toContainText('Brave Slash');
+    await expect(page.locator('.ability-card').first()).toContainText('Leaf Horn');
     await fight(page);
     if(i<2)await page.getByRole('button',{name:'Continue journey'}).click();
   }
