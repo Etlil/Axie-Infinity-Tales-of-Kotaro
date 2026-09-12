@@ -1,13 +1,14 @@
 import Phaser from 'phaser';
 export const PALETTE={ink:'#fff4d5',cream:'#fffbea',green:'#50744f',muted:'#adc1af'};
 export function label(scene,x,y,text,size=20,color=PALETTE.ink,extra={}){
-  return scene.add.text(x,y,text,{fontFamily:'Trebuchet MS, sans-serif',fontSize:size+'px',color,fontStyle:'bold',...extra});
+  return scene.add.text(x,y,text,{fontFamily:'"Changa One", sans-serif',fontSize:size+'px',color,fontStyle:'normal',...extra});
 }
 export function pill(scene,x,y,text,{width=170,fill=0x223b2e,color='#fff1cd',size=16}={}){
   const root=scene.add.container(x,y),g=scene.add.graphics();
-  g.fillStyle(0x0b1610,.35).fillRoundedRect(-width/2,-17,width,42,10);
-  g.fillStyle(fill,.96).fillRoundedRect(-width/2,-21,width,42,10);
-  g.lineStyle(1,0xd5b676,.7).strokeRoundedRect(-width/2,-21,width,42,10);
+  g.fillStyle(0x493321,.85).fillRoundedRect(-width/2,-16,width,42,12);
+  g.fillStyle(fill,.98).fillRoundedRect(-width/2,-21,width,42,12);
+  g.lineStyle(3,0x704a2d).strokeRoundedRect(-width/2,-21,width,42,12);
+  g.lineStyle(2,0xffefb9,.4).lineBetween(-width/2+13,-16,width/2-13,-16);
   root.add([g,label(scene,0,0,text,size,color).setOrigin(.5)]);return root;
 }
 export function floatingText(scene,x,y,text,color='#ffe8a7'){

@@ -4,7 +4,7 @@ Consult [ASSET_REFERENCES.md](ASSET_REFERENCES.md) for the user’s saved refere
 
 ## Official Axie materials
 
-All imported files are under `public/assets/atia/`. Axie characters, models, artwork, and animations remain Sky Mavis / Axie Infinity intellectual property. This repository is an Axie Vibeathon project. These are limited-use builder resources, not generally licensed stock art.
+Imported character and world files are under `public/assets/atia/`; interface artwork is under `src/assets/ui/`. Axie characters, models, artwork, and animations remain Sky Mavis / Axie Infinity intellectual property. This repository is an Axie Vibeathon project. These are limited-use builder resources, not generally licensed stock art.
 
 Keep the included [Origins license](../public/assets/atia/licenses/origins-LICENSE.md), [Origins third-party notices](../public/assets/atia/licenses/origins-Third-Party-Notices.md), and [3D asset permission](../public/assets/atia/licenses/3d-RIGHTS.md) with the assets.
 
@@ -41,6 +41,27 @@ Use case: stylized-concept. Asset type: production 2D game village hub backgroun
 
 The generated tent and gate positions were used to place interactive game hotspots. Rank-based tent/lodge changes are drawn above the background in Phaser.
 
+## Origins interface artwork
+
+Imported unchanged from the official Origins asset kit on 2026-09-12. These files use the same [Origins license](../public/assets/atia/licenses/origins-LICENSE.md) and [third-party notices](../public/assets/atia/licenses/origins-Third-Party-Notices.md) as the other imported materials. CSS scales the original images and slices the panel border; no game screenshots are embedded as interface controls.
+
+| Local file | Original source |
+| --- | --- |
+| `src/assets/ui/avatar-frame.png` | [PvE character portrait frame](https://github.com/axieinfinity/axie-origins-asset-kit/blob/main/Assets/OriginsKit/PvE/UI/InBattle/avatar_frame.png) |
+| `src/assets/ui/name-panel.png` | [Wooden name panel](https://github.com/axieinfinity/axie-origins-asset-kit/blob/main/Assets/OriginsKit/PvE/UI/InBattle/name_panel.png) |
+| `src/assets/ui/paper-texture.png` | [Panel background texture](https://github.com/axieinfinity/axie-origins-asset-kit/blob/main/Assets/OriginsKit/PvE/UI/Frames/frame_back.png) |
+| `src/assets/ui/paper-frame.png` | [Panel border](https://github.com/axieinfinity/axie-origins-asset-kit/blob/main/Assets/OriginsKit/PvE/UI/Frames/frame_border.png) |
+| `src/assets/ui/rank-medal.png` | [Star medal](https://github.com/axieinfinity/axie-origins-asset-kit/blob/main/Assets/OriginsKit/PvE/UI/Frames/star.png) |
+
+## Locally hosted fonts
+
+The public Origins kit contained no font files when checked on 2026-09-12. The exact Origins game typeface has not been verified. **Changa One** is a chosen visual match for rounded cartoon headings, buttons, and Phaser canvas labels; **Nunito** is used for dialogue and smaller interface text. These are substitutes, not a claim that either is the official Axie font. Replace the local font faces and display/body tokens in `src/origins-theme.css` if an authorized exact font becomes available; keep the canvas family in `src/scenes/SceneBase.js` and the font readiness check in `src/scenes/BootScene.js` in sync.
+
+- `src/assets/fonts/ChangaOne-Regular.ttf`: [Google Fonts source](https://github.com/google/fonts/blob/main/ofl/changaone/ChangaOne-Regular.ttf), with [OFL license](../public/assets/atia/licenses/ChangaOne-OFL.txt).
+- `src/assets/fonts/Nunito.ttf`: [Google Fonts variable font source](https://github.com/google/fonts/blob/main/ofl/nunito/Nunito%5Bwght%5D.ttf), with [OFL license](../public/assets/atia/licenses/Nunito-OFL.txt).
+- Both original fonts are included unchanged under the SIL Open Font License 1.1. Font requests stay on the game's own host.
+- The license files are also copied into the production build from `public/assets/atia/licenses/`.
+
 ## Original interface and effects
 
-The React/CSS interface, line icons, route nodes, story writing based on the user’s lore, paint effects, sword effects, and upgrade overlays were created for this project. Source references are retained to make future asset replacement and licensing review straightforward.
+The React/CSS layouts, illustrated button treatment, SVG icons, route nodes, story writing based on the user’s lore, paint effects, sword effects, and upgrade overlays were created for this project. The imported interface artwork above supplies the parchment frames, wooden sign, portrait ring, and rank medal. Source references are retained to make future asset replacement and licensing review straightforward.

@@ -4,6 +4,7 @@ import { initialState, derive } from './game/state';
 import { arrival, bubaDialogue, rankRewards, tentStages } from './data/story';
 import { dungeonRooms } from './data/bosses';
 import './App.css';
+import './origins-theme.css';
 
 function Icon({ name, size = 22 }) {
   const paths = {
@@ -27,7 +28,7 @@ function Icon({ name, size = 22 }) {
     coin: <><circle cx="12" cy="12" r="9"/><path d="m12 6 4 6-4 6-4-6Z"/></>,
     wood: <><path d="m3 16 12-12 6 6-12 12Z"/><ellipse cx="6" cy="19" rx="3" ry="3"/><path d="m9 15 7-7"/></>,
   };
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] || paths.spark}</svg>;
+  return <svg className={'game-icon icon-' + name} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] || paths.spark}</svg>;
 }
 function Portrait({ character = 'kotaro', className = '' }) {
   return <span className={'portrait ' + character + ' ' + className} aria-hidden="true"/>;
@@ -144,7 +145,7 @@ export default function App() {
         <button className="dock-item" onClick={() => command('openPanel', 'team')}><Icon name="team"/><span>Team</span></button>
         <button className="dock-item" onClick={() => command('openPanel', 'amulet')}><Icon name="spark"/><span>Amulet</span></button>
         <button className="dock-item" onClick={() => command('openPanel', 'journal')}><Icon name="book"/><span>Journal</span></button>
-        <button className="dock-item" onClick={() => command('openPanel', 'rewards')}><Icon name="gift"/><span>Rewards</span>{game.availableRewards > 0 && <i>{game.availableRewards}</i>}</button>
+        <button className="dock-item" aria-label="Rewards" onClick={() => command('openPanel', 'rewards')}><Icon name="gift"/><span>Rewards</span>{game.availableRewards > 0 && <i>{game.availableRewards}</i>}</button>
         <GoldButton onClick={() => command('openMap')}><Icon name="compass"/>Adventure</GoldButton>
       </nav>
     </>}

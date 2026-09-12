@@ -11,8 +11,14 @@ export default class BootScene extends Phaser.Scene {
     this.load.on('progress',value=>this.game.session.patch({loadProgress:Math.round(value*100)}));
     this.load.on('loaderror',()=>this.game.session.patch({assetError:true}));
   }
-  create(){
+  async create(){
     if(this.game.session.state.assetError)return;
+    // Canvas text must be drawn after the same local display font as the HUD.
+    if(document.fonts)await Promise.allSettled([
+      document.fonts.load('20px "Changa One"'),
+      document.fonts.load('700 14px Nunito'),
+    ]);
+    if(!this.sys.isActive())return;
     for(const id of ['kotaro','buba'])['idle','attack','ultimate','hit','run','greeting'].forEach((action,row)=>{
       this.anims.create({key:id+'-'+action,frames:this.anims.generateFrameNumbers(id+'-sheet',{start:row*12,end:row*12+(action==='hit'?2:action==='greeting'?3:11)}),
         frameRate:action==='idle'?8:action==='ultimate'?18:20,repeat:['idle','run'].includes(action)?-1:0});

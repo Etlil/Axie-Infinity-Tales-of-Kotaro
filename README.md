@@ -71,6 +71,7 @@ Browser checks exercise the full prologue and rescue loop, defeat/retry, save re
 ## Source and assets
 
 - `src/App.js`, `src/App.css`: story, village HUD, touch controls, accessible panels, and responsive layouts.
+- `src/origins-theme.css`: cartoon interface, Origins parchment/wood artwork, and locally hosted Changa One / Nunito fonts. Changa One is a visual match; the exact Origins font has not been verified. Font and artwork sources are recorded in the asset provenance document.
 - `src/main.js`: Phaser lifecycle and React bridge.
 - `src/scenes/`: loading, arrival, Buba’s dialogue, village, winding route, combat, rescue, and defeat.
 - `src/game/state.js`: validated local saves, unlocks, ranks, rewards, and encounter state.
