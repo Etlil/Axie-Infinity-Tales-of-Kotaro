@@ -1,112 +1,169 @@
 import { useEffect, useRef, useState } from 'react';
 import { createGame } from './main';
+import { initialState, derive } from './game/state';
+import { arrival, bubaDialogue, rankRewards, tentStages } from './data/story';
+import { dungeonRooms } from './data/bosses';
 import './App.css';
 
-const INITIAL_STATE = { scene: 'map', phase: '', playerHP: 100, playerMaxHP: 100, enemy: null, enemyHP: 0, roomIndex: 0, turn: 1, rescued: [], bonus: 0, lane: 1, dangerLane: null, dodgeRemaining: 0, message: 'Every great adventure begins with a small step.', cards: [] };
-
-function Icon({ name, size = 20 }) {
+function Icon({ name, size = 22 }) {
   const paths = {
     compass: <><circle cx="12" cy="12" r="9"/><path d="m16 8-2.5 5.5L8 16l2.5-5.5Z"/></>,
     home: <><path d="m3 10 9-7 9 7M5 9v11h14V9M9 20v-7h6v7"/></>,
     arrow: <path d="M4 12h15m-6-6 6 6-6 6"/>,
-    leaf: <path d="M20 4c-9-2-17 3-15 10 3 7 15 3 15-10ZM4 21l11-12M8 16v-5m0 5h5"/>,
-    heart: <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>,
-    water: <><path d="M12 2S5 10 5 14a7 7 0 0 0 14 0c0-4-7-12-7-12Z"/><path d="M8 14c0 2 1 3 3 3"/></>,
+    back: <path d="M20 12H5m6-6-6 6 6 6"/>,
+    heart: <path d="M20 5a5 5 0 0 0-8 1 5 5 0 0 0-8-1c-5 5 3 11 8 15 5-4 13-10 8-15Z"/>,
     spark: <path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z"/>,
-    flag: <path d="M5 22V3m0 0c5-5 9 5 15 0v11c-6 5-10-5-15 0"/>,
+    tent: <><path d="m3 21 9-18 9 18H3Zm6 0 3-9 3 9M9 3l6 6"/></>,
     book: <path d="M12 5v16M3 3c4-1 7 0 9 2 2-2 5-3 9-2v16c-4-1-7 0-9 2-2-2-5-3-9-2Z"/>,
-    check: <path d="m5 12 4 4L19 6"/>, close: <path d="m6 6 12 12M6 18 18 6"/>,
+    team: <><circle cx="9" cy="8" r="4"/><path d="M2 21v-2a7 7 0 0 1 14 0v2M17 4a4 4 0 0 1 0 8m2 3a6 6 0 0 1 3 6"/></>,
+    gift: <><path d="M3 9h18v5H3ZM5 14v7h14v-7M12 9v12"/><path d="M12 9C2 8 7-3 12 9c5-12 10-1 0 0Z"/></>,
+    check: <path d="m5 12 4 4L19 6"/>,
+    close: <path d="m6 6 12 12M6 18 18 6"/>,
     sword: <path d="m14 3 7-1-1 7L9 20l-5-5ZM3 13l8 8M3 21l3-3"/>,
+    shield: <path d="m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6Z"/>,
     moon: <path d="M20 15A9 9 0 0 1 9 3a9 9 0 1 0 11 12Z"/>,
-    clock: <><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></>,
+    lock: <><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4m-4 4v3"/></>,
+    expand: <path d="M3 9V3h6m6 0h6v6M3 15v6h6m6 0h6v-6"/>,
+    coin: <><circle cx="12" cy="12" r="9"/><path d="m12 6 4 6-4 6-4-6Z"/></>,
+    wood: <><path d="m3 16 12-12 6 6-12 12Z"/><ellipse cx="6" cy="19" rx="3" ry="3"/><path d="m9 15 7-7"/></>,
   };
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] || paths.spark}</svg>;
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] || paths.spark}</svg>;
+}
+function Portrait({ character = 'kotaro', className = '' }) {
+  return <span className={'portrait ' + character + ' ' + className} aria-hidden="true"/>;
+}
+function GoldButton({ children, className = '', ...props }) {
+  return <button className={'gold-button ' + className} {...props}>{children}<Icon name="arrow" size={18}/></button>;
+}
+function RankProgress({ game }) {
+  return <><div className="rank-line"><span>Adventure Rank {game.level}</span><small>{game.nextRankXP ? game.rankXP + ' / ' + game.nextRankXP + ' XP' : 'MAX RANK'}</small></div><div className="progress-track"><span style={{ width: (game.nextRankXP ? Math.min(100, game.rankXP / game.nextRankXP * 100) : 100) + '%' }}/></div></>;
+}
+function Health({ name, hp, max, enemy = false, guard = 0 }) {
+  return <div className={'health ' + (enemy ? 'enemy-health' : '')}><div><strong>{name}</strong><span>{hp} / {max}</span></div><div className="health-track"><span style={{ width: Math.max(0, hp / max * 100) + '%' }}/></div><small>{guard ? guard + ' SHIELD' : enemy ? 'OPPONENT' : 'YOUR AXIE'}</small></div>;
 }
 
-function AxiePortrait({ aqua = false, small = false }) {
-  const color = aqua ? '#88cec2' : '#f0bb61';
-  return <svg className={`axie-portrait ${small ? 'small' : ''}`} viewBox="0 0 240 185" fill="none" aria-hidden="true">
-    <ellipse cx="120" cy="160" rx="70" ry="10" fill="#24534a" opacity=".12"/>
-    {aqua ? <><path d="m68 81-34-23 11 42 26 4m99-23 34-23-11 42-26 4" fill="#67adab" stroke="#356c63" strokeWidth="3"/><path d="m100 57 1-29 18 20 20-24 2 35" fill="#c7e4bb" stroke="#356c63" strokeWidth="3"/></> : <><rect x="43" y="91" width="33" height="47" rx="12" fill="#957046" stroke="#775a3f" strokeWidth="3"/><path d="m97 62-11-35c19 0 25 14 27 28m0-4c0-23 17-25 29-23-3 16-12 25-29 23" fill="#7e9d59" stroke="#486345" strokeWidth="3"/></>}
-    <path d="M56 110c0-39 25-57 65-57 39 0 65 22 65 59 0 31-28 48-65 48-39 0-65-17-65-50Z" fill={color} stroke={aqua ? '#356c63' : '#947047'} strokeWidth="3"/>
-    <ellipse cx="98" cy="86" rx="22" ry="12" fill="white" opacity=".14"/>
-    <ellipse cx="80" cy="154" rx="15" ry="8" fill={color} stroke={aqua ? '#356c63' : '#947047'} strokeWidth="3"/><ellipse cx="158" cy="154" rx="15" ry="8" fill={color} stroke={aqua ? '#356c63' : '#947047'} strokeWidth="3"/>
-    <ellipse cx="99" cy="112" rx="5" ry="7" fill="#304638"/><ellipse cx="146" cy="112" rx="5" ry="7" fill="#304638"/><circle cx="100" cy="110" r="1.7" fill="white"/><circle cx="147" cy="110" r="1.7" fill="white"/>
-    <path d="M117 124q5 6 10 0" stroke="#304638" strokeWidth="2.5" strokeLinecap="round"/><ellipse cx="85" cy="123" rx="9" ry="4" fill="#dd8f88" opacity=".6"/><ellipse cx="160" cy="123" rx="9" ry="4" fill="#dd8f88" opacity=".6"/>
-    {!aqua && <path d="m63 135 21-4 5 24-22-5Z" fill="#78906a" stroke="#486345" strokeWidth="2"/>}
-    {aqua && <><path d="m184 125 19-8-5 20-17-1" fill="#67adab" stroke="#356c63" strokeWidth="3"/><circle cx="46" cy="33" r="6" stroke="#80b9b1" strokeWidth="2"/><circle cx="184" cy="26" r="4" stroke="#80b9b1" strokeWidth="2"/></>}
-  </svg>;
+function Panel({ game, command, close, panel }) {
+  const dialog = useRef(null);
+  useEffect(() => {
+    const previous = document.activeElement;
+    dialog.current?.querySelector('button')?.focus();
+    const onKey = event => {
+      if (event.key === 'Escape') close();
+      if (event.key === 'Tab') {
+        const items = [...dialog.current.querySelectorAll('button:not(:disabled),a[href],[tabindex="0"]')];
+        const first = items[0], last = items[items.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('keydown', onKey); if (previous?.isConnected) previous.focus(); };
+  }, [close]);
+  const titles = { rewards: "Buba’s tent", team: 'Your companions', journal: 'The Atia journal', amulet: 'A little light, handmade', help: 'Traveler’s guide' };
+  return <div className="modal-backdrop" onClick={close}><section ref={dialog} className={'panel panel-' + panel} role="dialog" aria-modal="true" aria-labelledby="panel-title" onClick={event => event.stopPropagation()}>
+    <button className="icon-button close-panel" onClick={close} aria-label="Close panel"><Icon name="close"/></button>
+    <p className="eyebrow">{panel === 'rewards' ? 'A HOME, ONE RANK AT A TIME' : 'ATIA • CHAPTER ONE'}</p><h2 id="panel-title">{titles[panel]}</h2>
+    {panel === 'rewards' && <>
+      <div className="tent-summary"><img src="/assets/atia/buba-avatar.png" alt="Buba"/><div><strong>{tentStages[game.tentStage]}</strong><p>{game.tentStage === 2 ? 'A real roof. A warm light. A place to belong.' : 'A few supplies today. A brighter village tomorrow.'}</p><RankProgress game={game}/></div></div>
+      <div className="tent-tiers">{['Rank 1 · Shelter', 'Rank 3 · Mended tent', 'Rank 5 · Lodge'].map((s, i) => <span key={s} className={i <= game.tentStage ? 'reached' : ''}><Icon name={i === 2 ? 'home' : 'tent'} size={18}/>{s}</span>)}</div>
+      <p className="muted">Clear encounters to earn Adventure XP. Claim each rank’s supplies once; Buba improves his home as your rank grows.</p>
+      <div className="reward-list">{rankRewards.map(reward => {
+        const claimed = game.claimedRewards.includes(reward.rank), locked = game.level < reward.rank;
+        return <div className={'reward-row ' + (claimed ? 'claimed' : '')} key={reward.rank}><span className="rank-medal">{reward.rank}</span><div><strong>{reward.title}</strong><small><Icon name="coin" size={14}/>{reward.coins} <Icon name="wood" size={14}/>{reward.wood}</small></div><button className={locked || claimed ? 'small-button' : 'small-button claim-button'} disabled={locked || claimed} onClick={() => command('claimReward', reward.rank)} aria-label={claimed ? 'Rank ' + reward.rank + ' claimed' : 'Claim rank ' + reward.rank}>{claimed ? <><Icon name="check" size={16}/>Claimed</> : locked ? <><Icon name="lock" size={14}/>Rank {reward.rank}</> : 'Claim'}</button></div>;
+      })}</div>
+    </>}
+    {panel === 'team' && <><p className="muted">Choose who leads the next expedition. Each Axie has its own abilities and ultimate.</p><div className="team-grid">{['kotaro', 'buba'].map(id => <article className={'hero-card ' + (game.activeCharacter === id ? 'chosen' : '')} key={id}><Portrait character={id}/><span className="eyebrow">{id === 'kotaro' ? 'THE WHITE WANDERER' : 'THE LAST VILLAGER'}</span><h3>{id === 'kotaro' ? 'Kotaro' : 'Buba'}</h3><p>{id === 'kotaro' ? 'Twin blades, a frostguard, and a moonlit whirlwind.' : 'A trusty sword, a wooden shield, and a paintbrush full of hope.'}</p><div className="hero-stats"><span><Icon name="heart" size={16}/>{id === 'kotaro' ? 100 : 110} HP</span><span><Icon name="spark" size={16}/>{id === 'kotaro' ? 'Moonlit Eclipse' : 'Paintstorm'}</span></div><button className="small-button" disabled={game.activeCharacter === id || !game.unlockedCharacters.includes(id)} onClick={() => command('selectCharacter', id)}>{!game.unlockedCharacters.includes(id) ? 'Meet Buba first' : game.activeCharacter === id ? 'Leading the journey' : 'Choose ' + (id === 'kotaro' ? 'Kotaro' : 'Buba')}</button></article>)}</div></>}
+    {panel === 'amulet' && <><div className="amulet-art"><Icon name="spark" size={72}/></div><blockquote>“It cannot mend everything. But it can bring someone back.”<cite>— Buba</cite></blockquote><p>Buba made this amulet from fragments of Atia’s old light. Weaken a corrupted guardian in battle, then use its light to reverse the corruption.</p><div className="journal-note"><Icon name="heart"/><div><strong>{game.rescued.length ? 'Momo is home' : 'Your first rescue awaits'}</strong><p>{game.rescued.length ? 'Momo’s blessing grants 5% more time in every dodge phase.' : 'Follow the forest path to Momo’s Lagoon. Bring a villager back to Atia.'}</p></div></div></>}
+    {panel === 'journal' && <div className="journal-pages"><span className="journal-date">SIX MONTHS AFTER THE RAID</span><h3>The village that waited</h3><p>Nightmare Axies raided Atia six months ago. Almost everyone became corrupted. Some now serve the enemy; others wander alone, lost in what remains of their old lives.</p><p>Only Buba stayed. He built a small tent from what he could salvage and guarded the empty village. When a white wanderer arrived, fear made him draw his sword.</p><h3>A promise in the clearing</h3><p>After the battle, Buba found the courage to trust again. He gave you his handmade amulet and asked for help restoring Atia, one home and one friend at a time.</p><div className="journal-note"><Icon name="compass"/><div><strong>{game.rescued.length ? 'Chapter one complete' : 'A promise to keep'}</strong><p>{game.rescued.length ? 'Momo is safe. Keep exploring to grow your Adventure Rank and improve Buba’s home.' : 'Enter the village gate, clear the forest trail, and reverse Momo’s corruption.'}</p></div></div></div>}
+    {panel === 'help' && <><ol className="guide-list"><li><strong>Play an ability.</strong> Tap a card, or use 1 / 2 / 3. Three abilities charge your ultimate (4).</li><li><strong>Watch, then dodge.</strong> The marked lane becomes dangerous in the final second. Tap Left, Center, or Right to move to a safe lane. Keyboard: A / S / D or arrows.</li><li><strong>Bring Atia back.</strong> The village gate opens your route. Claim Adventure Rank rewards at Buba’s tent. Switch companions from the Team menu.</li><li><strong>Use Buba’s amulet.</strong> Defeat the corrupted lagoon guardian, then choose “Use the amulet” to rescue Momo.</li></ol><p className="journal-note">Your story, companions, rewards, and rank save automatically in this browser. An unfinished encounter restarts from the village or Buba’s clearing after a reload.</p><p className="muted">Touch controls work in portrait and landscape. Landscape gives the village more room.</p></>}
+  </section></div>;
 }
-
-const TITLES = {
-  map: ['THE WORLD IS WAITING', 'Small steps. Big adventures.', 'Explore a little further. Bring someone home.'],
-  dungeon: ['CHAPTER 01 · MOMO’S LAGOON', 'Into the quiet wilds.', 'Follow the path through the lagoon. Momo is waiting at the end.'],
-  combat: ['CHAPTER 01 · MOMO’S LAGOON', 'A little courage goes a long way.', 'Choose your card. Watch the waves. Find your opening.'],
-  victory: ['A NEW FRIEND FOUND', 'Every rescue is a new beginning.', 'Some journeys end with treasure. This one ends with a friend.'],
-  village: ['HOME, SWEET HOME', 'Stronger, together.', 'A small village with room for a few more friends.'],
-  defeat: ['THE JOURNEY ISN’T OVER', 'Even brave Axies need a rest.', 'Take a breath, find your footing, and try again.'],
-};
 
 export default function App() {
-  const mount = useRef(null);
-  const controller = useRef(null);
-  const [game, setGame] = useState(INITIAL_STATE);
+  const mount = useRef(null), controller = useRef(null);
+  const [game, setGame] = useState(() => derive(initialState()));
   const [help, setHelp] = useState(false);
-  const closeHelp = useRef(null);
+  const [fullscreenNote, setFullscreenNote] = useState('');
   useEffect(() => {
     const instance = createGame(mount.current, setGame);
     controller.current = instance;
     return () => { instance.destroy(); controller.current = null; };
   }, []);
-  useEffect(() => {
-    controller.current?.command('setInputEnabled', !help);
-    if (!help) return undefined;
-    const previousFocus = document.activeElement;
-    closeHelp.current?.focus();
-    const keydown = event => {
-      if (event.key === 'Escape') setHelp(false);
-      if (event.key === 'Tab') { event.preventDefault(); closeHelp.current?.focus(); }
-    };
-    document.addEventListener('keydown', keydown);
-    return () => { document.removeEventListener('keydown', keydown); previousFocus?.focus(); };
-  }, [help]);
+  const panel = help ? 'help' : game.panel;
+  useEffect(() => { controller.current?.command('setInputEnabled', !panel); }, [panel]);
   const command = (action, payload) => controller.current?.command(action, payload);
-  const rescued = game.rescued?.length || 0;
-  const title = TITLES[game.scene] || TITLES.map;
-  const isCombat = game.scene === 'combat';
-  const isDodge = isCombat && game.phase === 'DODGE_PHASE';
-  const safeNavigation = ['map', 'village', 'victory', 'defeat'].includes(game.scene);
-  const sceneLabels = { map: 'World map', dungeon: 'The lagoon path', combat: 'Encounter', victory: 'A friend, rescued', village: 'Your village', defeat: 'A moment to rest' };
-  const healthPercent = Math.max(0, Math.min(100, game.playerHP / game.playerMaxHP * 100));
-  return <div className="app-shell">
-    <header className="site-header">
-      <a className="brand" href="#explore" onClick={event => { event.preventDefault(); if (safeNavigation) command('returnMap'); }} aria-label="Axie Dungeons home"><span className="brand-mark"><Icon name="leaf" size={26}/></span><span className="brand-name">axie<span>dungeons</span></span></a>
-      <nav className="main-nav" aria-label="Main navigation"><button className={game.scene !== 'village' ? 'nav-item active' : 'nav-item'} disabled={!safeNavigation} onClick={() => command('returnMap')}><Icon name="compass" size={18}/>Explore</button><button className={game.scene === 'village' ? 'nav-item active' : 'nav-item'} disabled={!safeNavigation} onClick={() => command('visitVillage')}><Icon name="home" size={18}/>My village<span className="nav-count">{rescued}</span></button></nav>
-      <div className="header-right"><button className="help-button" aria-label="How to play" onClick={() => setHelp(true)} disabled={isCombat}><Icon name="book" size={17}/><span>How to play</span></button><span className="prototype-badge"><span/>PROTOTYPE</span></div>
-    </header>
-    <main id="explore">
-      <section className="intro"><div><p className="eyebrow"><span className="tiny-star">✦</span>{title[0]}</p><h1>{title[1]}</h1><p className="intro-copy">{title[2]}</p></div><div className="chapter-stamp"><Icon name="flag" size={20}/><span>THE FIRST RESCUE<small>Chapter 01 of your story</small></span></div></section>
-      <div className={`adventure-layout ${isCombat ? 'in-combat' : ''}`}>
-        <section className="world-card" aria-label={sceneLabels[game.scene]}>
-          <div className="world-toolbar"><div><Icon name={game.scene === 'village' ? 'home' : 'compass'} size={17}/><span>{sceneLabels[game.scene]}</span><span className="toolbar-divider"/><span className="region-name">Lunacia</span></div><span className="world-status"><span className="status-dot"/>{isCombat ? `Turn ${game.turn}` : game.scene === 'map' ? '1 dungeon discovered' : game.scene === 'dungeon' ? `Room ${game.roomIndex + 1} of 3` : 'A little closer to home'}</span></div>
-          <div className="canvas-wrapper"><div ref={mount} className="game-mount" aria-label="Interactive Axie adventure game"/></div>
-          <div className={`world-message ${isDodge ? 'dodge-message' : ''}`} role="status"><span className="message-icon"><Icon name={isDodge ? 'water' : game.scene === 'victory' ? 'heart' : 'spark'} size={17}/></span><span>{game.message || 'Your next adventure is just a small step away.'}</span>{game.scene === 'map' && <span className="map-hint">Click a destination to explore<Icon name="arrow" size={15}/></span>}</div>
-          {isCombat && <div className="combat-controls"><div className="control-heading"><span>{isDodge ? 'FIND A SAFE LANE' : game.phase === 'PLAYER_TURN' ? 'YOUR TURN · CHOOSE A CARD' : 'WATCH YOUR OPPONENT'}</span><span>{isDodge ? 'A / S / D or arrow keys' : 'One card per turn'}</span></div>
-            <div className="lane-controls" aria-label="Dodge lanes">{['Left', 'Center', 'Right'].map((label, index) => <button key={label} disabled={!isDodge} onClick={() => command('moveLane', index)} className={`lane-button ${game.lane === index ? 'selected' : ''} ${isDodge && game.dangerLane === index ? 'danger' : ''}`} aria-pressed={game.lane === index}><kbd>{['A', 'S', 'D'][index]}</kbd>{label}{isDodge && game.dangerLane === index ? <Icon name="water" size={16}/> : game.lane === index ? <span className="lane-dot"/> : null}</button>)}</div>
-            <div className="ability-cards">{game.cards.map((card, index) => <button key={card.id} className={`ability-card ability-${index}`} disabled={game.phase !== 'PLAYER_TURN'} onClick={() => command('playCard', card.id)}><span className="ability-icon"><Icon name={['leaf', 'sword', 'moon'][index]} size={25}/></span><span className="ability-copy"><strong>{card.name}</strong><small>{card.description || 'A trusty traveler attack.'}</small></span><span className="ability-damage">{card.damage}<small>DMG</small></span><kbd>{index + 1}</kbd></button>)}</div>
-          </div>}
-        </section>
-        <aside className="detail-panel">
-          {['map', 'dungeon'].includes(game.scene) && <><div className="detail-heading"><span className="eyebrow">{game.scene === 'map' ? 'YOUR NEXT ADVENTURE' : 'ON THE TRAIL'}</span><span className="chapter-number">01</span></div><div className="momo-art"><span className="art-type"><Icon name="water" size={13}/>AQUA</span><div className="art-orbit orbit-one"/><div className="art-orbit orbit-two"/><AxiePortrait aqua/><span className="art-caption">A familiar face, a little lost.</span></div><div className="dungeon-heading"><h2>Momo’s Lagoon</h2><span className="difficulty"><i/><i/><i className="faded"/> Gentle</span></div><p className="detail-description">Past the willow trees and quiet waters, a friend needs your help. Follow the ripples. Find Momo.</p><div className="dungeon-facts"><span><Icon name="flag" size={15}/>3 rooms</span><span><Icon name="clock" size={15}/>~3 min</span><span><Icon name="sword" size={15}/>1 boss</span></div><div className="rescue-reward"><span className="reward-icon"><Icon name="spark" size={23}/></span><div><span>RESCUE REWARD</span><strong>+5% Dodge Accuracy</strong><small>A little help from a new friend.</small></div></div>{game.scene === 'dungeon' && <div className="room-progress">{['Reedbank', 'Willow Bend', 'Momo'].map((room, index) => <span key={room} className={index <= game.roomIndex ? 'reached' : ''}>{index < game.roomIndex ? <Icon name="check" size={13}/> : <b>{index + 1}</b>}{room}</span>)}</div>}<button className="primary-button" onClick={() => command(game.scene === 'map' ? 'enterDungeon' : 'advance')}>{game.scene === 'map' ? 'Enter dungeon' : `Enter ${game.roomIndex === 2 ? 'Momo’s sanctuary' : 'room ' + (game.roomIndex + 1)}`}<Icon name="arrow" size={19}/></button><p className="button-note">{game.scene === 'map' ? 'Your story starts with one brave step.' : 'Your health carries between rooms.'}</p></>}
-          {isCombat && <><div className="detail-heading"><span className="eyebrow">{game.roomIndex === 2 ? 'THE LAGOON GUARDIAN' : 'A LITTLE OBSTACLE'}</span><span className="chapter-number">0{game.roomIndex + 1}</span></div><div className={`momo-art ${game.roomIndex !== 2 ? 'mob-art' : ''}`}><AxiePortrait aqua/><span className="art-caption">{game.enemy?.type || 'Aqua'} · {game.roomIndex === 2 ? 'Boss encounter' : 'Wild encounter'}</span></div><h2>{game.enemy?.name || 'Lagoon guardian'}</h2><div className="enemy-health-label"><span>Opponent health</span><strong>{game.enemyHP} / {game.enemy?.maxHP || 100}</strong></div><div className="health-track enemy-health"><span style={{ width: `${Math.max(0, game.enemyHP / (game.enemy?.maxHP || 100) * 100)}%` }}/></div><div className={`phase-panel ${isDodge ? 'phase-water' : ''}`}><Icon name={isDodge ? 'water' : 'sword'} size={23}/><strong>{game.phase === 'PLAYER_TURN' ? 'Make your move' : game.phase === 'BOSS_TELEGRAPH' ? 'A wave is coming…' : isDodge ? 'Stay out of the blue lane!' : game.phase === 'RESOLVE_DODGE' ? 'Finding your footing…' : 'A little fighting spirit'}</strong><p>{game.phase === 'PLAYER_TURN' ? 'Play one of your three cards below the arena to deal damage.' : 'Watch the highlighted lane. Move to either safe lane before the wave lands.'}</p></div><div className="field-notes"><Icon name="book" size={17}/><div><strong>Traveler’s field notes</strong><p>A clean dodge means no damage. You can move between lanes as often as you need.</p></div></div><button className="text-button retreat-button" onClick={() => command('returnMap')}>Retreat to the world map</button></>}
-          {game.scene === 'victory' && <><div className="detail-heading"><span className="eyebrow">WELCOME TO THE FAMILY</span><Icon name="heart" size={20}/></div><div className="momo-art victory-art"><AxiePortrait aqua/><span className="art-caption">One less Axie out there alone.</span></div><h2>Momo is rescued!</h2><p className="detail-description">The waves settle. Momo is ready for a new adventure — this time, with you.</p><div className="rescue-reward"><span className="reward-icon"><Icon name="spark" size={23}/></span><div><span>VILLAGE BONUS UNLOCKED</span><strong>+5% Dodge Accuracy</strong><small>A longer window to dodge every wave.</small></div></div><button className="primary-button" onClick={() => command('continueVillage')}>Continue to village<Icon name="home" size={19}/></button></>}
-          {game.scene === 'village' && <><div className="detail-heading"><span className="eyebrow">A PLACE TO BELONG</span><Icon name="home" size={20}/></div><h2>Our little village</h2><p className="detail-description">Every friend you bring home makes the next journey a little easier.</p><div className="village-resident"><AxiePortrait aqua={rescued > 0}/><strong>{rescued ? 'Momo' : 'A home for new friends'}</strong><span>{rescued ? 'At home by the water' : 'Rescue Momo to welcome your first villager.'}</span>{rescued > 0 && <span className="resident-badge"><Icon name="check" size={14}/>Happily rescued</span>}</div><div className="rescue-reward"><span className="reward-icon"><Icon name="spark" size={23}/></span><div><span>TOTAL VILLAGE BONUS</span><strong>+{Math.round(game.bonus * 100)}% Dodge Accuracy</strong><small>{rescued ? 'Momo gives you 5% more dodge time.' : 'New friendships bring new strength.'}</small></div></div><button className="primary-button" onClick={() => command('returnMap')}>Return to dungeon map<Icon name="arrow" size={19}/></button></>}
-          {game.scene === 'defeat' && <><div className="detail-heading"><span className="eyebrow">REST. RESET. RETURN.</span><Icon name="heart" size={20}/></div><div className="momo-art rest-art"><AxiePortrait/><span className="art-caption">Still a brave little traveler.</span></div><h2>A wave too far.</h2><p className="detail-description">Momo is still out there. Come back with full health and try this encounter again.</p><div className="field-notes"><Icon name="book" size={18}/><div><strong>A tip for next time</strong><p>Blue means danger. Move to an unlit lane before the timer runs out.</p></div></div><button className="primary-button" onClick={() => command('retry')}>Try encounter again<Icon name="arrow" size={19}/></button><button className="secondary-button" onClick={() => command('returnMap')}>Return to dungeon map</button></>}
-        </aside>
-      </div>
-      <section className="journey-strip" aria-label="Traveler progress"><div className="traveler-summary"><span className="traveler-avatar"><AxiePortrait small/></span><div className="traveler-info"><span className="eyebrow">YOUR TRAVELER</span><strong>A brave little Axie</strong><div className="traveler-health"><Icon name="heart" size={13}/><div className="health-track"><span style={{ width: `${healthPercent}%` }}/></div><span>{game.playerHP}<small> / {game.playerMaxHP} HP</small></span></div></div></div><div className="journey-summary"><span className="summary-icon"><Icon name="flag" size={25}/></span><div><span className="eyebrow">FRIENDS FOUND</span><strong>{rescued} <span>/ 1</span><small>{rescued ? 'A new friend. A new beginning.' : 'A whole friendship ahead of you.'}</small></strong></div></div><div className="blessing-summary"><span className="summary-icon"><Icon name="spark" size={27}/></span><div><span className="eyebrow">VILLAGE BLESSINGS</span><strong>+{Math.round(game.bonus * 100)}% <span>Dodge Accuracy</span></strong><p>{rescued ? 'A gift from Momo, for every journey.' : 'Bring friends home. Grow stronger together.'}</p></div></div></section>
-    </main>
-    <footer className="site-footer"><span><Icon name="leaf" size={14}/>Made for the journey, and the friends along the way.</span><span>AXIE DUNGEONS<span className="footer-dot">·</span>AN ADVENTURE IN LUNACIA</span></footer>
-    {help && <div className="modal-backdrop" onClick={() => setHelp(false)}><section className="help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-title" onClick={event => event.stopPropagation()}><button ref={closeHelp} className="dialog-close" onClick={() => setHelp(false)} aria-label="Close how to play"><Icon name="close"/></button><span className="summary-icon"><Icon name="book" size={26}/></span><p className="eyebrow">A TRAVELER’S GUIDE</p><h2 id="help-title">A small guide to a big adventure.</h2><ol><li><strong>Follow the path.</strong> Enter Momo’s Lagoon, clear two little encounters, and reach Momo.</li><li><strong>Play your cards.</strong> Click a card or press <kbd>1</kbd>, <kbd>2</kbd>, or <kbd>3</kbd>. Each card deals its listed damage.</li><li><strong>Watch the water.</strong> A blue lane warns of a coming wave. Move to a safe lane with <kbd>A</kbd> / <kbd>S</kbd> / <kbd>D</kbd>, the arrow keys, or a lane click. Avoid the wave to take no damage.</li><li><strong>Bring a friend home.</strong> Rescue Momo to unlock +5% Dodge Accuracy: 5% more time to dodge in future encounters.</li></ol><p className="help-footnote">Progress stays with you during this session. A fresh page starts a fresh story.</p></section></div>}
-  </div>;
+  const closePanel = useRef(null);
+  closePanel.current = () => { setHelp(false); command('closePanel'); };
+  const stableClose = useRef(() => closePanel.current()).current;
+  const combat = game.scene === 'combat', dodge = combat && game.phase === 'DODGE_PHASE';
+  const story = ['intro', 'dialogue'].includes(game.scene);
+  const step = arrival[game.introStep] || arrival[0];
+  const dialogue = bubaDialogue[game.dialogueIndex] || bubaDialogue[0];
+  const selected = dungeonRooms[game.selectedStage] || dungeonRooms[0];
+  const heroName = game.activeCharacter === 'buba' ? 'Buba' : 'Kotaro';
+  const fullscreen = async () => {
+    try { if (document.fullscreenElement) await document.exitFullscreen(); else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); else setFullscreenNote('Use your browser menu to add Atia to your home screen.'); }
+    catch { setFullscreenNote('Fullscreen is unavailable here. The game still works in your browser.'); }
+  };
+  return <main className={'game-app scene-' + game.scene + (story ? ' story-scene' : '')} data-scene={game.scene} data-phase={game.phase} data-enemy={game.enemy?.id} style={{ '--village-image': 'url("/assets/atia/village.png")', '--kotaro-image': 'url("/assets/atia/kotaro-sheet.png")', '--buba-image': 'url("/assets/atia/buba-sheet.png")', '--arena-image': 'url("/assets/atia/' + (game.tutorial ? 'village.png' : game.roomIndex === 2 ? 'lagoon-arena.jpg' : 'forest-arena.jpg') + '")' }}>
+    <div className="world-fill" aria-hidden="true"/>
+    <div className="world-stage"><div className="game-mount" ref={mount} aria-label="Atia game world"/>
+      {game.scene === 'village' && <div className="world-hotspots">
+        <button className="hotspot tent-hotspot" onClick={() => command('openPanel', 'rewards')}><span className="hotspot-icon"><Icon name="tent"/>{game.availableRewards > 0 && <i>{game.availableRewards}</i>}</span><strong>Buba’s tent</strong><small>{game.availableRewards ? 'Rewards to claim' : tentStages[game.tentStage]}</small></button>
+        <button className="hotspot gate-hotspot" onClick={() => command('openMap')}><span className="hotspot-icon"><Icon name="compass"/></span><strong>Village gate</strong><small>Begin an expedition</small></button>
+        <span className="square-label">ATIA SQUARE</span>
+      </div>}
+    </div>
+    <div className="world-shade" aria-hidden="true"/>
+    {!story && !game.loading && <header className={'game-header ' + (combat ? 'battle-header' : '')}>
+      {combat ? <>
+        <button className="icon-button" aria-label="Retreat from encounter" onClick={() => command('retreat')}><Icon name="back"/></button>
+        <Health name={heroName} hp={game.playerHP} max={game.playerMaxHP} guard={game.guard}/>
+        <span className="turn-badge"><small>TURN</small>{String(game.turn).padStart(2, '0')}</span>
+        <Health enemy name={game.enemy?.name || 'Opponent'} hp={game.enemyHP} max={game.enemy?.maxHP || 100}/>
+      </> : <>
+        <button className="profile-block" onClick={() => command('openPanel', 'team')} aria-label="Open companions"><span className="profile-avatar"><Portrait character={game.activeCharacter}/><b>{game.level}</b></span><span className="profile-copy"><strong>{heroName}<small>ATIA’S WANDERER</small></strong><RankProgress game={game}/></span></button>
+        <div className="location-title"><span>THE WORLD OF LUNACIA</span><strong>{game.scene === 'map' ? 'The forest trail' : 'Atia Village'}</strong></div>
+        <div className="resources"><span title="Coins"><Icon name="coin" size={18}/>{game.coins}</span><span title="Timber"><Icon name="wood" size={18}/>{game.wood}</span><span title="Essence"><Icon name="spark" size={18}/>{game.essence}</span></div>
+      </>}
+      <div className="utility-buttons">{!combat && <button className="icon-button fullscreen-button" aria-label="Toggle fullscreen" onClick={fullscreen}><Icon name="expand" size={19}/></button>}<button className="icon-button" disabled={combat} aria-label="How to play" onClick={() => setHelp(true)}><Icon name="book" size={19}/></button></div>
+    </header>}
+    {game.loading && <section className="loading-screen"><span className="eyebrow">A NEW STORY IN LUNACIA</span><h1>ATIA</h1><p>{game.assetError ? 'An asset could not load. Please refresh to try again.' : 'Finding the way home…'}</p><div className="progress-track"><span style={{ width: (game.loadProgress || 0) + '%' }}/></div></section>}
+    {!game.loading && game.scene === 'intro' && <>
+      <div className="story-brand"><Icon name="spark" size={18}/><span>AXIE · TALES OF ATIA</span><small>CHAPTER I</small></div>
+      {game.introStep === 0 && <div className="title-treatment"><p className="eyebrow">EVERY LIGHT STARTS WITH A LITTLE COURAGE</p><h1>ATIA</h1><span className="title-rule"/><p className="title-subtitle">Echoes of a lost village</p></div>}
+      <section className={'story-card ' + (game.introStep === 0 ? 'opening-card' : '')}><span className="eyebrow">{step.eyebrow}</span><h2>{step.title}</h2><p>{step.text}</p><div className="story-actions"><span className="story-dots">{arrival.map((s, i) => <i className={i === game.introStep ? 'active' : ''} key={i}/>)}</span><GoldButton onClick={() => command('nextIntro')}>{step.button}</GoldButton></div></section>
+      <span className="story-footer">An Axie fan adventure · Vibeathon 2026</span>
+    </>}
+    {!game.loading && game.scene === 'dialogue' && <><div className="chapter-ribbon"><Icon name="heart"/><span>A stranger becomes a friend</span></div><section className="story-card dialogue-card"><img className="speaker-portrait" src="/assets/atia/buba-avatar.png" alt="Buba"/><div><span className="eyebrow">BUBA · THE LAST VILLAGER</span><h2>{dialogue.title}</h2><p>{dialogue.text}</p><div className="story-actions"><span className="story-dots">{bubaDialogue.map((s, i) => <i className={i === game.dialogueIndex ? 'active' : ''} key={i}/>)}</span><GoldButton onClick={() => command('nextDialogue')}>{game.dialogueIndex === bubaDialogue.length - 1 ? 'Restore Atia' : game.dialogueIndex === 4 ? 'Accept the amulet' : 'Continue'}</GoldButton></div></div></section></>}
+    {!game.loading && game.scene === 'village' && <>
+      <section className="quest-card"><span className="eyebrow">CHAPTER I · A PROMISE TO KEEP</span><h1>{game.rescued.length ? 'A light has come home.' : 'Let’s bring them home.'}</h1><p>{game.rescued.length ? 'Momo is safe. Grow your rank to rebuild Buba’s home.' : 'Beyond the gate, the forest remembers. Find the villagers lost to the nightmare.'}</p><span><Icon name={game.rescued.length ? 'check' : 'compass'} size={15}/>{game.rescued.length ? 'Momo rescued · +5% dodge time' : game.completedStages.length + ' / 3 forest encounters cleared'}</span></section>
+      <div className="village-caption"><span className="eyebrow">SIX MONTHS LATER</span><h2>A home worth fighting for.</h2></div>
+      <nav className="village-dock" aria-label="Village menu">
+        <button className="dock-item active" onClick={() => command('visitVillage')}><Icon name="home"/><span>Village</span></button>
+        <button className="dock-item" onClick={() => command('openPanel', 'team')}><Icon name="team"/><span>Team</span></button>
+        <button className="dock-item" onClick={() => command('openPanel', 'amulet')}><Icon name="spark"/><span>Amulet</span></button>
+        <button className="dock-item" onClick={() => command('openPanel', 'journal')}><Icon name="book"/><span>Journal</span></button>
+        <button className="dock-item" onClick={() => command('openPanel', 'rewards')}><Icon name="gift"/><span>Rewards</span>{game.availableRewards > 0 && <i>{game.availableRewards}</i>}</button>
+        <GoldButton onClick={() => command('openMap')}><Icon name="compass"/>Adventure</GoldButton>
+      </nav>
+    </>}
+    {!game.loading && game.scene === 'map' && <>
+      <section className="map-title"><button className="small-button" onClick={() => command('visitVillage')}><Icon name="back" size={17}/>Atia Village</button><p className="eyebrow">CHAPTER I · BEYOND THE GATE</p><h1>The road to Momo</h1><p>One step deeper. One friend closer.</p></section>
+      <div className="map-stage-picker" aria-label="Forest stages">{dungeonRooms.map((room, i) => <button key={room.id} className={game.selectedStage === i ? 'selected' : ''} disabled={i > game.unlockedStage} onClick={() => command('selectStage', i)} aria-label={'Stage ' + (i + 1) + ': ' + room.location} aria-pressed={game.selectedStage === i}>{i > game.unlockedStage ? <Icon name="lock" size={15}/> : game.completedStages.includes(i) ? <Icon name="check" size={16}/> : i + 1}<span>{room.location}</span></button>)}</div>
+      <section className="stage-detail"><div><span className="eyebrow">{game.selectedStage === 2 ? 'CORRUPTED GUARDIAN' : 'FOREST ENCOUNTER'} · STAGE 0{game.selectedStage + 1}</span><h2>{selected.location}</h2><p>{game.selectedStage === 2 ? 'Momo waits beneath the shadows. Carry Buba’s light into the lagoon.' : game.selectedStage === 1 ? 'The old crossing flickers with nightmare light. Clear a path through.' : 'Thorns have claimed the old trail. Take the first step beyond Atia.'}</p><div className="stage-facts"><span><Icon name="sword" size={16}/>{selected.maxHP} HP</span><span><Icon name="spark" size={16}/>{game.completedStages.includes(game.selectedStage) ? 20 : selected.xp} XP</span><span>{game.completedStages.includes(game.selectedStage) ? 'Replay available' : 'First clear'}</span></div></div><GoldButton onClick={() => command('enterDungeon')}>{game.completedStages.includes(game.selectedStage) ? 'Replay encounter' : 'Enter encounter'}</GoldButton></section>
+    </>}
+    {!game.loading && combat && <>
+      <div className="encounter-heading"><span className="eyebrow">{game.tutorial ? 'PROLOGUE · A FRIGHTENED GUARDIAN' : game.roomIndex === 2 ? 'THE LAGOON GUARDIAN' : 'BEYOND THE GATE'}</span><h1>{game.tutorial ? 'Earn Buba’s trust' : game.enemy?.location}</h1>{game.enemyCard && game.phase !== 'PLAYER_TURN' && <span className={'enemy-intent ' + (game.enemyCard.ultimate ? 'ultimate-intent' : '')}><Icon name={game.enemyCard.ultimate ? 'spark' : 'sword'} size={15}/>{game.enemyCard.name} · {game.enemyCard.damage} DMG</span>}</div>
+      <section className={'battle-controls ' + (dodge ? 'dodging' : '')} aria-label="Battle controls">
+        <div className="battle-status"><strong>{dodge ? game.warningActive ? 'DANGER — MOVE NOW' : 'GET READY TO DODGE' : game.phase === 'PLAYER_TURN' ? 'YOUR TURN' : game.phase === 'RESOLVE_DODGE' ? game.lastDamage ? 'STAY IN THE FIGHT' : 'SAFE LANDING' : 'IN ACTION'}</strong><span role="status">{game.message}</span>{dodge && <b className="dodge-timer">{game.dodgeRemaining.toFixed(1)}s</b>}</div>
+        {dodge ? <><div className="dodge-track"><span style={{ width: Math.min(100, game.dodgeRemaining / (3 * (1 + game.bonus)) * 100) + '%' }}/></div><div className="lane-controls" aria-label="Dodge lanes">{['Left', 'Center', 'Right'].map((name, i) => <button key={name} className={'lane-button ' + (game.lane === i ? 'selected ' : '') + (game.dangerLane === i ? 'danger' : '')} aria-label={name + ' lane'} aria-pressed={game.lane === i} onClick={() => command('moveLane', i)}><span>{game.dangerLane === i ? '✕' : ['←', '↓', '→'][i]}</span><strong>{name}</strong><small>{game.dangerLane === i ? 'DANGER' : game.lane === i ? 'YOU ARE HERE' : 'TAP TO MOVE'}</small></button>)}</div><p className="control-footnote">Move to either unmarked lane before the timer ends.</p></> : <><div className="ability-cards">{game.cards.map((card, i) => <button className={'ability-card card-' + card.kind} key={card.id} disabled={game.phase !== 'PLAYER_TURN'} onClick={() => command('playCard', card.id)}><span className="ability-top"><span className="ability-symbol"><Icon name={card.kind === 'guard' ? 'shield' : card.kind === 'heal' ? 'heart' : 'sword'}/></span><span>{card.damage}<small>DMG</small></span><kbd>{i + 1}</kbd></span><strong>{card.name}</strong><small>{card.description}</small><span className="ability-label">{card.label}</span></button>)}</div><button className={'ultimate-button ' + (game.charge >= 3 ? 'ready' : '')} disabled={game.phase !== 'PLAYER_TURN' || game.charge < 3} onClick={() => command('playCard', game.ultimate.id)}><Icon name={game.activeCharacter === 'buba' ? 'spark' : 'moon'} size={20}/><strong>{game.ultimate.name}</strong><span className="charge-orbs">{[0,1,2].map(i => <i key={i} className={game.charge > i ? 'filled' : ''}/>)}</span><small>{game.charge >= 3 ? game.ultimate.damage + ' DMG · READY' : game.charge + ' / 3 CHARGE'}</small><kbd>4</kbd></button></>}
+      </section>
+    </>}
+    {!game.loading && game.scene === 'victory' && <section className="result-card"><span className="result-emblem"><Icon name={game.result?.kind === 'purify' ? 'spark' : 'check'} size={34}/></span><p className="eyebrow">{game.result?.kind === 'purify' ? 'THE AMULET IS GLOWING' : game.result?.kind === 'rescued' ? 'A LIGHT RETURNS TO ATIA' : 'THE PATH IS CLEAR'}</p><h1>{game.result?.kind === 'purify' ? 'There’s still a light inside.' : game.result?.kind === 'rescued' ? 'Welcome home, Momo.' : 'A little further from fear.'}</h1><p>{game.result?.kind === 'purify' ? 'The nightmare is weakened. Use Buba’s amulet to bring Momo back.' : game.result?.kind === 'rescued' ? 'The corruption fades. Momo joins your village and gives you 5% more time to dodge.' : 'The next clearing is waiting. Your courage is helping Atia grow.'}</p>{game.result?.xp && <div className="result-rewards"><span><Icon name="spark"/>+{game.result.xp} XP</span><span><Icon name="coin"/>+{game.result.coins}</span><span>Rank {game.level}</span></div>}{game.result?.kind === 'purify' ? <GoldButton onClick={() => command('purify')}>Use the amulet</GoldButton> : <><GoldButton onClick={() => command(game.result?.kind === 'rescued' ? 'visitVillage' : 'returnMap')}>{game.result?.kind === 'rescued' ? 'Bring Momo home' : 'Continue journey'}</GoldButton><button className="text-button" onClick={() => command('visitVillage')}>Return to Atia</button></>}</section>}
+    {!game.loading && game.scene === 'defeat' && <section className="result-card"><span className="result-emblem"><Icon name="heart" size={34}/></span><p className="eyebrow">TAKE A BREATH, WANDERER</p><h1>Your story isn’t over.</h1><p>{game.tutorial ? 'Buba is frightened. Hold your ground and move away from the marked lane.' : 'Rest a moment. Return with full health and try this encounter again.'}</p><GoldButton onClick={() => command('retry')}>Try again</GoldButton><button className="text-button" onClick={() => command('retreat')}>{game.tutorial ? 'Back to the clearing' : 'Return to Atia'}</button></section>}
+    {!game.saveAvailable && <div className="save-notice" role="status">Browser storage is unavailable. Progress will last for this session.</div>}
+    {fullscreenNote && <button className="save-notice" onClick={() => setFullscreenNote('')}>{fullscreenNote} ×</button>}
+    {panel && <Panel game={game} command={command} close={stableClose} panel={panel}/>}
+  </main>;
 }

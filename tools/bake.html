@@ -1,0 +1,42 @@
+<!doctype html><html><head><meta charset="utf-8"><script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script><script src="/node_modules/phaser/dist/phaser.js"></script><script src="/node_modules/phaser/plugins/spine/dist/SpinePlugin.js"></script></head><body style="margin:0"><script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const SIZE = 256, FRAMES = 12;
+const atlas = document.createElement('canvas'); atlas.width=SIZE*FRAMES; atlas.height=SIZE*6;
+const output=atlas.getContext('2d');
+const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,preserveDrawingBuffer:true});
+renderer.setSize(SIZE,SIZE); renderer.setPixelRatio(1); renderer.setClearColor(0x000000,0);
+renderer.outputColorSpace=THREE.SRGBColorSpace; document.body.appendChild(renderer.domElement);
+const world=new THREE.Scene(); world.add(new THREE.HemisphereLight(0xffffff,0x7c7085,2.8));
+const sun=new THREE.DirectionalLight(0xfff2d9,3.2); sun.position.set(-3,6,6);world.add(sun);
+const gltf=await new GLTFLoader().loadAsync('/public/assets/atia/kotaro.glb');
+const model=gltf.scene;world.add(model);
+const bounds=new THREE.Box3().setFromObject(model), size=bounds.getSize(new THREE.Vector3()), center=bounds.getCenter(new THREE.Vector3());
+const extent=Math.max(size.x,size.y,size.z)*.78;
+const camera=new THREE.OrthographicCamera(-extent,extent,extent, -extent,.01,1000);
+camera.position.set(center.x+size.y*.85,center.y+size.y*.4,center.z+size.y*3);camera.lookAt(center.x,center.y,center.z);
+const mixer=new THREE.AnimationMixer(model);
+const clips=['Idle','Sword.Attack','Sword.Skill','Dead','Run','Greeting'];
+window.assetInfo={bounds:{x:size.x,y:size.y,z:size.z},nodes:[]};model.traverse(n=>window.assetInfo.nodes.push(n.name));
+window.bakeKotaro=()=>{
+ output.clearRect(0,0,atlas.width,atlas.height);
+ clips.forEach((name,row)=>{mixer.stopAllAction();const clip=THREE.AnimationClip.findByName(gltf.animations,name);const action=mixer.clipAction(clip);action.play();
+ for(let i=0;i<FRAMES;i++){mixer.setTime(clip.duration*i/FRAMES);renderer.render(world,camera);output.drawImage(renderer.domElement,i*SIZE,row*SIZE);}});
+ return atlas.toDataURL('image/png');
+};
+window.kotaroReady=true;
+
+window.bubaReady=false;
+const spineGame=new Phaser.Game({type:Phaser.WEBGL,width:SIZE,height:SIZE,transparent:true,antialias:true,preserveDrawingBuffer:true,banner:false,
+ plugins:{scene:[{key:'SpinePlugin',plugin:window.SpinePlugin,mapping:'spine'}]},
+ scene:{preload(){this.load.spine('buba','/public/assets/atia/buba.json','/public/assets/atia/buba.atlas',true);},create(){
+ const buba=this.add.spine(SIZE*.5,SIZE*.73,'buba','action/idle/normal',true);buba.setScale(.20);buba.timeScale=0;
+ const names=['action/idle/normal','attack/melee/normal-attack','attack/ranged/cast-tail','defense/hit-by-normal','action/run','activity/victory-pose-back-flip'];
+ window.bakeBuba=async()=>{const sheet=document.createElement('canvas');sheet.width=SIZE*FRAMES;sheet.height=SIZE*6;const ctx=sheet.getContext('2d');
+ for(let row=0;row<names.length;row++){
+ const animation=buba.skeleton.data.findAnimation(names[row]);const track=buba.state.setAnimation(0,names[row],true);
+ for(let i=0;i<FRAMES;i++){track.trackTime=animation.duration*i/FRAMES;buba.state.apply(buba.skeleton);buba.skeleton.updateWorldTransform();
+ await new Promise(resolve=>spineGame.events.once('postrender',resolve));ctx.drawImage(spineGame.canvas,i*SIZE,row*SIZE);}}
+ return sheet.toDataURL('image/png');};window.bubaReady=true;
+ }} });
+</script></body></html>

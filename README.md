@@ -1,63 +1,85 @@
-﻿# Axie Dungeons
+# Atia — Echoes of a Lost Village
 
-A playable Phaser 3 and React prototype: explore Momo’s Lagoon, clear two small encounters, rescue Momo, and welcome her to your village.
+A playable Axie Vibeathon adventure built with React and Phaser. Arrive as Kotaro, the white wanderer, earn Buba’s trust, and help restore Atia after the nightmare raid.
 
-## Run locally
+## Run on your computer
 
 ```sh
 npm install
 npm start
 ```
 
-Open the development server shown in the terminal, normally `http://localhost:3000`.
+Open **http://localhost:3000**. On Windows, use `npm.cmd` if PowerShell blocks `npm.ps1`.
 
-```sh
-npm run build
-npm test -- --watch=false --runInBand
+## Play on Android over Wi-Fi
+
+Connect the phone and computer to the same Wi-Fi network. Start the development server from this project:
+
+```powershell
+$env:HOST = "0.0.0.0"
+$env:BROWSER = "none"
+npm.cmd start
 ```
 
-The production build is written to `build/`. On PowerShell systems that block script execution, use `npm.cmd` instead of `npm` and `npx.cmd` instead of `npx`.
+On the Android phone, open Chrome and enter `http://YOUR-COMPUTER-IP:3000`. Find your computer’s Wi-Fi IPv4 address using `ipconfig`; **localhost on a phone refers to the phone**, so use the computer’s address. If Windows asks, allow Node on your private network.
 
-To run the browser checks for rescue, defeat/retry, and mobile controls:
+At the time of this build, this computer’s address was **http://192.168.1.25:3000**. Your router may assign a different address later.
+
+The game supports portrait and landscape, touch cards and lane controls, and desktop keyboard controls. Landscape provides a larger view of the village. The fullscreen button appears where screen space permits. Browser progress is stored per device and site address; saves do not sync between your PC and phone.
+
+For a public web release, run `npm run build` and serve the `build/` directory through an HTTPS static host. No backend is required. The manifest supports a standalone home-screen window; offline play and a service worker are not included.
+
+## The journey
+
+1. Follow the arrival story and fight Buba in Atia’s clearing.
+2. Listen to his account of the raid, accept his handmade amulet, and unlock Buba as a playable companion.
+3. Explore the village hub. Buba’s tent contains Adventure Rank rewards; the gate opens a winding stage map.
+4. Clear Whispering Woods, the Hollow Crossing, and Momo’s Lagoon in order.
+5. Weaken Momo, then **Use the amulet** to reverse the corruption and bring Momo home.
+6. Replay cleared stages to earn more XP. At ranks 3 and 5, Buba improves his tent into a mended shelter and then a lodge.
+
+| Action | Touch / mouse | Keyboard |
+| --- | --- | --- |
+| Story | Continue button | Enter |
+| Ability | Tap one of three cards | 1, 2, 3 |
+| Ultimate | Tap the charged ultimate | 4 |
+| Dodge | Tap Left, Center, or Right | A / S / D, or Left / Down / Right |
+| Stage | Select a node and Enter encounter | Enter selected stage |
+| Close a panel | Close button or backdrop | Escape |
+
+Each enemy attack has a three-second dodge phase. The danger lane is revealed in the final second; move to an unmarked lane before impact to take no damage. Guard reduces a hit and recovery abilities heal up to the character’s maximum HP. Three abilities charge an ultimate: Kotaro’s **Moonlit Eclipse** or Buba’s paintbrush **Paintstorm**.
+
+Momo’s blessing adds 5% to the dodge phase and warning window. It is deterministic, permanent in this browser’s save, and never stacks from repeat rescues.
+
+## Progress and rewards
+
+Adventure Rank thresholds are 0, 50, 140, 280, and 460 total XP. Buba’s encounter grants 60 XP once. First clears grant 30 / 45 / 90 XP; repeat clears grant 20 XP. Each rank’s supplies can be claimed once. Coins, timber, and essence are collected for the restoration prototype; tent improvements currently follow rank automatically.
+
+The local save key is `atia-adventure-v1`. Story checkpoints, companions, claims, cleared stages, resources, and rescued villagers survive reloads. An unfinished encounter restarts from the village (or Buba’s introduction before the prologue is complete). Retry restores full health at the same encounter. Clearing site data starts a new story. If browser storage is blocked, a notice explains that progress lasts only for the current session.
+
+## Validate
 
 ```sh
+npm test -- --watch=false --runInBand
 npx playwright install chromium --only-shell
 npm run test:e2e
+npm run build
 ```
 
-The browser tests start a local server when needed and write screenshots to `test-results/`.
+Browser checks exercise the full prologue and rescue loop, defeat/retry, save restoration, one-time rewards, and Android touch emulation in portrait and landscape. Screenshots are written to `test-results/` (git-ignored).
 
-## Play
+## Source and assets
 
-1. Click Momo’s Lagoon on the map or **Enter dungeon**.
-2. Advance through two clearings and reach Momo’s sanctuary. Health carries between encounters.
-3. Play one card each turn, then avoid the incoming wave.
-4. Defeat Momo, continue to the village, and return to the map for another expedition.
+- `src/App.js`, `src/App.css`: story, village HUD, touch controls, accessible panels, and responsive layouts.
+- `src/main.js`: Phaser lifecycle and React bridge.
+- `src/scenes/`: loading, arrival, Buba’s dialogue, village, winding route, combat, rescue, and defeat.
+- `src/game/state.js`: validated local saves, unlocks, ranks, rewards, and encounter state.
+- `src/entities/DodgeSystem.js`: lane timing, deterministic damage resolution, and input cleanup.
+- `src/game/world.js`: animated fighters, weapon effects, village upgrades, and route rendering.
+- `src/game/art.js`: existing vector scenery and corrupted creature illustrations.
+- `src/data/`: cards, enemy definitions, route nodes, lore, and rank thresholds.
+- `tools/bake-assets.cjs`: optional reproducible model-to-spritesheet baking. Run `node tools/bake-assets.cjs` after installing Playwright’s Chromium. Three.js and Spine are used only by this offline development tool; the playable game uses PNG sprite animations.
 
-| Action | Controls |
-| --- | --- |
-| Enter or advance | On-screen button; Enter; Space or Right Arrow on the dungeon path |
-| Play an ability | Click its card or press **1**, **2**, **3** |
-| Dodge left | **A**, Left Arrow, or tap the left lane |
-| Dodge center | **S**, Down Arrow, or tap the center lane |
-| Dodge right | **D**, Right Arrow, or tap the right lane |
+Read the [saved Axie references](docs/ASSET_REFERENCES.md) and [asset sources, licenses, and village generation prompt](docs/ASSET_PROVENANCE.md) before further art work. Imported Axie materials remain Sky Mavis IP and are limited to Axie Vibeathon / approved programs, as described by the included notices.
 
-A dodge phase lasts three seconds. During its final second, exactly one lane lights up blue. Your position when the wave lands determines the result: an unlit lane avoids all damage. Guard can reduce a hit; Moon Beam restores health up to 100 HP. Momo’s permanent **+5% Dodge Accuracy** bonus extends dodge timing and the warning window by 5%; it never randomly changes an outcome or stacks from rescuing Momo again.
-
-Retrying after defeat restarts the current encounter with full health. Returning to the map and entering again starts a new expedition from the first room. Rescued friends and bonuses last for the current session and survive retries or new expeditions. Refreshing the page starts a fresh session.
-
-## Project structure
-
-- `src/App.js`, `src/App.css`: responsive React interface, ability buttons, navigation, and help.
-- `src/main.js`: Phaser configuration and `createGame(parent, onState)` bridge, exposing `command`, `getState`, and `destroy`.
-- `src/scenes/`: map, traversal, combat, rescue, village, and defeat scenes.
-- `src/entities/DodgeSystem.js`: scene-owned lane input, warning timing, deterministic hit resolution, and cleanup.
-- `src/data/`: reusable player cards, enemy definitions, and the three-room dungeon.
-- `src/game/state.js`: in-memory expedition progress, village roster, and bonuses.
-- `src/game/art.js`: local Phaser vector scenery and Axie illustrations.
-
-Combat follows `PLAYER_TURN → PLAYER_ATTACK_ANIM → BOSS_TELEGRAPH → DODGE_PHASE → RESOLVE_DODGE`. A defeated enemy clears the room immediately; defeating the guardian opens the rescue scene. Zero player health opens defeat.
-
-Tests cover the UI-to-game commands, modal keyboard behavior, combat transitions, lane timing and input, rescue deduplication, and progress across retries. Phaser renders to a 1200 × 660 canvas that scales to its container; React provides additional accessible controls outside the canvas.
-
-This vertical slice contains one dungeon, one boss, one dodge pattern, and one village friend. It intentionally has no backend, wallet, blockchain integration, save system, procedural generation, audio, or PvP.
+This prototype includes one story chapter, two playable companions, three dungeon stages, five Adventure Ranks, and one rescuable guardian. Later map regions are visibly locked. Audio, additional regions, wallet integration, multiplayer, cloud saves, and offline play are outside this slice.

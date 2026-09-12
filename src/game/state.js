@@ -1,76 +1,100 @@
-import { playerCards } from '../data/playerCards';
+import { characterCards, ultimates } from '../data/playerCards';
+import { bosses, dungeonRooms } from '../data/bosses';
+import { rankRewards, rankThresholds } from '../data/story';
+export const SAVE_KEY = 'atia-adventure-v1';
 
 export function initialState() {
-  return {
-    scene: 'map',
-    phase: 'MAP',
-    playerHP: 100,
-    playerMaxHP: 100,
-    enemy: null,
-    enemyHP: 0,
-    roomIndex: 0,
-    turn: 1,
-    rescued: [],
-    bonus: 0,
-    selectedDungeon: 'momo',
-    lane: 1,
-    dangerLane: null,
-    dodgeRemaining: 0,
-    warningRemaining: 0,
-    warningActive: false,
-    dodgeActive: false,
-    guard: 0,
-    dodges: 0,
-    hits: 0,
-    lastDamage: 0,
-    message: 'A little courage. A new adventure. Explore Momo’s Lagoon.',
-    cards: playerCards,
-  };
+  return { scene: 'intro', phase: 'INTRO', loading: true, introStep: 0, dialogueIndex: 0, tutorialWon: false, prologueComplete: false,
+    activeCharacter: 'kotaro', unlockedCharacters: ['kotaro'], amulet: false, xp: 0, level: 1, coins: 0, wood: 0, essence: 0,
+    claimedRewards: [], completedStages: [], unlockedStage: 0, selectedStage: 0, tentStage: 0, rescued: [], bonus: 0,
+    playerHP: 100, playerMaxHP: 100, enemyHP: 0, enemy: null, roomIndex: 0, tutorial: false, turn: 1,
+    lane: 1, dangerLane: null, dodgeRemaining: 0, warningRemaining: 0, warningActive: false, dodgeActive: false,
+    guard: 0, charge: 0, dodges: 0, hits: 0, lastDamage: 0, cards: characterCards.kotaro, ultimate: ultimates.kotaro,
+    message: 'A new story waits beyond the gate.', panel: null, result: null, saveAvailable: true };
 }
+const profileKeys = ['introStep','dialogueIndex','tutorialWon','prologueComplete','activeCharacter','unlockedCharacters','amulet','xp','coins','wood','essence','claimedRewards','completedStages','unlockedStage','rescued'];
+const validIds = new Set(['kotaro','buba']);
 
-export function createSession(onState) {
+export function restoreProfile(storage) {
+  try {
+    const saved = JSON.parse(storage?.getItem(SAVE_KEY) || 'null');
+    if (!saved || saved.version !== 1) return {};
+    const clean = {};
+    for (const key of ['xp','coins','wood','essence']) clean[key] = Number.isFinite(saved[key]) ? Math.max(0, Math.floor(saved[key])) : 0;
+    clean.tutorialWon = saved.tutorialWon === true;
+    clean.prologueComplete = saved.prologueComplete === true && clean.tutorialWon;
+    clean.amulet = clean.prologueComplete && saved.amulet === true;
+    clean.unlockedCharacters = clean.prologueComplete ? ['kotaro','buba'] : ['kotaro'];
+    clean.activeCharacter = clean.unlockedCharacters.includes(saved.activeCharacter) ? saved.activeCharacter : 'kotaro';
+    clean.claimedRewards = Array.isArray(saved.claimedRewards) ? [...new Set(saved.claimedRewards.filter(x => Number.isInteger(x) && x >= 1 && x <= 5))] : [];
+    clean.completedStages = Array.isArray(saved.completedStages) ? [...new Set(saved.completedStages.filter(x => Number.isInteger(x) && x >= 0 && x <= 2))] : [];
+    clean.unlockedStage = Math.min(2, clean.completedStages.length ? Math.max(...clean.completedStages) + 1 : 0);
+    clean.rescued = clean.amulet && Array.isArray(saved.rescued) && saved.rescued.some(x => x?.id === 'momo') ? [{ id:'momo',name:'Momo',rescueBonus:bosses.momo.rescueBonus }] : [];
+    clean.introStep = Number.isInteger(saved.introStep) ? Math.max(0,Math.min(3,saved.introStep)) : 0;
+    clean.dialogueIndex = Number.isInteger(saved.dialogueIndex) ? Math.max(0,Math.min(5,saved.dialogueIndex)) : 0;
+    return clean;
+  } catch { return {}; }
+}
+export function derive(state) {
+  const level = rankThresholds.reduce((rank, threshold, i) => state.xp >= threshold ? i + 1 : rank, 1);
+  const active = validIds.has(state.activeCharacter) ? state.activeCharacter : 'kotaro';
+  return { ...state, level, tentStage: level >= 5 ? 2 : level >= 3 ? 1 : 0,
+    playerMaxHP: active === 'buba' ? 110 : 100, cards: characterCards[active], ultimate: ultimates[active],
+    bonus: state.rescued.some(x => x.id === 'momo') ? .05 : 0,
+    rankXP: state.xp - rankThresholds[level - 1], nextRankXP: level < 5 ? rankThresholds[level] - rankThresholds[level - 1] : 0,
+    availableRewards: rankRewards.filter(r => r.rank <= level && !state.claimedRewards.includes(r.rank)).length };
+}
+export function createSession(onState, { storage = null } = {}) {
+  let lastSaved = '';
+  const profile = restoreProfile(storage);
+  const state = derive({ ...initialState(), ...profile, saveAvailable: Boolean(storage) });
+  if (state.prologueComplete) state.scene = 'village';
+  else if (state.tutorialWon) state.scene = 'dialogue';
   return {
-    state: initialState(),
-    handler: null,
-    patch(update) {
-      this.state = { ...this.state, ...update };
-      this.emit();
-      return this.state;
-    },
+    state, handler: null,
+    patch(update) { this.state = derive({ ...this.state, ...update }); this.emit(); return this.state; },
     emit() {
-      if (onState) onState({ ...this.state });
+      if (storage) {
+        const profile = { version:1 }; profileKeys.forEach(key => { profile[key] = this.state[key]; });
+        const json = JSON.stringify(profile);
+        if (lastSaved !== json) { try { storage.setItem(SAVE_KEY, json); lastSaved = json; } catch { this.state.saveAvailable = false; } }
+      }
+      onState?.({ ...this.state });
     },
-    startRun() {
-      this.patch({
-        playerHP: 100,
-        enemy: null,
-        enemyHP: 0,
-        roomIndex: 0,
-        turn: 1,
-        lane: 1,
-        dangerLane: null,
-        dodgeRemaining: 0,
-        warningActive: false,
-        dodgeActive: false,
-        guard: 0,
-        dodges: 0,
-        hits: 0,
-        lastDamage: 0,
-      });
-    },
-    rescue(boss) {
-      if (this.state.rescued.some((axie) => axie.id === boss.id)) return false;
-      const rescued = [...this.state.rescued, {
-        id: boss.id, name: boss.name, type: boss.type, rescueBonus: boss.rescueBonus,
-      }];
-      this.patch({
-        rescued,
-        bonus: rescued.reduce((sum, axie) => sum + (axie.rescueBonus?.value || 0), 0),
-      });
+    prepareEncounter(index = 0, tutorial = false) {
+      const enemy = tutorial ? bosses.buba : dungeonRooms[index];
+      if (!enemy || (!tutorial && (!this.state.prologueComplete || index > this.state.unlockedStage))) return false;
+      this.patch({ tutorial, roomIndex:index, enemy, enemyHP:enemy.maxHP, playerHP:this.state.playerMaxHP, guard:0, charge:0,
+        turn:1, lane:1, dangerLane:null, dodgeActive:false, warningActive:false, dodges:0, hits:0, lastDamage:0, result:null, panel:null });
       return true;
     },
-    command(action, payload) {
-      if (this.handler) this.handler(action, payload);
+    finishTutorial() {
+      if (!this.state.tutorialWon) this.patch({ tutorialWon:true, xp:this.state.xp + 60, coins:this.state.coins + 50, dialogueIndex:0 });
     },
+    finishPrologue() { if(!this.state.tutorialWon)return false; this.patch({ prologueComplete:true, amulet:true, unlockedCharacters:['kotaro','buba'], panel:null, playerHP:this.state.playerMaxHP }); return true; },
+    completeStage(index) {
+      if (!Number.isInteger(index) || index < 0 || index > 2 || !this.state.prologueComplete) return null;
+      const first = !this.state.completedStages.includes(index);
+      const xp = first ? dungeonRooms[index].xp : 20;
+      this.patch({ xp:this.state.xp + xp, coins:this.state.coins + (first ? 40 : 15), essence:this.state.essence + 10,
+        completedStages: first ? [...this.state.completedStages,index] : this.state.completedStages,
+        unlockedStage:Math.min(2,Math.max(this.state.unlockedStage,index + 1)) });
+      return { xp, coins:first ? 40 : 15, first };
+    },
+    rescue(boss = bosses.momo) {
+      if (!this.state.amulet || this.state.rescued.some(x => x.id === boss.id)) return false;
+      this.patch({ rescued:[...this.state.rescued,{id:boss.id,name:'Momo',rescueBonus:boss.rescueBonus}] }); return true;
+    },
+    claimReward(rank) {
+      const reward = rankRewards.find(r => r.rank === rank);
+      if (!this.state.prologueComplete || !reward || rank > this.state.level || this.state.claimedRewards.includes(rank)) return false;
+      this.patch({ coins:this.state.coins + reward.coins, wood:this.state.wood + reward.wood, claimedRewards:[...this.state.claimedRewards,rank], message:'Supplies claimed. A little more hope for Atia.' });return true;
+    },
+    selectCharacter(id) {
+      if (!this.state.prologueComplete || !this.state.unlockedCharacters.includes(id) || this.state.scene === 'combat') return false;
+      this.patch({ activeCharacter:id, playerHP:id === 'buba' ? 110 : 100, message:id === 'buba' ? 'Buba is ready. Sword, shield, and a little courage.' : 'Kotaro takes the lead.' });return true;
+    },
+    startRun() { return this.prepareEncounter(0,false); },
+    command(action,payload) { this.handler?.(action,payload); },
   };
 }

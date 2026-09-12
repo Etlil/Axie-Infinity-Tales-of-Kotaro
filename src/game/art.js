@@ -1,5 +1,5 @@
-// Hand-drawn, resolution-independent art. All landmarks and creatures are made
-// from Phaser graphics, so the prototype has no remote asset dependencies.
+// Local vector scenery for the route and prototype corrupted creatures.
+// Animated Kotaro/Buba and painted environments are composed in world.js.
 const C = {
   paper: 0xf0efda, grass: 0xd5dfb4, grassLight: 0xe2e8c7,
   moss: 0xa9c690, leaf: 0x72996b, deepLeaf: 0x3b7155,

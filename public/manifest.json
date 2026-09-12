@@ -1,6 +1,6 @@
 {
-  "short_name": "Axie Dungeons",
-  "name": "Axie Dungeons — A Little Courage",
+  "short_name": "Atia",
+  "name": "Atia — Echoes of a Lost Village",
   "icons": [
     {
       "src": "favicon.svg",
@@ -10,6 +10,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#355a45",
-  "background_color": "#f8f7ef"
+  "theme_color": "#142a22",
+  "background_color": "#142a22"
 }
