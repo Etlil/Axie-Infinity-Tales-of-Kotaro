@@ -42,12 +42,14 @@ test.each(['kotaro','buba'])('%s exposes four labeled body-part attacks and a se
  expect(ultimate).toHaveAttribute('aria-keyshortcuts','5');
  fireEvent.click(ultimate);expect(command).toHaveBeenLastCalledWith('playCard',state.ultimate.id);
 });
-test('touch lanes show both position and explicit danger during the dodge phase',()=>{
- render(<App/>);publish({scene:'combat',phase:'DODGE_PHASE',enemy:bosses.buba,lane:1,dangerLane:1,warningActive:true});
- expect(screen.getByRole('button',{name:'Center lane'})).toHaveAttribute('aria-pressed','true');
- expect(screen.getByRole('button',{name:'Center lane'})).toHaveClass('danger');
- fireEvent.click(screen.getByRole('button',{name:'Left lane'}));
- expect(command).toHaveBeenCalledWith('moveLane',0);
+test('touch controls dispatch held movement and jump independently',()=>{
+ render(<App/>);publish({scene:'combat',phase:'DODGE_PHASE',enemy:bosses.buba,dodgeRemaining:6.5,dodgeX:330,dodgeY:600});
+ const right=screen.getByRole('button',{name:'Move right'}),jump=screen.getByRole('button',{name:'Jump'});
+ right.setPointerCapture=jest.fn();jump.setPointerCapture=jest.fn();
+ fireEvent.pointerDown(right,{pointerId:1});fireEvent.pointerDown(jump,{pointerId:2});
+ expect(command).toHaveBeenCalledWith('dodgeInput',expect.objectContaining({control:'right',pressed:true}));
+ expect(command).toHaveBeenCalledWith('dodgeInput',expect.objectContaining({control:'jump',pressed:true}));
+ fireEvent.pointerCancel(right,{pointerId:1});expect(command).toHaveBeenCalledWith('dodgeInput',expect.objectContaining({control:'right',pressed:false}));
  expect(screen.queryByRole('button',{name:/Horn Lance/})).not.toBeInTheDocument();
 });
 test('Momo must be purified with the amulet before returning home',()=>{
@@ -58,6 +60,10 @@ test('Momo must be purified with the amulet before returning home',()=>{
  expect(screen.getByRole('heading',{name:'Welcome home, Momo.'})).toBeInTheDocument();
  fireEvent.click(screen.getByRole('button',{name:'Bring Momo home'}));
  expect(command).toHaveBeenCalledWith('visitVillage',undefined);
+});
+test('enemy intent shows the damage of each colliding projectile',()=>{
+ render(<App/>);publish({scene:'combat',phase:'DODGE_PHASE',enemy:bosses.momo,enemyCard:bosses.momo.cards[0]});
+ expect(screen.getByText(/Nightmare Wave.*11 \/ HIT/)).toBeInTheDocument();
 });
 test('rank rewards remain visible but locked or claimed rewards cannot dispatch',()=>{
  render(<App/>);publish({scene:'village',prologueComplete:true,xp:60,panel:'rewards',claimedRewards:[1]});

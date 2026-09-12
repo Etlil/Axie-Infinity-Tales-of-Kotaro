@@ -40,10 +40,12 @@ For a public web release, run `npm run build` and serve the `build/` directory t
 
 | Action | Touch / mouse | Keyboard |
 | --- | --- | --- |
-| Story | Continue button | Enter |
-| Ability | Tap Horn, Mouth, Back, or Tail | 1, 2, 3, 4 |
+| Story | Tap to reveal, then continue | X / Enter |
+| Ability | Tap Horn, Mouth, Back, or Tail | A / D selects, X confirms; 1, 2, 3, 4 shortcuts |
 | Ultimate | Tap the charged ultimate | 5 |
-| Dodge | Tap Left, Center, or Right | A / S / D, or Left / Down / Right |
+| Run | Hold Left / Right | A / D or Left / Right |
+| Jump | Tap Jump while moving | Space / W / Up |
+| Dash | Tap Dash | Shift |
 | Stage | Select a node and Enter encounter | Enter selected stage |
 | Close a panel | Close button or backdrop | Escape |
 | Pause battle | Pause button at the top right | Focus the pause button and press Enter |
@@ -75,13 +77,13 @@ The local save key is `atia-adventure-v1`. Story checkpoints, companions, claims
 ## Validate
 
 ```sh
-npm test -- --watch=false --runInBand
+npm test -- --watchAll=false --runInBand
 npx playwright install chromium --only-shell
 npm run test:e2e
 npm run build
 ```
 
-Browser checks exercise the full prologue and rescue loop, defeat/retry, save restoration, one-time rewards, and Android touch emulation in portrait and landscape. They also check an actual touch drag across the village, camp navigation, and a frozen dodge timer while the pause menu is open. Screenshots are written to `test-results/` (git-ignored).
+Browser checks exercise the full prologue and rescue loop, defeat/retry, save restoration, one-time rewards, and Android touch emulation in portrait and landscape. They also check an actual touch drag across the village, camp navigation, simultaneous movement and jump touches, a frozen dodge timer in the pause menu, and identical canvas frames while choosing an attack. Screenshots are written to `test-results/` (git-ignored).
 
 ## Source and assets
 
@@ -91,7 +93,9 @@ Browser checks exercise the full prologue and rescue loop, defeat/retry, save re
 - `src/main.js`: Phaser lifecycle and React bridge.
 - `src/scenes/`: loading, arrival, Buba’s dialogue, village, winding route, combat, rescue, and defeat.
 - `src/game/state.js`: validated local saves, unlocks, ranks, rewards, and encounter state.
-- `src/entities/DodgeSystem.js`: lane timing, deterministic damage resolution, and input cleanup.
+- `src/entities/DodgeSystem.js`: fixed-step movement, jumps, ledge collisions, dashes, attack patterns, projectile collisions, and input cleanup.
+- `src/game/dodgeWorld.js`: arena ledges, attack telegraphs, and projectile rendering.
+- `src/ui/DialogueBox.js`, `src/ui/DodgeControls.js`, `src/cinematic-game.css`: portrait dialogue, multi-touch arena controls, and cinematic presentation.
 - `src/game/world.js`: animated fighters, weapon effects, village upgrades, and route rendering.
 - `src/game/art.js`: existing vector scenery and corrupted creature illustrations.
 - `src/data/`: cards, enemy definitions, route nodes, lore, and rank thresholds.

@@ -3,6 +3,7 @@ import { bodyPartAttack } from '../game/bodyPartAttacks';
 import { characterCards } from '../data/playerCards';
 import { createSession } from '../game/state';
 import { bosses, dungeonRooms } from '../data/bosses';
+jest.mock('../game/dodgeWorld',()=>({drawArena:jest.fn(),drawHazards:jest.fn()}));
 jest.mock('../game/bodyPartAttacks',()=>({bodyPartAttack:jest.fn()}));
 jest.mock('phaser',()=>({__esModule:true,default:{Scene:class Scene{}}}));
 jest.mock('../game/world',()=>({backdrop:jest.fn(),fighter:jest.fn(),slash:jest.fn(),paintBurst:jest.fn()}));
@@ -12,12 +13,12 @@ function encounter(enemy=bosses.momo,roomIndex=2,tutorial=false){
  if(!tutorial){session.finishTutorial();session.finishPrologue();}
  session.patch({phase:'PLAYER_TURN',scene:'combat',enemy,enemyHP:enemy.maxHP,roomIndex,tutorial});
  combat.game={session};combat.enemy=enemy;combat.enemyCard=enemy.cards[0];
- combat.player=displayObject();combat.enemySprite=displayObject();combat.paintLanes=jest.fn();
+ combat.player=displayObject();combat.enemySprite=displayObject();combat.arenaGraphics={clear:jest.fn()};combat.hazardGraphics={clear:jest.fn()};
  combat.add={text:jest.fn(displayObject),ellipse:jest.fn(displayObject)};
- combat.tweens={add:jest.fn(),killTweensOf:jest.fn()};
+ combat.tweens={add:jest.fn(),killTweensOf:jest.fn(),pauseAll:jest.fn(),resumeAll:jest.fn()};
  combat.time={delayedCall:(duration,callback)=>setTimeout(callback,duration)};
- combat.cameras={main:{shake:jest.fn()}};combat.scene={start:jest.fn()};
- combat.dodge={lane:1,start:jest.fn()};combat.dodgeView={};
+ combat.cameras={main:{shake:jest.fn(),pan:jest.fn(),zoomTo:jest.fn()}};combat.scene={start:jest.fn()};
+ combat.dodge={start:jest.fn(),stop:jest.fn()};combat.dodgeView={};
  return {combat,session};
 }
 beforeEach(()=>{jest.clearAllMocks();jest.useFakeTimers();});
@@ -41,9 +42,9 @@ test('one card per turn applies damage once before telegraph and dodge',()=>{
  expect(session.state.phase).toBe('PLAYER_ATTACK_ANIM');
  jest.advanceTimersByTime(360);expect(session.state.enemyHP).toBe(112);
  jest.advanceTimersByTime(440);expect(session.state.phase).toBe('BOSS_TELEGRAPH');
- jest.advanceTimersByTime(650);expect(combat.dodge.start).toHaveBeenCalledWith({dangerLane:2,damage:24});
- combat.resolveDodge({hit:false,damage:0,lane:1,dangerLane:2});
- jest.advanceTimersByTime(800);
+ jest.advanceTimersByTime(650);expect(combat.dodge.start).toHaveBeenCalledWith({pattern:'wave',damage:24});
+ combat.resolveDodge({hits:0,damage:0,player:{x:330,y:600}});
+ jest.advanceTimersByTime(960);
  expect(session.state).toMatchObject({phase:'PLAYER_TURN',playerHP:100,turn:2,dodges:1,charge:1});
 });
 test('ultimate needs three charges and consumes them for a unique animation',()=>{
@@ -75,12 +76,19 @@ test('a normal clear unlocks the next node and grants first-clear rewards',()=>{
  session.patch({enemyHP:12});combat.playCard('horn-lance');jest.advanceTimersByTime(1400);
  expect(session.state).toMatchObject({unlockedStage:1,completedStages:[0],result:{kind:'cleared',xp:30}});
 });
-test('healing is capped, guard absorbs one hit, and lethal damage opens defeat',()=>{
+test('healing is capped, shields are consumed on contact, and lethal contact opens defeat',()=>{
  const {combat,session}=encounter();
  session.patch({playerHP:98});combat.playCard('moon-fang');expect(session.state.playerHP).toBe(100);
- jest.clearAllTimers();session.patch({playerHP:50,guard:14});
- combat.resolveDodge({hit:true,damage:24,lane:1,dangerLane:1});
- expect(session.state.playerHP).toBe(40);jest.advanceTimersByTime(800);expect(session.state.guard).toBe(0);
- session.patch({playerHP:12});combat.resolveDodge({hit:true,damage:24,lane:1,dangerLane:1});jest.advanceTimersByTime(800);
- expect(session.state.playerHP).toBe(0);expect(combat.scene.start).toHaveBeenCalledWith('DefeatScene');
+ jest.clearAllTimers();session.patch({phase:'DODGE_PHASE',playerHP:50,guard:14});
+ combat.takeHit({damage:24,x:330,y:565});expect(session.state.playerHP).toBe(40);expect(session.state.guard).toBe(0);
+ session.patch({playerHP:12});combat.takeHit({damage:24,x:330,y:565});jest.advanceTimersByTime(450);
+ expect(session.state.playerHP).toBe(0);expect(combat.dodge.stop).toHaveBeenCalled();expect(combat.scene.start).toHaveBeenCalledWith('DefeatScene');
+});
+test('the cinematic freezes world time until an attack is confirmed',()=>{
+ const {combat,session}=encounter();combat.beginPlayerTurn();
+ expect(session.state.phase).toBe('PLAYER_FOCUS');combat.playCard('horn-lance');expect(session.state.enemyHP).toBe(132);
+ jest.advanceTimersByTime(460);expect(session.state.phase).toBe('PLAYER_TURN');expect(combat.time.paused).toBe(true);
+ expect(combat.tweens.pauseAll).toHaveBeenCalled();combat.selectAttack(3);expect(session.state.selectedAttack).toBe(3);
+ combat.playCard('tail-sweep');expect(combat.time.paused).toBe(false);expect(combat.tweens.resumeAll).toHaveBeenCalled();
+ jest.advanceTimersByTime(360);expect(session.state.enemyHP).toBe(114);
 });

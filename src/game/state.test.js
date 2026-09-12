@@ -82,7 +82,7 @@ test('corrupt saves and unavailable storage do not prevent a new game',()=>{
 
 test('new encounters restore health but retain companions, ranks, claims and blessings',()=>{
   const s=unlocked();s.rescue();s.claimReward(1);
-  s.patch({playerHP:0,roomIndex:2,turn:9,guard:8,dodges:3,hits:7,dodgeActive:true,dangerLane:1});
+  s.patch({playerHP:0,roomIndex:2,turn:9,guard:8,dodges:3,hits:7,dodgeActive:true,dodgeX:900,dodgeY:435,grounded:false});
   s.startRun();
-  expect(s.state).toMatchObject({playerHP:100,roomIndex:0,turn:1,guard:0,dodges:0,hits:0,dodgeActive:false,dangerLane:null,bonus:.05,claimedRewards:[1]});
+  expect(s.state).toMatchObject({playerHP:100,roomIndex:0,turn:1,guard:0,dodges:0,hits:0,dodgeActive:false,dodgeX:330,dodgeY:600,grounded:true,bonus:.05,claimedRewards:[1]});
 });

@@ -1,118 +1,123 @@
-const isLane = (lane) => Number.isInteger(lane) && lane >= 0 && lane <= 2;
-const DODGE_KEYS = [
-  ['A', 65, 0], ['LEFT', 37, 0],
-  ['S', 83, 1], ['DOWN', 40, 1],
-  ['D', 68, 2], ['RIGHT', 39, 2],
-];
-
-/** Bonus is a fraction: 0.05 grants five percent more reaction time. */
-export function getDodgeTiming(bonus = 0) {
-  const multiplier = 1 + (Number.isFinite(bonus) ? Math.max(0, Math.min(1, bonus)) : 0);
-  return { duration: 3000 * multiplier, warningDuration: 1000 * multiplier };
+export const ARENA = { left:150, right:1020, floor:600,
+  platforms:[{x:405,y:475,width:155},{x:700,y:435,width:145}] };
+const KEYS=[['A',65,'left'],['LEFT',37,'left'],['D',68,'right'],['RIGHT',39,'right'],
+  ['SPACE',32,'jump'],['W',87,'jump'],['UP',38,'jump'],['SHIFT',16,'dash']];
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+export const projectileDamage=damage=>Math.max(1,Math.round((Number.isFinite(damage)?damage:14)*.45));
+export function getDodgeTiming(bonus=0){
+  const benefit=1+clamp(Number.isFinite(bonus)?bonus:0,0,1);
+  return {duration:6500,warningDuration:650*benefit,speedMultiplier:1/benefit};
 }
-
-export function resolveLaneHit(lane, dangerLane, damage) {
-  const hit = isLane(lane) && isLane(dangerLane) && lane === dangerLane;
-  return {
-    hit,
-    damage: hit && Number.isFinite(damage) ? Math.max(0, damage) : 0,
-    lane,
-    dangerLane,
-  };
+export function overlapsPlayer(p,shot){
+  const x=clamp(shot.x,p.x-22,p.x+22),y=clamp(shot.y,p.y-64,p.y-8);
+  return (shot.x-x)**2+(shot.y-y)**2<shot.radius**2;
 }
-
-/** Scene-owned timing and input. CombatScene owns rendering and health changes. */
+export function attackPlan(pattern='thorns'){
+  const kinds={thorns:['thorn','high-thorn','thorn'],sweep:['blade','high-blade','blade'],
+    shield:['shield','shield','shield'],wave:['wave','bubble','wave'],aimed:['orb','orb','orb'],
+    rain:['rain','rain','rain'],tide:['wave','rain','wave']};
+  return (kinds[pattern]||kinds.thorns).map((kind,i)=>({kind,at:900+i*1700,warned:false,launched:false}));
+}
+/** Fixed-step movement and collisions; all time belongs to the Phaser scene. */
 export default class DodgeSystem {
-  constructor(scene, { onUpdate = () => {}, onResolve = () => {}, bonus = 0, initialLane = 1 } = {}) {
-    this.scene = scene;
-    this.onUpdate = onUpdate;
-    this.onResolve = onResolve;
-    this.bonus = bonus;
-    this.lane = isLane(initialLane) ? initialLane : 1;
-    this.active = false;
-    this.destroyed = false;
-    this.timer = null;
-    this.ownedCaptures = [];
-    this.keyboard = scene.input?.keyboard;
-    this.handleUpdate = () => this.emitUpdate();
-    this.handleShutdown = () => this.destroy();
-    this.keyHandlers = DODGE_KEYS.map(([key, , lane]) => {
-      const handler = () => this.moveLane(lane);
-      this.keyboard?.on(`keydown-${key}`, handler);
-      return [`keydown-${key}`, handler];
-    });
-    this.scene.events.once('shutdown', this.handleShutdown);
+  constructor(scene,{onUpdate=()=>{},onHit=()=>{},onResolve=()=>{},onLaunch=()=>{},bonus=0}={}){
+    Object.assign(this,{scene,onUpdate,onHit,onResolve,onLaunch,bonus,active:false,destroyed:false});
+    this.inputs=new Map();this.captures=[];this.keyboard=scene.input?.keyboard;
+    this.updateHandler=(_time,delta)=>this.update(delta);
+    this.clearControls=()=>{this.inputs.clear();this.jumpBuffer=0;};
+    this.shutdown=()=>this.destroy();this.keyHandlers=[];
+    KEYS.forEach(([key,,control])=>{for(const down of [true,false]){
+      const event=(down?'keydown-':'keyup-')+key;
+      const handler=e=>{
+        if(e?.target?.closest?.('input,textarea,select,[contenteditable="true"]'))return;
+        if(down&&e?.repeat)return;
+        this.setControl(control,down,'key-'+key);
+      };
+      this.keyboard?.on(event,handler);this.keyHandlers.push([event,handler]);
+    }});
+    scene.events.on('pause',this.clearControls);scene.events.once('shutdown',this.shutdown);
   }
-
-  start({ dangerLane, damage, duration = 3000 }) {
-    if (this.destroyed) return false;
-    if (!isLane(dangerLane)) throw new RangeError('dangerLane must be 0, 1, or 2.');
-    this.stop();
-    const timing = getDodgeTiming(this.bonus);
-    const baseDuration = Number.isFinite(duration) && duration > 0 ? duration : 3000;
-    this.duration = baseDuration * (timing.duration / 3000);
-    this.warningDuration = Math.min(this.duration, timing.warningDuration);
-    this.dangerLane = dangerLane;
-    this.damage = damage;
-    this.endsAt = this.scene.time.now + this.duration;
-    this.active = true;
-
-    // Captures are global inside Phaser, so preserve keys owned by other systems
-    // and release only our additions as soon as this dodge phase ends.
-    if (this.keyboard?.addCapture) {
-      const existing = this.keyboard.getCaptures?.() || [];
-      this.ownedCaptures = DODGE_KEYS.map(([, code]) => code).filter((code) => !existing.includes(code));
-      this.keyboard.addCapture(this.ownedCaptures);
+  start({pattern='thorns',damage=14}={}){
+    if(this.destroyed)return false;
+    this.stop();this.timing=getDodgeTiming(this.bonus);this.elapsed=0;this.hits=0;this.totalDamage=0;
+    this.damage=projectileDamage(damage);
+    this.player={x:330,y:ARENA.floor,vx:0,vy:0,facing:1,grounded:true,dash:0,cooldown:0,invulnerable:0};
+    this.shots=[];this.plan=attackPlan(pattern);this.jumpBuffer=0;this.coyote=100;this.active=true;
+    const owned=this.keyboard?.getCaptures?.()||[];
+    this.captures=KEYS.map(([,code])=>code).filter(code=>!owned.includes(code));
+    this.keyboard?.addCapture?.(this.captures);
+    this.scene.events.on('update',this.updateHandler);this.emit();return true;
+  }
+  setControl(control,pressed,source='touch-'+control){
+    if(!pressed){this.inputs.delete(source);return true;}
+    if(!this.active||!['left','right','jump','dash'].includes(control)||this.inputs.has(source))return false;
+    this.inputs.set(source,control);
+    if(control==='jump')this.jumpBuffer=140;
+    if(control==='dash'&&this.player.cooldown<=0){
+      this.player.facing=this.axis()||this.player.facing;this.player.dash=180;this.player.cooldown=950;
+      this.player.invulnerable=Math.max(this.player.invulnerable,210);this.player.vy=0;
     }
-    this.scene.events.on('update', this.handleUpdate);
-    this.timer = this.scene.time.delayedCall(this.duration, () => this.resolve());
-    this.emitUpdate();
     return true;
   }
-
-  moveLane(lane) {
-    if (!this.active || !isLane(lane)) return false;
-    this.lane = lane;
-    this.emitUpdate();
-    return true;
+  axis(){const held=[...this.inputs.values()];return Number(held.includes('right'))-Number(held.includes('left'));}
+  update(delta=16.667){
+    if(!this.active)return;
+    let remaining=clamp(Number.isFinite(delta)?delta:0,0,100);
+    // Substeps stop fast dashes and projectiles from tunneling through bodies.
+    while(remaining>0&&this.active){const step=Math.min(1000/120,remaining);this.step(step);remaining-=step;}
+    if(this.active)this.emit();
   }
-
-  emitUpdate() {
-    if (!this.active) return;
-    const remaining = Math.max(0, this.endsAt - this.scene.time.now);
-    const warningActive = remaining <= this.warningDuration;
-    this.onUpdate({
-      lane: this.lane,
-      dangerLane: warningActive ? this.dangerLane : null,
-      dodgeRemaining: remaining / 1000,
-      warningRemaining: warningActive ? remaining / 1000 : 0,
-      warningActive,
-      dodgeActive: true,
-    });
+  step(ms){
+    const p=this.player,dt=ms/1000;this.elapsed+=ms;
+    p.cooldown=Math.max(0,p.cooldown-ms);p.invulnerable=Math.max(0,p.invulnerable-ms);
+    this.jumpBuffer=Math.max(0,this.jumpBuffer-ms);this.coyote=p.grounded?100:Math.max(0,this.coyote-ms);
+    if(this.jumpBuffer>0&&this.coyote>0&&p.dash<=0){p.vy=-780;p.grounded=false;this.coyote=0;this.jumpBuffer=0;}
+    const axis=this.axis();if(axis)p.facing=axis;
+    if(p.dash>0){p.dash=Math.max(0,p.dash-ms);p.vx=p.facing*760;}
+    else{p.vx+=(axis*360-p.vx)*Math.min(1,dt*20);p.vy+=2100*dt;}
+    const oldY=p.y;p.x=clamp(p.x+p.vx*dt,ARENA.left,ARENA.right-65);p.y+=p.vy*dt;p.grounded=false;
+    if(p.vy>=0)for(const surface of [...ARENA.platforms,{x:ARENA.left-50,y:ARENA.floor,width:1100}]){
+      if(p.x+18>surface.x&&p.x-18<surface.x+surface.width&&oldY<=surface.y+1&&p.y>=surface.y){p.y=surface.y;p.vy=0;p.grounded=true;break;}
+    }
+    for(const event of this.plan){
+      if(!event.warned&&this.elapsed>=event.at-this.timing.warningDuration){event.warned=true;event.target={x:p.x,y:p.y-35};}
+      if(!event.launched&&this.elapsed>=event.at){event.launched=true;this.launch(event);}
+    }
+    for(const shot of this.shots){
+      if(shot.dead)continue;
+      shot.x+=shot.vx*dt;shot.y+=shot.vy*dt;shot.age+=ms;
+      if(shot.kind==='shield'){shot.vy+=320*dt;if(shot.y+shot.radius>ARENA.floor){shot.y=ARENA.floor-shot.radius;shot.vy=-230;}}
+      if(shot.x<ARENA.left-120||shot.y>ARENA.floor+80||shot.age>5000)shot.dead=true;
+      if(!shot.dead&&p.invulnerable<=0&&overlapsPlayer(p,shot)){
+        shot.dead=true;p.invulnerable=760;this.hits++;this.totalDamage+=this.damage;
+        this.onHit({damage:this.damage,x:p.x,y:p.y-45});if(!this.active)return;
+      }
+    }
+    this.shots=this.shots.filter(shot=>!shot.dead);
+    if(this.elapsed>=this.timing.duration)this.resolve();
   }
-
-  resolve() {
-    if (!this.active) return;
-    const result = resolveLaneHit(this.lane, this.dangerLane, this.damage);
-    this.stop();
-    this.onResolve(result);
+  launch(event){
+    const speed=this.timing.speedMultiplier;
+    const shot={kind:event.kind,x:1030,y:ARENA.floor-34,vx:-450*speed,vy:0,radius:24,age:0};
+    if(event.kind.startsWith('high-')||event.kind==='bubble')shot.y=ARENA.floor-155;
+    if(event.kind.includes('blade')){shot.radius=30;shot.vx=-520*speed;}
+    if(event.kind==='wave'){shot.radius=32;shot.vx=-425*speed;}
+    if(event.kind==='shield'){shot.radius=28;shot.y=ARENA.floor-145;shot.vx=-400*speed;shot.vy=60;}
+    if(event.kind==='orb'){
+      shot.y=460;shot.radius=20;
+      const angle=Math.atan2(event.target.y-shot.y,event.target.x-shot.x);
+      shot.vx=Math.cos(angle)*410*speed;shot.vy=Math.sin(angle)*410*speed;
+    }
+    if(event.kind==='rain')[-125,0,125].forEach(offset=>this.shots.push({...shot,x:clamp(event.target.x+offset,ARENA.left,ARENA.right),y:245,vx:0,vy:380*speed,radius:21}));
+    else this.shots.push(shot);
+    this.onLaunch(event.kind);
   }
-
-  /** Cancel pending damage without resolving the current attack. */
-  stop() {
-    this.active = false;
-    this.timer?.remove(false);
-    this.timer = null;
-    this.scene.events.off('update', this.handleUpdate);
-    if (this.ownedCaptures.length) this.keyboard?.removeCapture(this.ownedCaptures);
-    this.ownedCaptures = [];
-  }
-
-  destroy() {
-    if (this.destroyed) return;
-    this.stop();
-    this.destroyed = true;
-    this.keyHandlers.forEach(([event, handler]) => this.keyboard?.off(event, handler));
-    this.scene.events.off('shutdown', this.handleShutdown);
-  }
+  emit(){this.onUpdate({player:{...this.player},shots:this.shots,warnings:this.plan.filter(e=>e.warned&&!e.launched),
+    dodgeRemaining:Math.max(0,(this.timing.duration-this.elapsed)/1000),duration:this.timing.duration/1000,hits:this.hits});}
+  resolve(){if(!this.active)return;const result={hits:this.hits,damage:this.totalDamage,player:{...this.player}};this.stop();this.onResolve(result);}
+  stop(){this.active=false;this.clearControls();this.shots=[];this.scene.events.off('update',this.updateHandler);
+    if(this.captures.length)this.keyboard?.removeCapture?.(this.captures);this.captures=[];}
+  destroy(){if(this.destroyed)return;this.stop();this.destroyed=true;
+    this.keyHandlers.forEach(([event,handler])=>this.keyboard?.off(event,handler));
+    this.scene.events.off('pause',this.clearControls);this.scene.events.off('shutdown',this.shutdown);}
 }

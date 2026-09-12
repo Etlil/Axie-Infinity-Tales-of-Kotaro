@@ -1,18 +1,18 @@
 export const bosses = {
-  buba: { id: 'buba', name: 'Buba', type: 'Beast', maxHP: 120, dodgePattern: 'lane_flash', cards: [
-    { id: 'sword', name: 'Sword Rush', damage: 12 },
-    { id: 'shield', name: 'Shield Bash', damage: 16 },
-    { id: 'paintstorm', name: 'Paintstorm', damage: 26, ultimate: true },
+  buba: { id: 'buba', name: 'Buba', type: 'Beast', maxHP: 120, dodgePattern: 'platform_arena', cards: [
+    { id: 'sword', pattern: 'sweep', name: 'Sword Rush', damage: 12 },
+    { id: 'shield', pattern: 'shield', name: 'Shield Bash', damage: 16 },
+    { id: 'paintstorm', pattern: 'rain', name: 'Paintstorm', damage: 26, ultimate: true },
   ] },
-  momo: { id: 'momo', name: 'Corrupted Momo', type: 'Aqua', maxHP: 132, dodgePattern: 'lane_flash', rescueBonus: { stat: 'dodgeAccuracy', value: 0.05 }, cards: [
-    { id: 'wave', name: 'Nightmare Wave', damage: 24 },
-    { id: 'ripple', name: 'Dark Ripple', damage: 18 },
-    { id: 'tide', name: 'Tide of Shadows', damage: 32, ultimate: true },
+  momo: { id: 'momo', name: 'Corrupted Momo', type: 'Aqua', maxHP: 132, dodgePattern: 'platform_arena', rescueBonus: { stat: 'dodgeAccuracy', value: 0.05 }, cards: [
+    { id: 'wave', pattern: 'wave', name: 'Nightmare Wave', damage: 24 },
+    { id: 'ripple', pattern: 'aimed', name: 'Dark Ripple', damage: 18 },
+    { id: 'tide', pattern: 'tide', name: 'Tide of Shadows', damage: 32, ultimate: true },
   ] },
 };
 export const dungeonRooms = [
-  { id: 'thornling', name: 'Corrupted Thornling', type: 'Plant', maxHP: 60, location: 'Whispering Woods', xp: 30, cards: [{ id: 'thorns', name: 'Thorn Rush', damage: 14 }], dodgePattern: 'lane_flash' },
-  { id: 'wisp', name: 'Nightmare Wisp', type: 'Dusk', maxHP: 84, location: 'The Hollow Crossing', xp: 45, cards: [{ id: 'mist', name: 'Violet Mist', damage: 18 }, { id: 'shroud', name: 'Shadowfall', damage: 22 }], dodgePattern: 'lane_flash' },
+  { id: 'thornling', name: 'Corrupted Thornling', type: 'Plant', maxHP: 60, location: 'Whispering Woods', xp: 30, cards: [{ id: 'thorns', pattern: 'thorns', name: 'Thorn Rush', damage: 14 }], dodgePattern: 'platform_arena' },
+  { id: 'wisp', name: 'Nightmare Wisp', type: 'Dusk', maxHP: 84, location: 'The Hollow Crossing', xp: 45, cards: [{ id: 'mist', pattern: 'aimed', name: 'Violet Mist', damage: 18 }, { id: 'shroud', pattern: 'rain', name: 'Shadowfall', damage: 22 }], dodgePattern: 'platform_arena' },
   { ...bosses.momo, location: 'Momo’s Lagoon', xp: 90 },
 ];
 export const routeNodes = [

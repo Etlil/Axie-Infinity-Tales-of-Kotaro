@@ -8,7 +8,7 @@ export function initialState() {
     activeCharacter: 'kotaro', unlockedCharacters: ['kotaro'], amulet: false, xp: 0, level: 1, coins: 0, wood: 0, essence: 0,
     claimedRewards: [], completedStages: [], unlockedStage: 0, selectedStage: 0, tentStage: 0, rescued: [], bonus: 0,
     playerHP: 100, playerMaxHP: 100, enemyHP: 0, enemy: null, roomIndex: 0, tutorial: false, turn: 1,
-    lane: 1, dangerLane: null, dodgeRemaining: 0, warningRemaining: 0, warningActive: false, dodgeActive: false,
+    selectedAttack: 0, dodgeX: 330, dodgeY: 600, grounded: true, dashReady: true, dashCooldown: 0, dodgeDuration: 6.5, dodgeRemaining: 0, warningRemaining: 0, warningActive: false, dodgeActive: false,
     guard: 0, charge: 0, dodges: 0, hits: 0, lastDamage: 0, cards: characterCards.kotaro, ultimate: ultimates.kotaro,
     message: 'A new story waits beyond the gate.', panel: null, result: null, saveAvailable: true };
 }
@@ -65,7 +65,7 @@ export function createSession(onState, { storage = null } = {}) {
       const enemy = tutorial ? bosses.buba : dungeonRooms[index];
       if (!enemy || (!tutorial && (!this.state.prologueComplete || index > this.state.unlockedStage))) return false;
       this.patch({ tutorial, roomIndex:index, enemy, enemyHP:enemy.maxHP, playerHP:this.state.playerMaxHP, guard:0, charge:0,
-        turn:1, lane:1, dangerLane:null, dodgeActive:false, warningActive:false, dodges:0, hits:0, lastDamage:0, result:null, panel:null });
+        turn:1, selectedAttack:0, dodgeX:330, dodgeY:600, grounded:true, dashReady:true, dashCooldown:0, dodgeActive:false, warningActive:false, dodges:0, hits:0, lastDamage:0, result:null, panel:null });
       return true;
     },
     finishTutorial() {

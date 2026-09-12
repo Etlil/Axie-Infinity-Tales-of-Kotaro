@@ -15,18 +15,13 @@ async function fight(page, { dodge = true, weak = false, shot = null } = {}) {
     const ultimate = page.locator('.ultimate-button:not(:disabled)');
     if (!weak && await ultimate.count()) await ultimate.click();
     else await page.locator(weak ? '.ability-card.card-heal' : '.ability-card').first().click();
-    // Resolve a real React lane button in-frame; transport delays must not
-    // consume the one-second reaction window. A separate touch test taps lanes.
-    const outcome = await page.waitForFunction(dodge => {
-      if (!document.querySelector('.scene-combat')) return 'complete';
-      const danger = document.querySelector('.lane-button.danger');
-      if (!danger) return false;
-      (dodge ? document.querySelector('.lane-button:not(.danger)') : danger).click();
-      return 'dodge';
-    }, dodge);
-    if (await outcome.jsonValue() === 'complete') return;
+    await page.waitForFunction(()=>document.querySelector('.dodge-controls')||!document.querySelector('.scene-combat'));
+    if (dodge && await page.locator('.dodge-controls').count()) {
+      await page.keyboard.down('d');await page.keyboard.press('Space');await page.waitForTimeout(300);await page.keyboard.up('d');
+    }
     if (shot && turn===0) await page.screenshot({path:'test-results/'+shot+'.png'});
-    await page.waitForFunction(() => !document.querySelector('.lane-button.danger'));
+    await page.waitForFunction(()=>document.querySelector('.ability-card:not(:disabled)')||!document.querySelector('.scene-combat'));
+
   }
   throw new Error('Encounter exceeded 18 turns');
 }
@@ -58,19 +53,18 @@ test('four body-part keyboard attacks work for both companions; key 5 uses the c
     await expect(page.locator('.ability-card')).toHaveCount(4);
     await page.keyboard.press('5');
     await expect(page.locator('.ability-card').first()).toBeEnabled();
+    await page.waitForTimeout(350);
+    const frozen=await page.locator('canvas').screenshot();
+    await page.waitForTimeout(700);
+    expect((await page.locator('canvas').screenshot()).equals(frozen)).toBe(true);
     for (const [index,part] of ['horn','mouth','back','tail'].entries()) {
       const card=page.locator('.ability-card').nth(index);
       await expect(card).toBeEnabled();
       await expect(card).toHaveAttribute('data-part',part);
       const name=await card.locator('strong').textContent();
-      await page.keyboard.press(String(index+1));
+      await page.keyboard.press(index===0?'x':String(index+1));
       await expect(page.getByRole('status')).toContainText(name+'!');
       await expect(card).toBeDisabled();
-      await page.waitForFunction(()=>{
-        const safe=document.querySelector('.lane-button:not(.danger)');
-        if (!document.querySelector('.lane-button.danger')) return false;
-        safe.click();return true;
-      });
       await expect(card).toBeEnabled({timeout:10000});
     }
     await expect(page.locator('.ultimate-button')).toBeEnabled();
@@ -90,16 +84,21 @@ test('complete prologue, Buba unlock, rank rewards, route, amulet rescue and dur
   await page.goto('/');
   await expect(page.locator('canvas')).toHaveCount(1);
   await page.getByRole('button',{name:'Begin journey'}).click();
+  await page.getByRole('button',{name:'Reveal dialogue'}).click();
   await page.getByRole('button',{name:'Approach the village'}).click();
+  await page.getByRole('button',{name:'Reveal dialogue'}).click();
   await page.getByRole('button',{name:'Step into the clearing'}).click();
+  await page.getByRole('button',{name:'Reveal dialogue'}).click();
   await page.getByRole('button',{name:'Defend yourself'}).click();
   await expect(page.locator('.enemy-health')).toContainText('Buba');
   await page.screenshot({path:'test-results/atia-buba-desktop.png'});
   await fight(page,{shot:'atia-dodge-desktop'});
   await expect(page.getByRole('heading',{name:'You… you stopped.'})).toBeVisible();
   await page.screenshot({path:'test-results/atia-dialogue-desktop.png'});
-  for(let i=0;i<4;i++) await page.getByRole('button',{name:'Continue',exact:true}).click();
+  for(let i=0;i<4;i++) { await page.getByRole('button',{name:'Reveal dialogue'}).click(); await page.getByRole('button',{name:'Continue',exact:true}).click(); }
+  await page.getByRole('button',{name:'Reveal dialogue'}).click();
   await page.getByRole('button',{name:'Accept the amulet'}).click();
+  await page.getByRole('button',{name:'Reveal dialogue'}).click();
   await page.getByRole('button',{name:'Restore Atia'}).click();
   await expect(page.locator('.scene-village')).toBeVisible();
   await expect(page.locator('.profile-block')).toContainText('Adventure Rank 2');
@@ -180,10 +179,15 @@ test('Android touch controls, portrait and landscape, panel focus and save resto
   await visibleControls(page,'.ability-card,.ultimate-button');
   await page.screenshot({path:'test-results/atia-combat-mobile.png'});
   await page.locator('.ability-card').first().tap();
-  await expect(page.locator('.lane-button')).toHaveCount(3);
-  await visibleControls(page,'.lane-button');
-  await page.getByRole('button',{name:'Right lane',exact:true}).tap();
-  await expect(page.getByRole('button',{name:'Right lane',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(page.locator('.dodge-controls')).toBeVisible();
+  await visibleControls(page,'.movement-button');
+  const right=await page.getByRole('button',{name:'Move right',exact:true}).boundingBox();
+  const jump=await page.getByRole('button',{name:'Jump',exact:true}).boundingBox();
+  await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:1,x:right.x+right.width/2,y:right.y+right.height/2},{id:2,x:jump.x+jump.width/2,y:jump.y+jump.height/2}]});
+  await page.waitForTimeout(220);
+  expect(Number(await page.locator('.dodge-controls').getAttribute('data-player-x'))).toBeGreaterThan(350);
+  expect(Number(await page.locator('.dodge-controls').getAttribute('data-player-y'))).toBeLessThan(550);
+  await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   await page.getByRole('button',{name:'Pause encounter'}).tap();
   await expect(page.getByRole('dialog',{name:'Game paused'})).toBeVisible();
   const frozenTimer = await page.locator('.dodge-timer').textContent();
@@ -197,9 +201,9 @@ test('Android touch controls, portrait and landscape, panel focus and save resto
   await visibleControls(page,'.ability-card,.ultimate-button');
   await page.screenshot({path:'test-results/atia-combat-landscape.png'});
   await page.locator('.ability-card').first().tap();
-  await expect(page.locator('.lane-button')).toHaveCount(3);
-  await visibleControls(page,'.lane-button');
-  await page.getByRole('button',{name:'Left lane',exact:true}).tap();
+  await expect(page.locator('.dodge-controls')).toBeVisible();
+  await visibleControls(page,'.movement-button');
+  await page.getByRole('button',{name:'Dash',exact:true}).tap();
   await page.getByRole('button',{name:'Pause encounter'}).tap();
   await page.getByRole('button',{name:'Retreat from encounter'}).tap();
   await expect(page.locator('.scene-village')).toBeVisible();

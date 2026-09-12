@@ -1,56 +1,63 @@
 import SceneBase, { floatingText } from './SceneBase';
-import { backdrop, fighter, slash, paintBurst } from '../game/world';
+import { backdrop, fighter, slash } from '../game/world';
 import { bodyPartAttack } from '../game/bodyPartAttacks';
+import { drawArena, drawHazards } from '../game/dodgeWorld';
 import DodgeSystem from '../entities/DodgeSystem';
 
-const LANES = [360, 600, 840];
-const LANE_NAMES = ['left', 'center', 'right'];
-const LANE_SEQUENCE = [1, 0, 2, 1, 2, 0];
-
 export default class CombatScene extends SceneBase {
-  constructor() { super('CombatScene'); }
-  create() {
-    this.enemy = this.state.enemy;
-    this.dodgeView = { lane: 1, dangerLane: null, dodgeActive: false, warningActive: false };
-    this.lastPublishedDodge = '';
-    backdrop(this, this.state.tutorial ? 'village' : this.enemy.id === 'momo' ? 'lagoon' : 'battle', { image: false });
-    this.bindScene('combat', 'PLAYER_TURN', 'Choose an ability. Watch the warning, then tap a safe lane.', { enemyCard: null });
-    this.player = fighter(this, 320, 460, this.state.activeCharacter, 1.35);
-    this.enemySprite = fighter(this, 890, 445, this.enemy.id === 'buba' ? 'buba' : this.enemy.id === 'momo' ? 'momo' : 'mob', 1.35, 'left');
-    this.laneGraphics = this.add.graphics().setDepth(5);
-    this.player.setDepth(8);
-    LANES.forEach((x, index) => this.add.zone(x, 592, 218, 160).setDepth(10).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.dodge.moveLane(index)));
-    this.dodge = new DodgeSystem(this, { bonus: this.state.bonus, initialLane: 1,
-      onUpdate: view => this.onDodgeUpdate(view), onResolve: result => this.resolveDodge(result) });
-    this.state.cards.forEach((card, index) => this.bindKey('keydown-' + ['ONE', 'TWO', 'THREE', 'FOUR'][index], () => this.playCard(card.id)));
-    this.bindKey('keydown-FIVE', () => this.playCard(this.state.ultimate.id));
-    this.events.once('shutdown', () => this.dodge.destroy());
+  constructor(){super('CombatScene');}
+  create(){
+    this.enemy=this.state.enemy;this.time.paused=false;this.tweens.resumeAll();
+    this.reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    this.lastPublishedDodge='';this.lastAction='';
+    backdrop(this,this.state.tutorial?'village':this.enemy.id==='momo'?'lagoon':'battle',{image:false});
+    this.bindScene('combat','PLAYER_FOCUS','Take a breath. Choose your next move.',{enemyCard:null,selectedAttack:0});
+    this.player=fighter(this,320,460,this.state.activeCharacter,1.35).setDepth(8);
+    this.enemySprite=fighter(this,890,445,this.enemy.id==='buba'?'buba':this.enemy.id==='momo'?'momo':'mob',1.35,'left');
+    this.arenaGraphics=this.add.graphics().setDepth(4);
+    this.hazardGraphics=this.add.graphics().setDepth(12);
+    this.dodge=new DodgeSystem(this,{bonus:this.state.bonus,onUpdate:view=>this.onDodgeUpdate(view),
+      onHit:hit=>this.takeHit(hit),onResolve:result=>this.resolveDodge(result),
+      onLaunch:()=>this.enemySprite.playAction(this.enemyCard?.ultimate?'ultimate':'attack')});
+    this.state.cards.forEach((card,i)=>this.bindKey('keydown-'+['ONE','TWO','THREE','FOUR'][i],()=>this.playCard(card.id)));
+    this.bindKey('keydown-FIVE',()=>this.playCard(this.state.ultimate.id));
+    this.bindKey('keydown-X',()=>this.playCard(this.state.cards[this.state.selectedAttack||0].id));
+    ['A','LEFT'].forEach(key=>this.bindKey('keydown-'+key,()=>this.selectAttack((this.state.selectedAttack+3)%4)));
+    ['D','RIGHT'].forEach(key=>this.bindKey('keydown-'+key,()=>this.selectAttack((this.state.selectedAttack+1)%4)));
+    this.events.once('shutdown',()=>{this.dodge.destroy();this.time.paused=false;});
+    this.beginPlayerTurn();
   }
-  paintLanes() {
-    this.laneGraphics.clear();
-    if (!this.dodgeView.dodgeActive) return;
-    LANES.forEach((x, i) => {
-      const danger = this.dodgeView.warningActive && this.dodgeView.dangerLane === i;
-      const selected = this.dodgeView.lane === i;
-      const water = this.enemy.id === 'momo';
-      this.laneGraphics.fillStyle(danger ? water ? 0x358bb0 : 0xc15f7b : selected ? 0xd7b96c : 0x18362d, .68).fillRoundedRect(x - 106, 520, 212, 134, 22);
-      this.laneGraphics.lineStyle(danger ? 5 : 2, danger ? water ? 0xa2e4f4 : 0xffa0b6 : selected ? 0xffe6a2 : 0xabc4b2, .9).strokeRoundedRect(x - 106, 520, 212, 134, 22);
-      if (danger) this.laneGraphics.lineStyle(5, 0xffebd2, .8).lineBetween(x - 20, 544, x + 20, 584).lineBetween(x + 20, 544, x - 20, 584);
-      if (danger && water) for (let row = 0; row < 2; row++) {
-        this.laneGraphics.lineStyle(3, 0xd6f7ff, .7).beginPath();
-        for (let step = 0; step <= 32; step++) {
-          const px = x - 96 + step * 6, py = 610 + row * 20 + Math.sin(step * .4 + this.time.now / 150) * 5;
-          if (step === 0) this.laneGraphics.moveTo(px, py); else this.laneGraphics.lineTo(px, py);
-        }
-        this.laneGraphics.strokePath();
-      }
+  freezeWorld(frozen){
+    this.time.paused=frozen;
+    if(frozen)this.tweens.pauseAll();else this.tweens.resumeAll();
+    [this.player,this.enemySprite].forEach(actor=>{
+      if(frozen)actor.sprite?.anims.pause();else actor.sprite?.anims.resume();
     });
   }
+  beginPlayerTurn(){
+    this.dodge.stop();this.arenaGraphics.clear();this.hazardGraphics.clear();
+    this.tweens.killTweensOf(this.player);this.tweens.killTweensOf(this.enemySprite);
+    this.player.setPosition(320,460).setScale(1.35).setAngle(0).setAlpha(1);this.player.playAction('idle');this.player.sprite?.setFlipX(true);
+    this.enemySprite.setPosition(890,445).setScale(1.35*(this.enemy.id==='buba'?1:1.65)).setAngle(0);this.enemySprite.playAction('idle');
+    this.session.patch({phase:'PLAYER_FOCUS',dodgeActive:false,enemyCard:null,guard:0,selectedAttack:0,message:'Take a breath. Your move.'});
+    this.freezeWorld(true);this.time.paused=false;
+    const duration=this.reducedMotion?0:460;
+    this.cameras.main.pan(520,430,duration,'Sine.easeInOut');
+    this.cameras.main.zoomTo(this.reducedMotion?1:1.14,duration,'Sine.easeInOut');
+    this.time.delayedCall(duration,()=>{
+      this.session.patch({phase:'PLAYER_TURN',message:'Time is held. Choose a move, then press X or tap its card.'});
+      this.freezeWorld(true);
+    });
+  }
+  selectAttack(index){if(this.state.phase==='PLAYER_TURN'&&Number.isInteger(index)&&index>=0&&index<4)this.session.patch({selectedAttack:index});}
   playCard(id) {
     if (this.state.phase !== 'PLAYER_TURN') return;
     const ultimate = id === this.state.ultimate.id;
     const card = ultimate ? this.state.ultimate : this.state.cards.find(entry => entry.id === id);
     if (!card || (ultimate && this.state.charge < 3)) return;
+    this.freezeWorld(false);
+    this.cameras.main.pan(590,430,180,'Sine.easeOut');
+    this.cameras.main.zoomTo(this.reducedMotion ? 1 : 1.22,180);
     this.session.patch({ phase: 'PLAYER_ATTACK_ANIM', message: card.name + '! ' + card.damage + ' damage.',
       guard: card.guard || 0, charge: ultimate ? 0 : Math.min(3, this.state.charge + 1),
       playerHP: Math.min(this.state.playerMaxHP, this.state.playerHP + (card.heal || 0)) });
@@ -78,59 +85,55 @@ export default class CombatScene extends SceneBase {
     });
     this.time.delayedCall(800, () => this.state.enemyHP <= 0 ? this.winEncounter() : this.telegraph());
   }
-  telegraph() {
-    this.enemyCard = this.enemy.cards[(this.state.turn - 1) % this.enemy.cards.length];
-    this.session.patch({ phase: 'BOSS_TELEGRAPH', enemyCard: this.enemyCard, message: this.enemy.name + ' is preparing ' + this.enemyCard.name + '.' });
-    this.tweens.add({ targets: this.enemySprite, angle: -6, duration: 120, yoyo: true, repeat: 1 });
-    this.time.delayedCall(650, () => this.startDodge());
+  telegraph(){
+    this.enemyCard=this.enemy.cards[(this.state.turn-1)%this.enemy.cards.length];
+    this.session.patch({phase:'BOSS_TELEGRAPH',enemyCard:this.enemyCard,message:this.enemy.name+' readies '+this.enemyCard.name+'. Get ready to move!'});
+    this.cameras.main.pan(600,400,350,'Sine.easeInOut');this.cameras.main.zoomTo(1,350);
+    this.tweens.add({targets:this.enemySprite,angle:-6,duration:120,yoyo:true,repeat:1});
+    this.time.delayedCall(650,()=>this.startDodge());
   }
-  startDodge() {
-    this.session.patch({ phase: 'DODGE_PHASE', message: 'Watch for the marked lane. Tap either safe lane.' });
-    this.lastPublishedDodge = '';
-    this.tweens.killTweensOf(this.player);
-    this.player.playAction('run');
-    this.tweens.add({ targets: this.player, x: LANES[this.dodge.lane], y: 588, scaleX: .78, scaleY: .78, angle: 0, duration: 220, onComplete: () => this.player.playAction('idle') });
-    this.dodge.start({ dangerLane: LANE_SEQUENCE[(this.state.turn - 1 + this.state.roomIndex) % LANE_SEQUENCE.length], damage: this.enemyCard.damage });
+  startDodge(){
+    this.lastPublishedDodge='';this.lastAction='';
+    this.tweens.killTweensOf(this.player);this.tweens.killTweensOf(this.enemySprite);
+    this.player.setScale(.75).setAngle(0);this.enemySprite.setPosition(1040,540).setScale(.82*(this.enemy.id==='buba'?1:1.65)).setAngle(0);
+    drawArena(this.arenaGraphics);
+    this.session.patch({phase:'DODGE_PHASE',dodgeActive:true,dodgeDuration:6.5,message:'Move freely. Jump over low attacks; dash through danger.'});
+    this.dodge.start({pattern:this.enemyCard.pattern,damage:this.enemyCard.damage});
   }
-  onDodgeUpdate(view) {
-    const moved = this.dodgeView.lane !== view.lane;
-    this.dodgeView = view;
-    if (moved) {
-      this.tweens.killTweensOf(this.player);
-      this.player.playAction('run');
-      this.tweens.add({ targets: this.player, x: LANES[view.lane], y: 588, scaleX: .78, scaleY: .78, duration: 95, onComplete: () => this.player.playAction('idle') });
+  onDodgeUpdate(view){
+    const p=view.player;
+    this.player.setPosition(p.x,p.y-57).setScale(.75).setAngle(p.dash>0?p.facing*8:p.grounded?0:Math.max(-12,Math.min(12,p.vy/50)));
+    this.player.setAlpha(p.invulnerable>210?(Math.floor(p.invulnerable/90)%2?.45:1):1);
+    const action=Math.abs(p.vx)>30?'run':'idle';
+    if(this.lastAction!==action){this.player.playAction(action);this.lastAction=action;}
+    this.player.sprite?.setFlipX(p.facing===1);
+    drawHazards(this.hazardGraphics,view,this.enemy.id);
+    const portrait=window.innerHeight>window.innerWidth;
+    this.cameras.main.centerOn(portrait?p.x:600,portrait?440:400);
+    const tenth=Math.ceil(view.dodgeRemaining*10)/10;
+    const key=tenth+':'+view.hits;
+    if(key!==this.lastPublishedDodge){this.lastPublishedDodge=key;
+      this.session.patch({dodgeRemaining:tenth,dodgeX:Math.round(p.x),dodgeY:Math.round(p.y),grounded:p.grounded,
+        dashReady:p.cooldown<=0,dashCooldown:p.cooldown/1000,warningActive:view.warnings.length>0});
     }
-    this.paintLanes();
-    const tenth = Math.ceil(view.dodgeRemaining * 10) / 10;
-    const key = view.lane + ':' + view.dangerLane + ':' + tenth;
-    if (key !== this.lastPublishedDodge) {
-      this.lastPublishedDodge = key;
-      this.session.patch({ ...view, dodgeRemaining: tenth, warningRemaining: Math.ceil(view.warningRemaining * 10) / 10,
-        message: view.warningActive ? 'Danger in the ' + LANE_NAMES[view.dangerLane] + ' lane. Move now!' : 'Get ready… the danger lane appears in the final second.' });
+  }
+  takeHit(hit){
+    if(this.state.phase!=='DODGE_PHASE')return;
+    const absorbed=Math.min(this.state.guard,hit.damage),damage=hit.damage-absorbed;
+    this.session.patch({playerHP:Math.max(0,this.state.playerHP-damage),guard:this.state.guard-absorbed,
+      hits:this.state.hits+1,lastDamage:damage,message:damage?'Hit! Keep moving.': 'Shield absorbed the hit!'});
+    floatingText(this,hit.x,hit.y,damage?'-'+damage:'BLOCKED',damage?'#ffb4ba':'#bff5d6');
+    if(damage&&!this.reducedMotion)this.cameras.main.shake(100,.002);
+    if(this.state.playerHP<=0){
+      this.dodge.stop();this.session.patch({phase:'RESOLVE_DODGE',dodgeActive:false});
+      this.time.delayedCall(450,()=>this.scene.start('DefeatScene'));
     }
   }
-  resolveDodge(result) {
-    const damage = Math.max(0, result.damage - this.state.guard);
-    const message = result.hit ? damage ? 'Caught! −' + damage + ' HP.' : 'Shield held. No damage!' : 'Perfect dodge. No damage!';
-    this.enemySprite.playAction(this.enemyCard.ultimate ? 'ultimate' : 'attack');
-    if (this.enemy.id === 'buba' && this.enemyCard.ultimate) paintBurst(this, LANES[result.dangerLane], 575);
-    else slash(this, LANES[result.dangerLane], 585, this.enemy.id === 'buba' ? 0xffdf95 : 0xd6a4f1, !!this.enemyCard.ultimate);
-    this.session.patch({ phase: 'RESOLVE_DODGE', playerHP: Math.max(0, this.state.playerHP - damage), lastDamage: damage,
-      hits: this.state.hits + (result.hit ? 1 : 0), dodges: this.state.dodges + (result.hit ? 0 : 1),
-      dodgeActive: false, warningActive: false, dodgeRemaining: 0, warningRemaining: 0, dangerLane: null, message });
-    this.dodgeView = { ...this.dodgeView, dodgeActive: false, warningActive: false, dangerLane: null };
-    this.paintLanes();
-    floatingText(this, LANES[result.lane], 498, damage ? '−' + damage : result.hit ? 'BLOCKED' : 'DODGED', damage ? '#ffb4ba' : '#c9efb4');
-    if (damage) { this.player.playAction('hit'); this.cameras.main.shake(120, .003); }
-    this.time.delayedCall(800, () => {
-      if (this.state.playerHP <= 0) this.scene.start('DefeatScene');
-      else {
-        this.tweens.killTweensOf(this.player);
-        this.player.playAction('idle');
-        this.tweens.add({ targets: this.player, x: 320, y: 460, scaleX: 1.35, scaleY: 1.35, alpha: 1, duration: 200 });
-        this.session.patch({ turn: this.state.turn + 1, guard: 0, phase: 'PLAYER_TURN', message: 'Your turn. Every three abilities charge your ultimate.' });
-      }
-    });
+  resolveDodge(result){
+    this.hazardGraphics.clear();
+    this.session.patch({phase:'RESOLVE_DODGE',dodges:this.state.dodges+(result.hits?0:1),dodgeActive:false,
+      warningActive:false,dodgeRemaining:0,message:result.hits?'You held on. Find your opening.':'Untouched. Your opening!'});
+    this.time.delayedCall(500,()=>{this.session.patch({turn:this.state.turn+1});this.beginPlayerTurn();});
   }
   winEncounter() {
     this.session.patch({ phase: 'ENCOUNTER_WON', message: this.state.tutorial ? 'Buba lowers his sword…' : 'The nightmare falters.' });
@@ -145,8 +148,9 @@ export default class CombatScene extends SceneBase {
       }
     });
   }
-  onCommand(action, payload) {
-    if (action === 'playCard') this.playCard(typeof payload === 'object' ? payload.id : payload);
-    if (action === 'moveLane') this.dodge.moveLane(Number(payload));
+  onCommand(action,payload){
+    if(action==='playCard')this.playCard(typeof payload==='object'?payload.id:payload);
+    if(action==='selectAttack')this.selectAttack(Number(payload));
+    if(action==='dodgeInput')this.dodge.setControl(payload.control,payload.pressed,payload.source);
   }
 }
