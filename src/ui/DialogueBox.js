@@ -15,12 +15,12 @@ export default function DialogueBox({speaker='Buba',portrait='buba',title,text,b
   },[ready,paused,text]);
   useEffect(()=>{
     const key=e=>{
-      if(e.repeat||!['x','X','Enter'].includes(e.key)||e.target?.closest?.('input,textarea,select'))return;
+      if(paused||e.repeat||!['x','X','Enter'].includes(e.key)||e.target?.closest?.('input,textarea,select'))return;
       e.preventDefault();e.stopPropagation();action.current();
     };
     document.addEventListener('keydown',key,true);
     return()=>document.removeEventListener('keydown',key,true);
-  },[]);
+  },[paused]);
   return <section className="dialogue-box" aria-label={speaker+' dialogue'} data-typing={!ready}>
     <svg className="dialogue-ornament" viewBox="0 0 32 32" aria-hidden="true"><path d="M29 4H12L4 12v17M20 4l-6 8-7-2M4 20l8-6-2-7"/></svg>
     <svg className="dialogue-ornament right" viewBox="0 0 32 32" aria-hidden="true"><path d="M29 4H12L4 12v17M20 4l-6 8-7-2M4 20l8-6-2-7"/></svg>

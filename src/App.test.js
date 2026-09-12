@@ -6,7 +6,7 @@ import {bosses} from './data/bosses';
 jest.mock('./main',()=>({createGame:jest.fn()}));
 const command=jest.fn(),destroy=jest.fn();let publish;
 beforeEach(()=>{
- command.mockClear();destroy.mockClear();
+ command.mockReset();destroy.mockClear();
  createGame.mockImplementation((parent,onState)=>{
   publish=update=>act(()=>onState(derive({...initialState(),loading:false,...update})));
   onState(derive({...initialState(),loading:false}));return {command,destroy};
@@ -95,4 +95,45 @@ test('pausing a dodge locks the engine, and retreat resumes it before navigating
  fireEvent.click(screen.getByRole('button',{name:'Retreat from encounter'}));
  expect(command.mock.calls.slice(0,3)).toEqual([['setPaused',false],['setInputEnabled',true],['retreat',undefined]]);
  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
+
+test('reset requires confirmation; keeping the save never dispatches deletion',()=>{
+ render(<App/>);publish({scene:'village',prologueComplete:true,xp:460});
+ fireEvent.click(screen.getByRole('button',{name:'Settings'}));
+ fireEvent.click(screen.getByRole('button',{name:'Reset save data'}));
+ const keep=screen.getByRole('button',{name:'Keep my save'});
+ expect(keep).toHaveFocus();expect(screen.getByText(/This can’t be undone/)).toBeInTheDocument();
+ expect(command).not.toHaveBeenCalledWith('resetSave',undefined);
+ fireEvent.click(keep);
+ expect(screen.getByRole('button',{name:'Reset save data'})).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'Close panel'}));
+ expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+ expect(command).not.toHaveBeenCalledWith('resetSave',undefined);
+});
+
+test('reset from paused combat closes every menu only after successful deletion',()=>{
+ render(<App/>);publish({scene:'combat',phase:'DODGE_PHASE',enemy:bosses.buba});
+ fireEvent.click(screen.getByRole('button',{name:'Pause encounter'}));
+ fireEvent.click(screen.getByRole('button',{name:'Settings'}));
+ fireEvent.click(screen.getByRole('button',{name:'Reset save data'}));
+ command.mockImplementation(action=>action==='resetSave'?{ok:false,error:'Could not delete this save.'}:undefined);
+ fireEvent.click(screen.getByRole('button',{name:'Delete save and restart'}));
+ expect(screen.getByRole('alert')).toHaveTextContent('Could not delete this save.');
+ expect(screen.getByRole('dialog',{name:'Settings'})).toBeInTheDocument();
+ command.mockImplementation(action=>{
+  if(action==='resetSave'){publish({});return {ok:true};}
+ });
+ fireEvent.click(screen.getByRole('button',{name:'Delete save and restart'}));
+ expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+ expect(screen.getByRole('button',{name:'Begin journey'})).toBeInTheDocument();
+ expect(command).toHaveBeenLastCalledWith('setInputEnabled',true);
+});
+
+test('story Settings can close without changing the intro checkpoint',()=>{
+ render(<App/>);publish({introStep:2});
+ fireEvent.click(screen.getByRole('button',{name:'Settings'}));
+ expect(screen.getByRole('dialog',{name:'Settings'})).toBeInTheDocument();
+ fireEvent.keyDown(document,{key:'Escape'});
+ expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+ expect(command).not.toHaveBeenCalledWith('nextIntro',undefined);
 });

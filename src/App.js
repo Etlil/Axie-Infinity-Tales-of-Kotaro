@@ -7,11 +7,13 @@ import WorldView from './ui/WorldView';
 import JourneyMap from './ui/JourneyMap';
 import DialogueBox from './ui/DialogueBox';
 import DodgeControls from './ui/DodgeControls';
+import SettingsContent from './ui/SettingsContent';
 import { projectileDamage } from './entities/DodgeSystem';
 import './App.css';
 import './origins-theme.css';
 import './mobile-game.css';
 import './cinematic-game.css';
+import './settings.css';
 
 function Icon({ name, size = 22 }) {
   const paths = {
@@ -28,6 +30,7 @@ function Icon({ name, size = 22 }) {
     check: <path d="m5 12 4 4L19 6"/>,
     close: <path d="m6 6 12 12M6 18 18 6"/>,
     pause: <><path d="M8 5v14M16 5v14" strokeWidth="5"/></>,
+    settings: <><path d="m9 3-.6 3-2.8 1-2.2 2.2L5 12l-1.6 2.8L5.6 17l2.8 1 .6 3h6l.6-3 2.8-1 2.2-2.2L19 12l1.6-2.8L18.4 7l-2.8-1-.6-3Z"/><circle cx="12" cy="12" r="3"/></>,
     play: <path d="m8 4 12 8-12 8Z"/>,
     sword: <path d="m14 3 7-1-1 7L9 20l-5-5ZM3 13l8 8M3 21l3-3"/>,
     horn: <path d="M5 20C5 12 10 12 17 3c2 9-1 16-7 18ZM8 16l6 2"/>,
@@ -66,7 +69,7 @@ function AbilityCard({ card, index, disabled, selected, command }) {
   </button>;
 }
 
-function Panel({ game, command, close, panel, fullscreen, showHelp }) {
+function Panel({ game, command, close, panel, fullscreen, showHelp, showSettings, resetSave }) {
   const dialog = useRef(null);
   useEffect(() => {
     const previous = document.activeElement;
@@ -83,12 +86,13 @@ function Panel({ game, command, close, panel, fullscreen, showHelp }) {
     document.addEventListener('keydown', onKey);
     return () => { document.removeEventListener('keydown', onKey); if (previous?.isConnected) previous.focus(); };
   }, [close]);
-  const titles = { rewards: "Buba’s tent", team: 'Your companions', journal: 'The Atia journal', amulet: 'A little light, handmade', help: 'Traveler’s guide', pause: 'Game paused' };
+  const titles = { rewards: "Buba’s tent", team: 'Your companions', journal: 'The Atia journal', amulet: 'A little light, handmade', help: 'Traveler’s guide', pause: 'Game paused', settings: 'Settings' };
   return <div className="modal-backdrop" onClick={close}><section ref={dialog} className={'panel panel-' + panel} role="dialog" aria-modal="true" aria-labelledby="panel-title" onClick={event => event.stopPropagation()}>
     <button className="icon-button close-panel" onClick={close} aria-label="Close panel"><Icon name="close"/></button>
     <p className="eyebrow">{panel === 'rewards' ? 'A HOME, ONE RANK AT A TIME' : 'ATIA • CHAPTER ONE'}</p><h2 id="panel-title">{titles[panel]}</h2>
     <div className="panel-body">
-    {panel === 'pause' && <div className="pause-actions"><p>Take your time. The encounter will wait for you.</p><GoldButton onClick={close}><Icon name="play"/>Resume encounter</GoldButton><button className="small-button" onClick={fullscreen}><Icon name="expand"/>Toggle fullscreen</button><button className="small-button" onClick={showHelp}><Icon name="book"/>How to play</button><button className="text-button" aria-label="Retreat from encounter" onClick={() => command('retreat')}>{game.tutorial ? 'Return to the clearing' : 'Return to Atia'}</button></div>}
+    {panel === 'pause' && <div className="pause-actions"><p>Take your time. The encounter will wait for you.</p><GoldButton onClick={close}><Icon name="play"/>Resume encounter</GoldButton><button className="small-button" onClick={showSettings}><Icon name="settings"/>Settings</button><button className="small-button" onClick={showHelp}><Icon name="book"/>How to play</button><button className="text-button" aria-label="Retreat from encounter" onClick={() => command('retreat')}>{game.tutorial ? 'Return to the clearing' : 'Return to Atia'}</button></div>}
+    {panel === 'settings' && <SettingsContent saveAvailable={game.saveAvailable} fullscreen={fullscreen} showHelp={showHelp} resetSave={resetSave}/>}
     {panel === 'help' && <button className="small-button guide-fullscreen" onClick={fullscreen}><Icon name="expand"/>Toggle fullscreen</button>}
     {panel === 'rewards' && <>
       <div className="tent-summary"><img src="/assets/atia/buba-avatar.png" alt="Buba"/><div><strong>{tentStages[game.tentStage]}</strong><p>{game.tentStage === 2 ? 'A real roof. A warm light. A place to belong.' : 'A few supplies today. A brighter village tomorrow.'}</p><RankProgress game={game}/></div></div>
@@ -112,13 +116,14 @@ export default function App() {
   const [game, setGame] = useState(() => derive(initialState()));
   const [help, setHelp] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [settings, setSettings] = useState(false);
   const [fullscreenNote, setFullscreenNote] = useState('');
   useEffect(() => {
     const instance = createGame(mount.current, setGame);
     controller.current = instance;
     return () => { instance.destroy(); controller.current = null; };
   }, []);
-  const panel = help ? 'help' : paused ? 'pause' : game.panel;
+  const panel = help ? 'help' : settings ? 'settings' : paused ? 'pause' : game.panel;
   useEffect(() => {
     controller.current?.command('setPaused', Boolean(panel));
     controller.current?.command('setInputEnabled', !panel);
@@ -130,14 +135,23 @@ export default function App() {
   }, [game.scene]);
   const command = (action, payload) => {
     if (action === 'retreat') {
-      setHelp(false); setPaused(false);
+      setHelp(false); setPaused(false); setSettings(false);
       controller.current?.command('setPaused', false);
       controller.current?.command('setInputEnabled', true);
     }
-    controller.current?.command(action, payload);
+    return controller.current?.command(action, payload);
+  };
+  const resetSave = () => {
+    const result = command('resetSave');
+    if (result?.ok) { setHelp(false); setPaused(false); setSettings(false); setFullscreenNote(''); }
+    return result;
   };
   const closePanel = useRef(null);
-  closePanel.current = () => { setHelp(false); setPaused(false); command('closePanel'); };
+  closePanel.current = () => {
+    if (help) setHelp(false);
+    else if (settings) setSettings(false);
+    else { setPaused(false); command('closePanel'); }
+  };
   const stableClose = useRef(() => closePanel.current()).current;
   const combat = game.scene === 'combat', dodge = combat && game.phase === 'DODGE_PHASE';
   const story = ['intro', 'dialogue'].includes(game.scene);
@@ -170,8 +184,9 @@ export default function App() {
         <div className="location-title"><span>THE WORLD OF LUNACIA</span><strong>{game.scene === 'map' ? 'The forest trail' : 'Atia Village'}</strong></div>
         <div className="resources"><span title="Coins"><Icon name="coin" size={18}/>{game.coins}</span><span title="Timber"><Icon name="wood" size={18}/>{game.wood}</span><span title="Essence"><Icon name="spark" size={18}/>{game.essence}</span></div>
       </>}
-      <div className="utility-buttons">{!combat && <button className="icon-button fullscreen-button" aria-label="Toggle fullscreen" onClick={fullscreen}><Icon name="expand" size={19}/></button>}<button className="icon-button" disabled={combat} aria-label="How to play" onClick={() => setHelp(true)}><Icon name="book" size={19}/></button></div>
+      <div className="utility-buttons">{!combat && <button className="icon-button" aria-label="Settings" onClick={() => setSettings(true)}><Icon name="settings" size={19}/></button>}<button className="icon-button" disabled={combat} aria-label="How to play" onClick={() => setHelp(true)}><Icon name="book" size={19}/></button></div>
     </header>}
+    {story && !game.loading && <button className="icon-button story-settings" aria-label="Settings" onClick={() => setSettings(true)}><Icon name="settings"/></button>}
     {game.loading && <section className="loading-screen"><span className="eyebrow">A NEW STORY IN LUNACIA</span><h1>ATIA</h1><p>{game.assetError ? 'An asset could not load. Please refresh to try again.' : 'Finding the way home…'}</p><div className="progress-track"><span style={{ width: (game.loadProgress || 0) + '%' }}/></div></section>}
     {!game.loading && game.scene === 'intro' && <>
       <div className="story-brand"><Icon name="spark" size={18}/><span>AXIE · TALES OF ATIA</span><small>CHAPTER I</small></div>
@@ -211,6 +226,6 @@ export default function App() {
     {!game.loading && game.scene === 'defeat' && <section className="result-card"><span className="result-emblem"><Icon name="heart" size={34}/></span><p className="eyebrow">TAKE A BREATH, WANDERER</p><h1>Your story isn’t over.</h1><p>{game.tutorial ? 'Buba is frightened. Jump over his sword waves and dash through danger.' : 'Rest a moment. Return with full health and try this encounter again.'}</p><GoldButton onClick={() => command('retry')}>Try again</GoldButton><button className="text-button" onClick={() => command('retreat')}>{game.tutorial ? 'Back to the clearing' : 'Return to Atia'}</button></section>}
     {!game.saveAvailable && <div className="save-notice" role="status">Browser storage is unavailable. Progress will last for this session.</div>}
     {fullscreenNote && <button className="save-notice" onClick={() => setFullscreenNote('')}>{fullscreenNote} ×</button>}
-    {panel && <Panel game={game} command={command} close={stableClose} panel={panel} fullscreen={fullscreen} showHelp={() => setHelp(true)}/>}
+    {panel && <Panel key={panel} game={game} command={command} close={stableClose} panel={panel} fullscreen={fullscreen} showHelp={() => setHelp(true)} showSettings={() => setSettings(true)} resetSave={resetSave}/>}
   </main>;
 }

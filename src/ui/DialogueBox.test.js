@@ -13,6 +13,8 @@ test('touch reveal, highlighted words, and pause work without advancing the stor
   const advance=jest.fn(),props={title:'The light',text:'Atia needs the amulet.',onAdvance:advance};
   const view=render(<DialogueBox {...props}/>);fireEvent.click(screen.getByRole('button',{name:'Reveal dialogue'}));
   expect(view.container.querySelector('em')).toHaveTextContent('Atia');expect(advance).not.toHaveBeenCalled();
-  view.rerender(<DialogueBox {...props} paused/>);fireEvent.keyDown(document,{key:'Enter'});expect(advance).not.toHaveBeenCalled();
+  view.rerender(<DialogueBox {...props} paused/>);
+  // Modal buttons must retain their native Enter behavior while story input is paused.
+  expect(fireEvent.keyDown(document,{key:'Enter'})).toBe(true);expect(advance).not.toHaveBeenCalled();
   view.rerender(<DialogueBox {...props}/>);fireEvent.click(screen.getByRole('button',{name:'Continue'}));expect(advance).toHaveBeenCalledTimes(1);
 });

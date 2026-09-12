@@ -25,7 +25,7 @@ On the Android phone, open Chrome and enter `http://YOUR-COMPUTER-IP:3000`. Find
 
 At the time of this build, this computer’s address was **http://192.168.1.25:3000**. Your router may assign a different address later.
 
-The game is designed **landscape first**, with a full-screen village, a compact edge HUD, touch cards, and a separate ultimate button. Portrait is also playable: drag the village sideways or use Camp / Square / Gate to explore, and scroll the winding dungeon map to select a stage. Desktop keyboard controls remain available. The fullscreen button is available in the header where space permits, in the guide, and in the battle pause menu. Browser progress is stored per device and site address; saves do not sync between your PC and phone.
+The game is designed **landscape first**, with a full-screen village, a compact edge HUD, touch cards, and a separate ultimate button. Portrait is also playable: drag the village sideways or use Camp / Square / Gate to explore, and scroll the winding dungeon map to select a stage. Desktop keyboard controls remain available. Fullscreen is available in Settings and the guide. Open Settings with the gear on story and village screens, or through the battle pause menu. Browser progress is stored per device and site address; saves do not sync between your PC and phone.
 
 For a public web release, run `npm run build` and serve the `build/` directory through an HTTPS static host. No backend is required. The manifest supports a standalone home-screen window; offline play and a service worker are not included.
 
@@ -64,7 +64,7 @@ Each companion has four body-part attacks, with matching attachment-point animat
 
 The four cards sit side by side in landscape and form a compact two-by-two hand in portrait. The ultimate remains a separate charged ability.
 
-Each enemy attack has a three-second dodge phase. The danger lane is revealed in the final second; move to an unmarked lane before impact to take no damage. Guard reduces a hit and recovery abilities heal up to the character’s maximum HP. Three abilities charge an ultimate: Kotaro’s **Moonlit Eclipse** or Buba’s paintbrush **Paintstorm**.
+Each enemy attack has a 6.5-second dodge phase. Move your Axie, jump onto ledges, and dash through the actual projectiles. Guard reduces a hit and recovery abilities heal up to the character’s maximum HP. Three abilities charge an ultimate: Kotaro’s **Moonlit Eclipse** or Buba’s paintbrush **Paintstorm**.
 
 Momo’s blessing adds 5% to the dodge phase and warning window. It is deterministic, permanent in this browser’s save, and never stacks from repeat rescues.
 
@@ -72,7 +72,9 @@ Momo’s blessing adds 5% to the dodge phase and warning window. It is determini
 
 Adventure Rank thresholds are 0, 50, 140, 280, and 460 total XP. Buba’s encounter grants 60 XP once. First clears grant 30 / 45 / 90 XP; repeat clears grant 20 XP. Each rank’s supplies can be claimed once. Coins, timber, and essence are collected for the restoration prototype; tent improvements currently follow rank automatically.
 
-The local save key is `atia-adventure-v1`. Story checkpoints, companions, claims, cleared stages, resources, and rescued villagers survive reloads. An unfinished encounter restarts from the village (or Buba’s introduction before the prologue is complete). Retry restores full health at the same encounter. Clearing site data starts a new story. If browser storage is blocked, a notice explains that progress lasts only for the current session.
+The local save key is `atia-adventure-v1`. Story checkpoints, companions, claims, cleared stages, resources, and rescued villagers survive reloads. An unfinished encounter restarts from the village (or Buba’s introduction before the prologue is complete). Retry restores full health at the same encounter. If browser storage is blocked, a notice explains that progress lasts only for the current session.
+
+To replay from the beginning, choose **Settings → Reset save data → Delete save and restart**. Confirmation clears this browser’s Atia progress and restarts the intro as Kotaro, including when an encounter is paused. **Keep my save** cancels without deleting anything. Other browser data is untouched. The new adventure saves normally; a failed deletion keeps your current adventure and shows an error.
 
 ## Validate
 

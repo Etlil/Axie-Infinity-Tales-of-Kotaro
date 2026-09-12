@@ -52,6 +52,15 @@ export function createSession(onState, { storage = null } = {}) {
   else if (state.tutorialWon) state.scene = 'dialogue';
   return {
     state, handler: null,
+    resetSave() {
+      // Remove only Atia's profile. A blocked deletion must leave the current
+      // adventure intact, so the UI can report the failure and offer a retry.
+      try { storage?.removeItem(SAVE_KEY); } catch { return false; }
+      this.state = derive({ ...initialState(), saveAvailable: Boolean(storage) });
+      lastSaved = '';
+      this.emit();
+      return true;
+    },
     patch(update) { this.state = derive({ ...this.state, ...update }); this.emit(); return this.state; },
     emit() {
       if (storage) {

@@ -1,6 +1,6 @@
 import { bosses } from '../data/bosses';
-import { createSession, SAVE_KEY } from './state';
-const memory = () => { const data={};return {getItem:key=>data[key],setItem:(key,value)=>{data[key]=value;}}; };
+import { createSession, derive, initialState, SAVE_KEY } from './state';
+const memory = () => { const data={};return {getItem:key=>data[key],setItem:(key,value)=>{data[key]=value;},removeItem:key=>{delete data[key];}}; };
 function unlocked(storage) { const s=createSession(jest.fn(),{storage});s.finishTutorial();s.finishPrologue();return s; }
 
 test('Buba must be defeated before the amulet and playable companion unlock',()=>{
@@ -85,4 +85,35 @@ test('new encounters restore health but retain companions, ranks, claims and ble
   s.patch({playerHP:0,roomIndex:2,turn:9,guard:8,dodges:3,hits:7,dodgeActive:true,dodgeX:900,dodgeY:435,grounded:false});
   s.startRun();
   expect(s.state).toMatchObject({playerHP:100,roomIndex:0,turn:1,guard:0,dodges:0,hits:0,dodgeActive:false,dodgeX:330,dodgeY:600,grounded:true,bonus:.05,claimedRewards:[1]});
+});
+
+test('reset clears every checkpoint and encounter while preserving unrelated browser data',()=>{
+  const storage=memory(),s=unlocked(storage);
+  storage.setItem('another-app','keep this');
+  s.rescue();s.claimReward(1);s.completeStage(0);s.selectCharacter('buba');
+  s.patch({scene:'combat',phase:'DODGE_PHASE',loading:false,introStep:3,dialogueIndex:5,xp:460,wood:90,
+    playerHP:3,charge:3,enemy:bosses.momo,enemyHP:15,dodgeActive:true,panel:'settings',result:{kind:'rescued'}});
+  expect(s.resetSave()).toBe(true);
+  expect(s.state).toEqual(derive(initialState()));
+  expect(storage.getItem('another-app')).toBe('keep this');
+  expect(createSession(null,{storage}).state).toEqual(derive(initialState()));
+  // A new adventure still autosaves normally after resetting.
+  s.patch({introStep:1});
+  expect(createSession(null,{storage}).state.introStep).toBe(1);
+});
+
+test('failed deletion preserves both the saved profile and the current encounter',()=>{
+  const storage=memory(),s=unlocked(storage);
+  s.patch({scene:'combat',loading:false,playerHP:7});
+  const before=s.state,saved=storage.getItem(SAVE_KEY);
+  storage.removeItem=()=>{throw Error('blocked');};
+  expect(s.resetSave()).toBe(false);
+  expect(s.state).toBe(before);
+  expect(storage.getItem(SAVE_KEY)).toBe(saved);
+});
+
+test('reset also works for a session with no storage',()=>{
+  const s=unlocked();
+  expect(s.resetSave()).toBe(true);
+  expect(s.state).toEqual(derive({...initialState(),saveAvailable:false}));
 });

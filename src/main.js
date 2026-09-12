@@ -81,6 +81,18 @@ export function createGame(parent, onState) {
       } else if (action === 'setPaused') {
         paused = Boolean(payload);
         applyPause();
+      } else if (action === 'resetSave') {
+        if (!game?.scene || session.state.loading) return { ok: false, error: 'The adventure is still loading. Please try again in a moment.' };
+        if (!session.resetSave()) return { ok: false, error: 'Your browser could not delete the save. Your adventure is unchanged. Please try again.' };
+        // Stop paused scenes too: their pending attacks must never reach the
+        // fresh adventure. Keep the loaded textures and restart the intro.
+        session.handler = null;
+        game.scene.getScenes(false).forEach(scene => game.scene.stop(scene.sys.settings.key));
+        paused = false;
+        inputEnabled = true;
+        applyInput(game);
+        game.scene.start('IntroScene');
+        return { ok: true };
       } else session.command(action, payload);
     },
     getState() { return { ...session.state }; },
