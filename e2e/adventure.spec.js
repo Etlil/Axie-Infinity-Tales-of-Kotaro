@@ -118,10 +118,17 @@ test('Android touch controls, portrait and landscape, panel focus and save resto
   await savedVillage(page);
   await page.screenshot({path:'test-results/atia-village-mobile.png'});
   await visibleControls(page,'.village-dock button');
+  const beforePan = (await page.locator('.world-stage').boundingBox()).x;
+  const touch = await context.newCDPSession(page);
+  await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:275,y:390}]});
+  await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:125,y:390}]});
+  await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  expect((await page.locator('.world-stage').boundingBox()).x).toBeLessThan(beforePan-100);
   await page.getByRole('button',{name:'How to play'}).tap();
   await expect(page.getByRole('dialog',{name:'Traveler’s guide'})).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('button',{name:'How to play'})).toBeFocused();
+  await page.getByRole('button',{name:'View camp',exact:true}).tap();
   await page.getByRole('button',{name:/Buba’s tent/}).tap();
   await page.getByRole('button',{name:'Claim rank 1',exact:true}).tap();
   await page.screenshot({path:'test-results/atia-rewards-mobile.png'});
@@ -136,6 +143,13 @@ test('Android touch controls, portrait and landscape, panel focus and save resto
   await visibleControls(page,'.lane-button');
   await page.getByRole('button',{name:'Right lane',exact:true}).tap();
   await expect(page.getByRole('button',{name:'Right lane',exact:true})).toHaveAttribute('aria-pressed','true');
+  await page.getByRole('button',{name:'Pause encounter'}).tap();
+  await expect(page.getByRole('dialog',{name:'Game paused'})).toBeVisible();
+  const frozenTimer = await page.locator('.dodge-timer').textContent();
+  // Wait longer than the warning window to prove the scene clock is frozen.
+  await page.waitForTimeout(1100);
+  await expect(page.locator('.dodge-timer')).toHaveText(frozenTimer);
+  await page.getByRole('button',{name:'Resume encounter'}).tap();
   await page.screenshot({path:'test-results/atia-dodge-mobile.png'});
   await page.setViewportSize({width:844,height:390});
   await page.waitForFunction(()=>document.querySelector('.ability-card:not(:disabled)'));
@@ -145,6 +159,7 @@ test('Android touch controls, portrait and landscape, panel focus and save resto
   await expect(page.locator('.lane-button')).toHaveCount(3);
   await visibleControls(page,'.lane-button');
   await page.getByRole('button',{name:'Left lane',exact:true}).tap();
+  await page.getByRole('button',{name:'Pause encounter'}).tap();
   await page.getByRole('button',{name:'Retreat from encounter'}).tap();
   await expect(page.locator('.scene-village')).toBeVisible();
   await page.screenshot({path:'test-results/atia-village-landscape.png'});

@@ -4,7 +4,7 @@ import {bosses} from '../data/bosses';
 export default class VictoryScene extends SceneBase{
   constructor(){super('VictoryScene');}
   create(){
-    backdrop(this,this.state.roomIndex===2?'lagoon':'battle');
+    backdrop(this,this.state.roomIndex===2?'lagoon':'battle',{image:false});
     this.bindScene('victory','VICTORY',this.state.result?.kind==='purify'?'The nightmare has weakened. Use Buba’s amulet.':'Another path is clear.');
     fighter(this,450,480,this.state.activeCharacter,1.7);
     if(this.state.roomIndex===2){

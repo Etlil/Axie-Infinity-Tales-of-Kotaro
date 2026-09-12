@@ -15,6 +15,7 @@ export function createGame(parent, onState) {
   let resizeObserver = null;
   let resizeFrame = null;
   let inputEnabled = true;
+  let paused = false;
   let storage = null;
   try { storage = window.localStorage; } catch { /* Session play still works when storage is blocked. */ }
   const session = createSession((snapshot) => {
@@ -24,6 +25,12 @@ export function createGame(parent, onState) {
     if (!instance?.input) return;
     instance.input.enabled = inputEnabled;
     if (instance.input.keyboard) instance.input.keyboard.enabled = inputEnabled;
+  };
+  const applyPause = () => {
+    const scene = game?.scene?.getScene('CombatScene');
+    if (!scene) return;
+    if (paused && scene.sys.isActive()) game.scene.pause('CombatScene');
+    else if (!paused && scene.sys.isPaused()) game.scene.resume('CombatScene');
   };
   const config = {
     type: Phaser.AUTO,
@@ -71,6 +78,9 @@ export function createGame(parent, onState) {
       if (action === 'setInputEnabled') {
         inputEnabled = Boolean(payload);
         applyInput(game);
+      } else if (action === 'setPaused') {
+        paused = Boolean(payload);
+        applyPause();
       } else session.command(action, payload);
     },
     getState() { return { ...session.state }; },

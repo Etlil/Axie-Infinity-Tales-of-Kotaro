@@ -12,8 +12,7 @@ export default class CombatScene extends SceneBase {
     this.enemy = this.state.enemy;
     this.dodgeView = { lane: 1, dangerLane: null, dodgeActive: false, warningActive: false };
     this.lastPublishedDodge = '';
-    backdrop(this, this.state.tutorial ? 'village' : this.enemy.id === 'momo' ? 'lagoon' : 'battle');
-    this.add.rectangle(600, 400, 1200, 800, 0x101c24, .18);
+    backdrop(this, this.state.tutorial ? 'village' : this.enemy.id === 'momo' ? 'lagoon' : 'battle', { image: false });
     this.bindScene('combat', 'PLAYER_TURN', 'Choose an ability. Watch the warning, then tap a safe lane.', { enemyCard: null });
     this.player = fighter(this, 320, 460, this.state.activeCharacter, 1.35);
     this.enemySprite = fighter(this, 890, 445, this.enemy.id === 'buba' ? 'buba' : this.enemy.id === 'momo' ? 'momo' : 'mob', 1.35, 'left');

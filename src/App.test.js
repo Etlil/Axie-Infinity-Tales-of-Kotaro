@@ -63,3 +63,15 @@ test('help disables world input and restores focus on Escape',()=>{
  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
  expect(command).toHaveBeenLastCalledWith('setInputEnabled',true);expect(help).toHaveFocus();
 });
+
+test('pausing a dodge locks the engine, and retreat resumes it before navigating',()=>{
+ render(<App/>);publish({scene:'combat',phase:'DODGE_PHASE',enemy:bosses.buba,dodgeRemaining:2.4});
+ fireEvent.click(screen.getByRole('button',{name:'Pause encounter'}));
+ expect(screen.getByRole('dialog',{name:'Game paused'})).toBeInTheDocument();
+ expect(command).toHaveBeenCalledWith('setPaused',true);
+ expect(command).toHaveBeenLastCalledWith('setInputEnabled',false);
+ command.mockClear();
+ fireEvent.click(screen.getByRole('button',{name:'Retreat from encounter'}));
+ expect(command.mock.calls.slice(0,3)).toEqual([['setPaused',false],['setInputEnabled',true],['retreat',undefined]]);
+ expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});

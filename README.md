@@ -25,7 +25,7 @@ On the Android phone, open Chrome and enter `http://YOUR-COMPUTER-IP:3000`. Find
 
 At the time of this build, this computer’s address was **http://192.168.1.25:3000**. Your router may assign a different address later.
 
-The game supports portrait and landscape, touch cards and lane controls, and desktop keyboard controls. Landscape provides a larger view of the village. The fullscreen button appears where screen space permits. Browser progress is stored per device and site address; saves do not sync between your PC and phone.
+The game is designed **landscape first**, with a full-screen village, a compact edge HUD, touch cards, and a separate ultimate button. Portrait is also playable: drag the village sideways or use Camp / Square / Gate to explore, and scroll the winding dungeon map to select a stage. Desktop keyboard controls remain available. The fullscreen button is available in the header where space permits, in the guide, and in the battle pause menu. Browser progress is stored per device and site address; saves do not sync between your PC and phone.
 
 For a public web release, run `npm run build` and serve the `build/` directory through an HTTPS static host. No backend is required. The manifest supports a standalone home-screen window; offline play and a service worker are not included.
 
@@ -46,6 +46,10 @@ For a public web release, run `npm run build` and serve the `build/` directory t
 | Dodge | Tap Left, Center, or Right | A / S / D, or Left / Down / Right |
 | Stage | Select a node and Enter encounter | Enter selected stage |
 | Close a panel | Close button or backdrop | Escape |
+| Pause battle | Pause button at the top right | Focus the pause button and press Enter |
+| Resume / retreat | Choose an action in the pause menu | Tab to the action and press Enter |
+
+The pause menu freezes the encounter, including dodge timers, animations, and queued attacks. Battles also pause when the browser tab becomes hidden; resume when you return. Panel headers stay visible while their contents scroll, including rank rewards on short landscape screens. Touch controls respect display safe areas.
 
 Each enemy attack has a three-second dodge phase. The danger lane is revealed in the final second; move to an unmarked lane before impact to take no damage. Guard reduces a hit and recovery abilities heal up to the character’s maximum HP. Three abilities charge an ultimate: Kotaro’s **Moonlit Eclipse** or Buba’s paintbrush **Paintstorm**.
 
@@ -66,12 +70,13 @@ npm run test:e2e
 npm run build
 ```
 
-Browser checks exercise the full prologue and rescue loop, defeat/retry, save restoration, one-time rewards, and Android touch emulation in portrait and landscape. Screenshots are written to `test-results/` (git-ignored).
+Browser checks exercise the full prologue and rescue loop, defeat/retry, save restoration, one-time rewards, and Android touch emulation in portrait and landscape. They also check an actual touch drag across the village, camp navigation, and a frozen dodge timer while the pause menu is open. Screenshots are written to `test-results/` (git-ignored).
 
 ## Source and assets
 
 - `src/App.js`, `src/App.css`: story, village HUD, touch controls, accessible panels, and responsive layouts.
 - `src/origins-theme.css`: cartoon interface, Origins parchment/wood artwork, and locally hosted Changa One / Nunito fonts. Changa One is a visual match; the exact Origins font has not been verified. Font and artwork sources are recorded in the asset provenance document.
+- `src/mobile-game.css`, `src/ui/WorldView.js`, `src/ui/JourneyMap.js`: full-screen world composition, safe-area HUD, village panning, portrait stage route, scrolling panels, and compact battle controls. The CSS owns the canvas display bounds; Phaser refreshes its input scale from those measured bounds.
 - `src/main.js`: Phaser lifecycle and React bridge.
 - `src/scenes/`: loading, arrival, Buba’s dialogue, village, winding route, combat, rescue, and defeat.
 - `src/game/state.js`: validated local saves, unlocks, ranks, rewards, and encounter state.

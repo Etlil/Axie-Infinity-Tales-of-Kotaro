@@ -3,8 +3,11 @@ import { createGame } from './main';
 import { initialState, derive } from './game/state';
 import { arrival, bubaDialogue, rankRewards, tentStages } from './data/story';
 import { dungeonRooms } from './data/bosses';
+import WorldView from './ui/WorldView';
+import JourneyMap from './ui/JourneyMap';
 import './App.css';
 import './origins-theme.css';
+import './mobile-game.css';
 
 function Icon({ name, size = 22 }) {
   const paths = {
@@ -20,6 +23,8 @@ function Icon({ name, size = 22 }) {
     gift: <><path d="M3 9h18v5H3ZM5 14v7h14v-7M12 9v12"/><path d="M12 9C2 8 7-3 12 9c5-12 10-1 0 0Z"/></>,
     check: <path d="m5 12 4 4L19 6"/>,
     close: <path d="m6 6 12 12M6 18 18 6"/>,
+    pause: <><path d="M8 5v14M16 5v14" strokeWidth="5"/></>,
+    play: <path d="m8 4 12 8-12 8Z"/>,
     sword: <path d="m14 3 7-1-1 7L9 20l-5-5ZM3 13l8 8M3 21l3-3"/>,
     shield: <path d="m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6Z"/>,
     moon: <path d="M20 15A9 9 0 0 1 9 3a9 9 0 1 0 11 12Z"/>,
@@ -43,7 +48,7 @@ function Health({ name, hp, max, enemy = false, guard = 0 }) {
   return <div className={'health ' + (enemy ? 'enemy-health' : '')}><div><strong>{name}</strong><span>{hp} / {max}</span></div><div className="health-track"><span style={{ width: Math.max(0, hp / max * 100) + '%' }}/></div><small>{guard ? guard + ' SHIELD' : enemy ? 'OPPONENT' : 'YOUR AXIE'}</small></div>;
 }
 
-function Panel({ game, command, close, panel }) {
+function Panel({ game, command, close, panel, fullscreen, showHelp }) {
   const dialog = useRef(null);
   useEffect(() => {
     const previous = document.activeElement;
@@ -60,10 +65,13 @@ function Panel({ game, command, close, panel }) {
     document.addEventListener('keydown', onKey);
     return () => { document.removeEventListener('keydown', onKey); if (previous?.isConnected) previous.focus(); };
   }, [close]);
-  const titles = { rewards: "Buba’s tent", team: 'Your companions', journal: 'The Atia journal', amulet: 'A little light, handmade', help: 'Traveler’s guide' };
+  const titles = { rewards: "Buba’s tent", team: 'Your companions', journal: 'The Atia journal', amulet: 'A little light, handmade', help: 'Traveler’s guide', pause: 'Game paused' };
   return <div className="modal-backdrop" onClick={close}><section ref={dialog} className={'panel panel-' + panel} role="dialog" aria-modal="true" aria-labelledby="panel-title" onClick={event => event.stopPropagation()}>
     <button className="icon-button close-panel" onClick={close} aria-label="Close panel"><Icon name="close"/></button>
     <p className="eyebrow">{panel === 'rewards' ? 'A HOME, ONE RANK AT A TIME' : 'ATIA • CHAPTER ONE'}</p><h2 id="panel-title">{titles[panel]}</h2>
+    <div className="panel-body">
+    {panel === 'pause' && <div className="pause-actions"><p>Take your time. The encounter will wait for you.</p><GoldButton onClick={close}><Icon name="play"/>Resume encounter</GoldButton><button className="small-button" onClick={fullscreen}><Icon name="expand"/>Toggle fullscreen</button><button className="small-button" onClick={showHelp}><Icon name="book"/>How to play</button><button className="text-button" aria-label="Retreat from encounter" onClick={() => command('retreat')}>{game.tutorial ? 'Return to the clearing' : 'Return to Atia'}</button></div>}
+    {panel === 'help' && <button className="small-button guide-fullscreen" onClick={fullscreen}><Icon name="expand"/>Toggle fullscreen</button>}
     {panel === 'rewards' && <>
       <div className="tent-summary"><img src="/assets/atia/buba-avatar.png" alt="Buba"/><div><strong>{tentStages[game.tentStage]}</strong><p>{game.tentStage === 2 ? 'A real roof. A warm light. A place to belong.' : 'A few supplies today. A brighter village tomorrow.'}</p><RankProgress game={game}/></div></div>
       <div className="tent-tiers">{['Rank 1 · Shelter', 'Rank 3 · Mended tent', 'Rank 5 · Lodge'].map((s, i) => <span key={s} className={i <= game.tentStage ? 'reached' : ''}><Icon name={i === 2 ? 'home' : 'tent'} size={18}/>{s}</span>)}</div>
@@ -77,6 +85,7 @@ function Panel({ game, command, close, panel }) {
     {panel === 'amulet' && <><div className="amulet-art"><Icon name="spark" size={72}/></div><blockquote>“It cannot mend everything. But it can bring someone back.”<cite>— Buba</cite></blockquote><p>Buba made this amulet from fragments of Atia’s old light. Weaken a corrupted guardian in battle, then use its light to reverse the corruption.</p><div className="journal-note"><Icon name="heart"/><div><strong>{game.rescued.length ? 'Momo is home' : 'Your first rescue awaits'}</strong><p>{game.rescued.length ? 'Momo’s blessing grants 5% more time in every dodge phase.' : 'Follow the forest path to Momo’s Lagoon. Bring a villager back to Atia.'}</p></div></div></>}
     {panel === 'journal' && <div className="journal-pages"><span className="journal-date">SIX MONTHS AFTER THE RAID</span><h3>The village that waited</h3><p>Nightmare Axies raided Atia six months ago. Almost everyone became corrupted. Some now serve the enemy; others wander alone, lost in what remains of their old lives.</p><p>Only Buba stayed. He built a small tent from what he could salvage and guarded the empty village. When a white wanderer arrived, fear made him draw his sword.</p><h3>A promise in the clearing</h3><p>After the battle, Buba found the courage to trust again. He gave you his handmade amulet and asked for help restoring Atia, one home and one friend at a time.</p><div className="journal-note"><Icon name="compass"/><div><strong>{game.rescued.length ? 'Chapter one complete' : 'A promise to keep'}</strong><p>{game.rescued.length ? 'Momo is safe. Keep exploring to grow your Adventure Rank and improve Buba’s home.' : 'Enter the village gate, clear the forest trail, and reverse Momo’s corruption.'}</p></div></div></div>}
     {panel === 'help' && <><ol className="guide-list"><li><strong>Play an ability.</strong> Tap a card, or use 1 / 2 / 3. Three abilities charge your ultimate (4).</li><li><strong>Watch, then dodge.</strong> The marked lane becomes dangerous in the final second. Tap Left, Center, or Right to move to a safe lane. Keyboard: A / S / D or arrows.</li><li><strong>Bring Atia back.</strong> The village gate opens your route. Claim Adventure Rank rewards at Buba’s tent. Switch companions from the Team menu.</li><li><strong>Use Buba’s amulet.</strong> Defeat the corrupted lagoon guardian, then choose “Use the amulet” to rescue Momo.</li></ol><p className="journal-note">Your story, companions, rewards, and rank save automatically in this browser. An unfinished encounter restarts from the village or Buba’s clearing after a reload.</p><p className="muted">Touch controls work in portrait and landscape. Landscape gives the village more room.</p></>}
+    </div>
   </section></div>;
 }
 
@@ -84,17 +93,33 @@ export default function App() {
   const mount = useRef(null), controller = useRef(null);
   const [game, setGame] = useState(() => derive(initialState()));
   const [help, setHelp] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [fullscreenNote, setFullscreenNote] = useState('');
   useEffect(() => {
     const instance = createGame(mount.current, setGame);
     controller.current = instance;
     return () => { instance.destroy(); controller.current = null; };
   }, []);
-  const panel = help ? 'help' : game.panel;
-  useEffect(() => { controller.current?.command('setInputEnabled', !panel); }, [panel]);
-  const command = (action, payload) => controller.current?.command(action, payload);
+  const panel = help ? 'help' : paused ? 'pause' : game.panel;
+  useEffect(() => {
+    controller.current?.command('setPaused', Boolean(panel));
+    controller.current?.command('setInputEnabled', !panel);
+  }, [panel]);
+  useEffect(() => {
+    const hide = () => { if (document.hidden && game.scene === 'combat') setPaused(true); };
+    document.addEventListener('visibilitychange', hide);
+    return () => document.removeEventListener('visibilitychange', hide);
+  }, [game.scene]);
+  const command = (action, payload) => {
+    if (action === 'retreat') {
+      setHelp(false); setPaused(false);
+      controller.current?.command('setPaused', false);
+      controller.current?.command('setInputEnabled', true);
+    }
+    controller.current?.command(action, payload);
+  };
   const closePanel = useRef(null);
-  closePanel.current = () => { setHelp(false); command('closePanel'); };
+  closePanel.current = () => { setHelp(false); setPaused(false); command('closePanel'); };
   const stableClose = useRef(() => closePanel.current()).current;
   const combat = game.scene === 'combat', dodge = combat && game.phase === 'DODGE_PHASE';
   const story = ['intro', 'dialogue'].includes(game.scene);
@@ -108,17 +133,17 @@ export default function App() {
   };
   return <main className={'game-app scene-' + game.scene + (story ? ' story-scene' : '')} data-scene={game.scene} data-phase={game.phase} data-enemy={game.enemy?.id} style={{ '--village-image': 'url("/assets/atia/village.png")', '--kotaro-image': 'url("/assets/atia/kotaro-sheet.png")', '--buba-image': 'url("/assets/atia/buba-sheet.png")', '--arena-image': 'url("/assets/atia/' + (game.tutorial ? 'village.png' : game.roomIndex === 2 ? 'lagoon-arena.jpg' : 'forest-arena.jpg') + '")' }}>
     <div className="world-fill" aria-hidden="true"/>
-    <div className="world-stage"><div className="game-mount" ref={mount} aria-label="Atia game world"/>
+    <WorldView scene={game.scene}><div className="game-mount" ref={mount} aria-label="Atia game world"/>
       {game.scene === 'village' && <div className="world-hotspots">
         <button className="hotspot tent-hotspot" onClick={() => command('openPanel', 'rewards')}><span className="hotspot-icon"><Icon name="tent"/>{game.availableRewards > 0 && <i>{game.availableRewards}</i>}</span><strong>Buba’s tent</strong><small>{game.availableRewards ? 'Rewards to claim' : tentStages[game.tentStage]}</small></button>
         <button className="hotspot gate-hotspot" onClick={() => command('openMap')}><span className="hotspot-icon"><Icon name="compass"/></span><strong>Village gate</strong><small>Begin an expedition</small></button>
         <span className="square-label">ATIA SQUARE</span>
       </div>}
-    </div>
+    </WorldView>
     <div className="world-shade" aria-hidden="true"/>
     {!story && !game.loading && <header className={'game-header ' + (combat ? 'battle-header' : '')}>
       {combat ? <>
-        <button className="icon-button" aria-label="Retreat from encounter" onClick={() => command('retreat')}><Icon name="back"/></button>
+        <button className="icon-button pause-control" aria-label="Pause encounter" onClick={() => setPaused(true)}><Icon name="pause"/></button>
         <Health name={heroName} hp={game.playerHP} max={game.playerMaxHP} guard={game.guard}/>
         <span className="turn-badge"><small>TURN</small>{String(game.turn).padStart(2, '0')}</span>
         <Health enemy name={game.enemy?.name || 'Opponent'} hp={game.enemyHP} max={game.enemy?.maxHP || 100}/>
@@ -138,8 +163,8 @@ export default function App() {
     </>}
     {!game.loading && game.scene === 'dialogue' && <><div className="chapter-ribbon"><Icon name="heart"/><span>A stranger becomes a friend</span></div><section className="story-card dialogue-card"><img className="speaker-portrait" src="/assets/atia/buba-avatar.png" alt="Buba"/><div><span className="eyebrow">BUBA · THE LAST VILLAGER</span><h2>{dialogue.title}</h2><p>{dialogue.text}</p><div className="story-actions"><span className="story-dots">{bubaDialogue.map((s, i) => <i className={i === game.dialogueIndex ? 'active' : ''} key={i}/>)}</span><GoldButton onClick={() => command('nextDialogue')}>{game.dialogueIndex === bubaDialogue.length - 1 ? 'Restore Atia' : game.dialogueIndex === 4 ? 'Accept the amulet' : 'Continue'}</GoldButton></div></div></section></>}
     {!game.loading && game.scene === 'village' && <>
-      <section className="quest-card"><span className="eyebrow">CHAPTER I · A PROMISE TO KEEP</span><h1>{game.rescued.length ? 'A light has come home.' : 'Let’s bring them home.'}</h1><p>{game.rescued.length ? 'Momo is safe. Grow your rank to rebuild Buba’s home.' : 'Beyond the gate, the forest remembers. Find the villagers lost to the nightmare.'}</p><span><Icon name={game.rescued.length ? 'check' : 'compass'} size={15}/>{game.rescued.length ? 'Momo rescued · +5% dodge time' : game.completedStages.length + ' / 3 forest encounters cleared'}</span></section>
-      <div className="village-caption"><span className="eyebrow">SIX MONTHS LATER</span><h2>A home worth fighting for.</h2></div>
+      <button className="quest-card" aria-label="Open story quest" onClick={() => command('openPanel', 'journal')}><span className="quest-symbol"><Icon name={game.rescued.length ? 'check' : 'book'}/></span><span className="quest-copy"><small>STORY QUEST · CHAPTER 01</small><strong>{game.rescued.length ? 'A friend comes home' : 'A promise to keep'}</strong><span>{game.rescued.length ? 'Momo rescued · +5% dodge time' : 'Find Momo · ' + game.completedStages.length + ' / 3 cleared'}</span></span><Icon name="arrow" size={16}/></button>
+      <div className="village-caption"><Icon name="home" size={18}/><div><span className="eyebrow">CHAPTER 01</span><h2>Atia Village</h2></div></div>
       <nav className="village-dock" aria-label="Village menu">
         <button className="dock-item active" onClick={() => command('visitVillage')}><Icon name="home"/><span>Village</span></button>
         <button className="dock-item" onClick={() => command('openPanel', 'team')}><Icon name="team"/><span>Team</span></button>
@@ -150,6 +175,7 @@ export default function App() {
       </nav>
     </>}
     {!game.loading && game.scene === 'map' && <>
+      <JourneyMap game={game} command={command}/>
       <section className="map-title"><button className="small-button" onClick={() => command('visitVillage')}><Icon name="back" size={17}/>Atia Village</button><p className="eyebrow">CHAPTER I · BEYOND THE GATE</p><h1>The road to Momo</h1><p>One step deeper. One friend closer.</p></section>
       <div className="map-stage-picker" aria-label="Forest stages">{dungeonRooms.map((room, i) => <button key={room.id} className={game.selectedStage === i ? 'selected' : ''} disabled={i > game.unlockedStage} onClick={() => command('selectStage', i)} aria-label={'Stage ' + (i + 1) + ': ' + room.location} aria-pressed={game.selectedStage === i}>{i > game.unlockedStage ? <Icon name="lock" size={15}/> : game.completedStages.includes(i) ? <Icon name="check" size={16}/> : i + 1}<span>{room.location}</span></button>)}</div>
       <section className="stage-detail"><div><span className="eyebrow">{game.selectedStage === 2 ? 'CORRUPTED GUARDIAN' : 'FOREST ENCOUNTER'} · STAGE 0{game.selectedStage + 1}</span><h2>{selected.location}</h2><p>{game.selectedStage === 2 ? 'Momo waits beneath the shadows. Carry Buba’s light into the lagoon.' : game.selectedStage === 1 ? 'The old crossing flickers with nightmare light. Clear a path through.' : 'Thorns have claimed the old trail. Take the first step beyond Atia.'}</p><div className="stage-facts"><span><Icon name="sword" size={16}/>{selected.maxHP} HP</span><span><Icon name="spark" size={16}/>{game.completedStages.includes(game.selectedStage) ? 20 : selected.xp} XP</span><span>{game.completedStages.includes(game.selectedStage) ? 'Replay available' : 'First clear'}</span></div></div><GoldButton onClick={() => command('enterDungeon')}>{game.completedStages.includes(game.selectedStage) ? 'Replay encounter' : 'Enter encounter'}</GoldButton></section>
@@ -158,13 +184,13 @@ export default function App() {
       <div className="encounter-heading"><span className="eyebrow">{game.tutorial ? 'PROLOGUE · A FRIGHTENED GUARDIAN' : game.roomIndex === 2 ? 'THE LAGOON GUARDIAN' : 'BEYOND THE GATE'}</span><h1>{game.tutorial ? 'Earn Buba’s trust' : game.enemy?.location}</h1>{game.enemyCard && game.phase !== 'PLAYER_TURN' && <span className={'enemy-intent ' + (game.enemyCard.ultimate ? 'ultimate-intent' : '')}><Icon name={game.enemyCard.ultimate ? 'spark' : 'sword'} size={15}/>{game.enemyCard.name} · {game.enemyCard.damage} DMG</span>}</div>
       <section className={'battle-controls ' + (dodge ? 'dodging' : '')} aria-label="Battle controls">
         <div className="battle-status"><strong>{dodge ? game.warningActive ? 'DANGER — MOVE NOW' : 'GET READY TO DODGE' : game.phase === 'PLAYER_TURN' ? 'YOUR TURN' : game.phase === 'RESOLVE_DODGE' ? game.lastDamage ? 'STAY IN THE FIGHT' : 'SAFE LANDING' : 'IN ACTION'}</strong><span role="status">{game.message}</span>{dodge && <b className="dodge-timer">{game.dodgeRemaining.toFixed(1)}s</b>}</div>
-        {dodge ? <><div className="dodge-track"><span style={{ width: Math.min(100, game.dodgeRemaining / (3 * (1 + game.bonus)) * 100) + '%' }}/></div><div className="lane-controls" aria-label="Dodge lanes">{['Left', 'Center', 'Right'].map((name, i) => <button key={name} className={'lane-button ' + (game.lane === i ? 'selected ' : '') + (game.dangerLane === i ? 'danger' : '')} aria-label={name + ' lane'} aria-pressed={game.lane === i} onClick={() => command('moveLane', i)}><span>{game.dangerLane === i ? '✕' : ['←', '↓', '→'][i]}</span><strong>{name}</strong><small>{game.dangerLane === i ? 'DANGER' : game.lane === i ? 'YOU ARE HERE' : 'TAP TO MOVE'}</small></button>)}</div><p className="control-footnote">Move to either unmarked lane before the timer ends.</p></> : <><div className="ability-cards">{game.cards.map((card, i) => <button className={'ability-card card-' + card.kind} key={card.id} disabled={game.phase !== 'PLAYER_TURN'} onClick={() => command('playCard', card.id)}><span className="ability-top"><span className="ability-symbol"><Icon name={card.kind === 'guard' ? 'shield' : card.kind === 'heal' ? 'heart' : 'sword'}/></span><span>{card.damage}<small>DMG</small></span><kbd>{i + 1}</kbd></span><strong>{card.name}</strong><small>{card.description}</small><span className="ability-label">{card.label}</span></button>)}</div><button className={'ultimate-button ' + (game.charge >= 3 ? 'ready' : '')} disabled={game.phase !== 'PLAYER_TURN' || game.charge < 3} onClick={() => command('playCard', game.ultimate.id)}><Icon name={game.activeCharacter === 'buba' ? 'spark' : 'moon'} size={20}/><strong>{game.ultimate.name}</strong><span className="charge-orbs">{[0,1,2].map(i => <i key={i} className={game.charge > i ? 'filled' : ''}/>)}</span><small>{game.charge >= 3 ? game.ultimate.damage + ' DMG · READY' : game.charge + ' / 3 CHARGE'}</small><kbd>4</kbd></button></>}
+        {dodge ? <><div className="dodge-track"><span style={{ width: Math.min(100, game.dodgeRemaining / (3 * (1 + game.bonus)) * 100) + '%' }}/></div><div className="lane-controls" aria-label="Dodge lanes">{['Left', 'Center', 'Right'].map((name, i) => <button key={name} className={'lane-button ' + (game.lane === i ? 'selected ' : '') + (game.dangerLane === i ? 'danger' : '')} aria-label={name + ' lane'} aria-pressed={game.lane === i} onClick={() => command('moveLane', i)}><span>{game.dangerLane === i ? '✕' : ['←', '↓', '→'][i]}</span><strong>{name}</strong><small>{game.dangerLane === i ? 'DANGER' : game.lane === i ? 'YOU ARE HERE' : 'TAP TO MOVE'}</small></button>)}</div><p className="control-footnote">Move to either unmarked lane before the timer ends.</p></> : <><div className="ability-cards">{game.cards.map((card, i) => <button className={'ability-card card-' + card.kind} key={card.id} disabled={game.phase !== 'PLAYER_TURN'} onClick={() => command('playCard', card.id)}><span className="ability-top"><span className="ability-symbol"><Icon name={card.kind === 'guard' ? 'shield' : card.kind === 'heal' ? 'heart' : 'sword'}/></span><span>{card.damage}<small>DMG</small></span><kbd>{i + 1}</kbd></span><strong>{card.name}</strong><small className="ability-description">{card.description}</small><span className="ability-label">{card.guard ? card.guard + ' SHIELD' : card.heal ? 'HEAL ' + card.heal : card.label}</span></button>)}</div><button className={'ultimate-button ' + (game.charge >= 3 ? 'ready' : '')} disabled={game.phase !== 'PLAYER_TURN' || game.charge < 3} onClick={() => command('playCard', game.ultimate.id)}><Icon name={game.activeCharacter === 'buba' ? 'spark' : 'moon'} size={20}/><strong>{game.ultimate.name}</strong><span className="ultimate-caption" aria-hidden="true">{game.charge >= 3 ? 'READY!' : game.charge + ' / 3'}</span><span className="charge-orbs">{[0,1,2].map(i => <i key={i} className={game.charge > i ? 'filled' : ''}/>)}</span><small>{game.charge >= 3 ? game.ultimate.damage + ' DMG · READY' : game.charge + ' / 3 CHARGE'}</small><kbd>4</kbd></button></>}
       </section>
     </>}
     {!game.loading && game.scene === 'victory' && <section className="result-card"><span className="result-emblem"><Icon name={game.result?.kind === 'purify' ? 'spark' : 'check'} size={34}/></span><p className="eyebrow">{game.result?.kind === 'purify' ? 'THE AMULET IS GLOWING' : game.result?.kind === 'rescued' ? 'A LIGHT RETURNS TO ATIA' : 'THE PATH IS CLEAR'}</p><h1>{game.result?.kind === 'purify' ? 'There’s still a light inside.' : game.result?.kind === 'rescued' ? 'Welcome home, Momo.' : 'A little further from fear.'}</h1><p>{game.result?.kind === 'purify' ? 'The nightmare is weakened. Use Buba’s amulet to bring Momo back.' : game.result?.kind === 'rescued' ? 'The corruption fades. Momo joins your village and gives you 5% more time to dodge.' : 'The next clearing is waiting. Your courage is helping Atia grow.'}</p>{game.result?.xp && <div className="result-rewards"><span><Icon name="spark"/>+{game.result.xp} XP</span><span><Icon name="coin"/>+{game.result.coins}</span><span>Rank {game.level}</span></div>}{game.result?.kind === 'purify' ? <GoldButton onClick={() => command('purify')}>Use the amulet</GoldButton> : <><GoldButton onClick={() => command(game.result?.kind === 'rescued' ? 'visitVillage' : 'returnMap')}>{game.result?.kind === 'rescued' ? 'Bring Momo home' : 'Continue journey'}</GoldButton><button className="text-button" onClick={() => command('visitVillage')}>Return to Atia</button></>}</section>}
     {!game.loading && game.scene === 'defeat' && <section className="result-card"><span className="result-emblem"><Icon name="heart" size={34}/></span><p className="eyebrow">TAKE A BREATH, WANDERER</p><h1>Your story isn’t over.</h1><p>{game.tutorial ? 'Buba is frightened. Hold your ground and move away from the marked lane.' : 'Rest a moment. Return with full health and try this encounter again.'}</p><GoldButton onClick={() => command('retry')}>Try again</GoldButton><button className="text-button" onClick={() => command('retreat')}>{game.tutorial ? 'Back to the clearing' : 'Return to Atia'}</button></section>}
     {!game.saveAvailable && <div className="save-notice" role="status">Browser storage is unavailable. Progress will last for this session.</div>}
     {fullscreenNote && <button className="save-notice" onClick={() => setFullscreenNote('')}>{fullscreenNote} ×</button>}
-    {panel && <Panel game={game} command={command} close={stableClose} panel={panel}/>}
+    {panel && <Panel game={game} command={command} close={stableClose} panel={panel} fullscreen={fullscreen} showHelp={() => setHelp(true)}/>}
   </main>;
 }

@@ -55,3 +55,26 @@ test('input commands are safe before boot and cleanup suppresses late state call
   expect(game.input.keyboard.enabled).toBe(false);
   expect(handler).toHaveBeenCalledTimes(1);
 });
+
+test('the pause menu freezes only an active encounter and resumes it once', async () => {
+  const controller = createGame(document.createElement('div'), jest.fn());
+  await Promise.resolve();
+  const game = Phaser.Game.mock.results[0].value;
+  let active = true, paused = false;
+  game.scene = {
+    getScene: () => ({ sys: { isActive: () => active, isPaused: () => paused } }),
+    pause: jest.fn(() => { active = false; paused = true; }),
+    resume: jest.fn(() => { active = true; paused = false; }),
+  };
+  controller.command('setPaused', true);
+  controller.command('setPaused', true);
+  expect(game.scene.pause).toHaveBeenCalledTimes(1);
+  expect(game.scene.pause).toHaveBeenCalledWith('CombatScene');
+  controller.command('setPaused', false);
+  controller.command('setPaused', false);
+  expect(game.scene.resume).toHaveBeenCalledTimes(1);
+  active = false;
+  controller.command('setPaused', true);
+  expect(game.scene.pause).toHaveBeenCalledTimes(1);
+  controller.destroy();
+});

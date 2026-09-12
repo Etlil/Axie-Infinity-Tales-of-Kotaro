@@ -3,7 +3,7 @@ import {backdrop,fighter} from '../game/world';
 export default class DialogueScene extends SceneBase{
   constructor(){super('DialogueScene');}
   create(){
-    backdrop(this);this.bindScene('dialogue','DIALOGUE','The first step toward rebuilding Atia.');
+    backdrop(this,'village',{image:false});this.bindScene('dialogue','DIALOGUE','The first step toward rebuilding Atia.');
     fighter(this,490,550,'kotaro',1.15);fighter(this,720,535,'buba',1.25,'left');
     if(this.state.dialogueIndex>=4){
       const glow=this.add.circle(609,418,34,0xe4dcac,.24);

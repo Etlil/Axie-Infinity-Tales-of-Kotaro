@@ -65,3 +65,5 @@ The public Origins kit contained no font files when checked on 2026-09-12. The e
 ## Original interface and effects
 
 The React/CSS layouts, illustrated button treatment, SVG icons, route nodes, story writing based on the user’s lore, paint effects, sword effects, and upgrade overlays were created for this project. The imported interface artwork above supplies the parchment frames, wooden sign, portrait ring, and rank medal. Source references are retained to make future asset replacement and licensing review straightforward.
+
+The 2026-09-12 mobile layout reuses these same assets. `src/ui/WorldView.js` frames and pans the village without modifying its bitmap. Combat/story backgrounds are displayed by the full-screen HTML layer, with animated characters and effects on a separately framed Phaser canvas. The portrait route in `src/ui/JourneyMap.js` is original SVG/CSS work using the existing stage names and character sprite sheets. No additional external artwork was imported for this layout.

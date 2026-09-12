@@ -1,8 +1,11 @@
 import Phaser from 'phaser';
 import { renderWorld as legacyWorld, drawAxie } from './art';
 
-export function backdrop(scene, kind = 'village') {
-  if (kind === 'map') {
+export function backdrop(scene, kind = 'village', { image = true } = {}) {
+  if (!image) {
+    // The responsive HTML layer supplies an uninterrupted full-screen arena.
+    // Keep only fighters and effects on the independently framed canvas.
+  } else if (kind === 'map') {
     scene.add.rectangle(600,400,1200,800,0x283f32);
     legacyWorld(scene,'map');
     scene.add.rectangle(600,400,1200,800,0x10271e,.22);
