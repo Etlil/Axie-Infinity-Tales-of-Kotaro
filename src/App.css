@@ -67,7 +67,7 @@
 .ability-cards{grid-template-columns:repeat(3,minmax(0,1fr))}.ability-card{min-width:0;overflow-wrap:anywhere}
 .scene-combat .world-fill,.scene-victory .world-fill{background-image:var(--arena-image)}
 @media(pointer:coarse) and (orientation:landscape){.game-header .resources{max-width:none;flex-shrink:0}.game-header .utility-buttons{flex-shrink:0}.game-header .icon-button{width:44px;height:44px}}
-.scene-combat[data-enemy="momo"] .lane-button.danger{background:#205b76;border-color:#a2e4f4}
-.scene-combat[data-enemy="momo"] .lane-button.danger>span,.scene-combat[data-enemy="momo"] .lane-button.danger small{color:#d6f7ff}
+.scene-combat[data-enemy="puffy"] .lane-button.danger{background:#205b76;border-color:#a2e4f4}
+.scene-combat[data-enemy="puffy"] .lane-button.danger>span,.scene-combat[data-enemy="puffy"] .lane-button.danger small{color:#d6f7ff}
 @media(pointer:coarse){.icon-button,.small-button,.gold-button,.map-stage-picker>button,.ultimate-button{min-height:44px}.icon-button{min-width:44px}.resources{max-width:116px}.battle-header>.icon-button{min-width:36px}.close-panel{min-width:44px;min-height:44px}}
 @media(max-height:520px) and (orientation:landscape){.ultimate-button{min-height:44px}.scene-combat .world-stage{top:35%}.battle-header .utility-buttons{display:none}.story-card .gold-button{min-height:44px}.map-stage-picker>button{min-height:44px}.stage-detail .gold-button{min-height:44px}.stage-detail p{line-height:1.5}}

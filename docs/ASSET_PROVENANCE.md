@@ -14,18 +14,24 @@ Keep the included [Origins license](../public/assets/atia/licenses/origins-LICEN
 | `kotaro-sword.glb` | [Kotaro sword equipment](https://github.com/jaatster/axie-3d-assets/blob/main/assets/equipment/kotaro-sword.glb) (source equipment reference; not fetched by the game) |
 | `buba.json`, `buba.atlas`, `1.png` | [Buba / starter 1 animation source](https://github.com/axieinfinity/axie-origins-asset-kit/tree/main/Assets/OriginsKit/PvE/Starters/1) |
 | `buba-avatar.png` | [Buba / starter 1 avatar](https://github.com/axieinfinity/axie-origins-asset-kit/blob/main/Assets/OriginsKit/PvE/Avatars/starters/1.png) |
-| `momo-avatar.png` | [Momo / starter 12 avatar](https://github.com/axieinfinity/axie-origins-asset-kit/blob/main/Assets/OriginsKit/PvE/Avatars/starters/12.png) |
+| `puffy.json`, `puffy.atlas`, `3.png` | [Puffy / starter 3 animation source](https://github.com/axieinfinity/axie-origins-asset-kit/tree/069a59b772e54633d04a3d9d12ecde73b3e4be5d/Assets/OriginsKit/PvE/Starters/3) |
+| `puffy-avatar.png` | [Puffy / starter 3 avatar](https://github.com/axieinfinity/axie-origins-asset-kit/blob/069a59b772e54633d04a3d9d12ecde73b3e4be5d/Assets/OriginsKit/PvE/Avatars/starters/3.png) |
 | `beast-arena.jpg` | [Beast arena](https://github.com/axieinfinity/axie-origins-asset-kit/blob/main/Assets/OriginsKit/PvE/Backgrounds/class/bg-beast.jpg) |
 | `forest-arena.jpg` | [Plant / forest arena](https://github.com/axieinfinity/axie-origins-asset-kit/blob/main/Assets/OriginsKit/PvE/Backgrounds/class/bg-plant.jpg) |
 | `lagoon-arena.jpg` | [Aquatic arena](https://github.com/axieinfinity/axie-origins-asset-kit/blob/main/Assets/OriginsKit/PvE/Backgrounds/class/bg-aquatic.jpg) |
 | `kotaro-sheet.png` | Rendered from the Kotaro model above using `tools/bake-assets.cjs` |
 | `buba-sheet.png` | Rendered from the Buba animation source above using `tools/bake-assets.cjs` |
+| `puffy-sheet.png` | Rendered from the Puffy animation source above using `node tools/bake-assets.cjs puffy` |
 
 The user supplied white-Axie screenshots as visual references on 2026-09-11, including `Screenshot 2026-09-11 120419.png`. Kotaro’s supplied model matches this white fur, blue horns, yellow eyes, red forehead marks, and sword silhouette.
 
-Sprite sheets contain 12 columns × 6 rows of 256 × 256 frames: idle, attack, ultimate, hit, run, and greeting. Kotaro is rendered using Three.js; Buba’s existing skeleton is rendered by the Phaser Spine development plugin. The game loads only baked PNG animations, not a Spine runtime or Three.js. Any future distribution of Spine runtime code must satisfy the upstream Spine license. Weapon props, sword arcs, guard rings, paint particles, and shelter upgrades are implemented in local Phaser graphics.
+Sprite sheets contain 12 columns × 6 rows of 256 × 256 frames: idle, attack, ultimate, hit, run, and greeting. Kotaro is rendered using Three.js; Buba’s and Puffy’s existing skeletons are rendered by the Phaser Spine development plugin. The game loads only baked PNG animations, not a Spine runtime or Three.js. Any future distribution of Spine runtime code must satisfy the upstream Spine license. Weapon props, sword arcs, guard rings, paint particles, and shelter upgrades are implemented in local Phaser graphics.
 
-The existing vector Momo battle representation and Aqua dodge mechanics are retained from the user’s original prototype specification. The official avatar is used for Momo’s village resident icon.
+On 2026-09-13, the user replaced the prototype’s Momo guardian with **Puffy**, the aquatic Origins starter. Puffy uses the official starter-3 artwork in battle, the rescue scene, and the village. The unchanged source files above come from asset-kit revision `069a59b772e54633d04a3d9d12ecde73b3e4be5d`; only their local JSON/atlas filenames differ. The atlas still references its original `3.png` texture. The former Momo portrait has been removed.
+
+Puffy’s baked animation rows sample `action/idle/normal`, `attack/ranged/cast-low`, `attack/ranged/cast-multi`, `defense/hit-by-normal`, `action/run`, and `battle/get-buff`. A runtime tint and violet aura indicate corruption; the source artwork is unchanged, and purification restores its original turquoise colors. Water-projectile patterns and the permanent 5% dodge-time rescue bonus remain prototype mechanics. Old Momo rescue records migrate to a single Puffy record without resetting earned progress.
+
+Puffy’s village healing spring, healing bubbles, and HP recovery display are original Phaser/CSS work. The healer panel and village shortcut use the official starter-3 portrait above; village healing reuses the baked `battle/get-buff` animation. No new external artwork is added for the healer service.
 
 ## Original Atia village illustration
 

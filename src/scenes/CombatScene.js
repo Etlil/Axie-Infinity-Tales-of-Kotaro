@@ -10,10 +10,11 @@ export default class CombatScene extends SceneBase {
     this.enemy=this.state.enemy;this.time.paused=false;this.tweens.resumeAll();
     this.reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     this.lastPublishedDodge='';this.lastAction='';
-    backdrop(this,this.state.tutorial?'village':this.enemy.id==='momo'?'lagoon':'battle',{image:false});
+    backdrop(this,this.state.tutorial?'village':this.enemy.id==='puffy'?'lagoon':'battle',{image:false});
     this.bindScene('combat','PLAYER_FOCUS','Take a breath. Choose your next move.',{enemyCard:null,selectedAttack:0});
     this.player=fighter(this,320,460,this.state.activeCharacter,1.35).setDepth(8);
-    this.enemySprite=fighter(this,890,445,this.enemy.id==='buba'?'buba':this.enemy.id==='momo'?'momo':'mob',1.35,'left');
+    this.enemySprite=fighter(this,890,445,this.enemy.id==='buba'?'buba':this.enemy.id==='puffy'?'puffy':'mob',1.35,'left');
+    this.enemySprite.setCorrupted?.(this.enemy.id==='puffy');
     this.arenaGraphics=this.add.graphics().setDepth(4);
     this.hazardGraphics=this.add.graphics().setDepth(12);
     this.dodge=new DodgeSystem(this,{bonus:this.state.bonus,onUpdate:view=>this.onDodgeUpdate(view),
@@ -38,7 +39,7 @@ export default class CombatScene extends SceneBase {
     this.dodge.stop();this.arenaGraphics.clear();this.hazardGraphics.clear();
     this.tweens.killTweensOf(this.player);this.tweens.killTweensOf(this.enemySprite);
     this.player.setPosition(320,460).setScale(1.35).setAngle(0).setAlpha(1);this.player.playAction('idle');this.player.sprite?.setFlipX(true);
-    this.enemySprite.setPosition(890,445).setScale(1.35*(this.enemy.id==='buba'?1:1.65)).setAngle(0);this.enemySprite.playAction('idle');
+    this.enemySprite.setPosition(890,445).setScale(1.35*(['buba','puffy'].includes(this.enemy.id)?1:1.65)).setAngle(0);this.enemySprite.playAction('idle');
     this.session.patch({phase:'PLAYER_FOCUS',dodgeActive:false,enemyCard:null,guard:0,selectedAttack:0,message:'Take a breath. Your move.'});
     this.freezeWorld(true);this.time.paused=false;
     const duration=this.reducedMotion?0:460;
@@ -95,7 +96,7 @@ export default class CombatScene extends SceneBase {
   startDodge(){
     this.lastPublishedDodge='';this.lastAction='';
     this.tweens.killTweensOf(this.player);this.tweens.killTweensOf(this.enemySprite);
-    this.player.setScale(.75).setAngle(0);this.enemySprite.setPosition(1040,540).setScale(.82*(this.enemy.id==='buba'?1:1.65)).setAngle(0);
+    this.player.setScale(.75).setAngle(0);this.enemySprite.setPosition(1040,540).setScale(.82*(['buba','puffy'].includes(this.enemy.id)?1:1.65)).setAngle(0);
     drawArena(this.arenaGraphics);
     this.session.patch({phase:'DODGE_PHASE',dodgeActive:true,dodgeDuration:6.5,message:'Move freely. Jump over low attacks; dash through danger.'});
     this.dodge.start({pattern:this.enemyCard.pattern,damage:this.enemyCard.damage});
@@ -141,7 +142,7 @@ export default class CombatScene extends SceneBase {
     this.time.delayedCall(600, () => {
       if (this.state.tutorial) { this.session.finishTutorial(); this.scene.start('DialogueScene'); }
       else {
-        const result = this.enemy.id === 'momo' && !this.state.rescued.some(x => x.id === 'momo')
+        const result = this.enemy.id === 'puffy' && !this.state.rescued.some(x => x.id === 'puffy')
           ? { kind: 'purify' } : { kind: 'cleared', ...this.session.completeStage(this.state.roomIndex) };
         this.session.patch({ result });
         this.scene.start('VictoryScene');

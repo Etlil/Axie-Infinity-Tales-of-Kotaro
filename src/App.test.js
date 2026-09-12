@@ -52,17 +52,17 @@ test('touch controls dispatch held movement and jump independently',()=>{
  fireEvent.pointerCancel(right,{pointerId:1});expect(command).toHaveBeenCalledWith('dodgeInput',expect.objectContaining({control:'right',pressed:false}));
  expect(screen.queryByRole('button',{name:/Horn Lance/})).not.toBeInTheDocument();
 });
-test('Momo must be purified with the amulet before returning home',()=>{
+test('Puffy must be purified with the amulet before returning home',()=>{
  render(<App/>);publish({scene:'victory',result:{kind:'purify'},amulet:true});
  fireEvent.click(screen.getByRole('button',{name:'Use the amulet'}));
  expect(command).toHaveBeenCalledWith('purify',undefined);
- publish({scene:'victory',result:{kind:'rescued',xp:90,coins:40},rescued:[bosses.momo]});
- expect(screen.getByRole('heading',{name:'Welcome home, Momo.'})).toBeInTheDocument();
- fireEvent.click(screen.getByRole('button',{name:'Bring Momo home'}));
+ publish({scene:'victory',result:{kind:'rescued',xp:90,coins:40},rescued:[bosses.puffy]});
+ expect(screen.getByRole('heading',{name:'Welcome home, Puffy.'})).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'Bring Puffy home'}));
  expect(command).toHaveBeenCalledWith('visitVillage',undefined);
 });
 test('enemy intent shows the damage of each colliding projectile',()=>{
- render(<App/>);publish({scene:'combat',phase:'DODGE_PHASE',enemy:bosses.momo,enemyCard:bosses.momo.cards[0]});
+ render(<App/>);publish({scene:'combat',phase:'DODGE_PHASE',enemy:bosses.puffy,enemyCard:bosses.puffy.cards[0]});
  expect(screen.getByText(/Nightmare Wave.*11 \/ HIT/)).toBeInTheDocument();
 });
 test('rank rewards remain visible but locked or claimed rewards cannot dispatch',()=>{
@@ -136,4 +136,21 @@ test('story Settings can close without changing the intro checkpoint',()=>{
  fireEvent.keyDown(document,{key:'Escape'});
  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
  expect(command).not.toHaveBeenCalledWith('nextIntro',undefined);
+});
+
+test('rescued Puffy offers village healing and locks the button at full health',()=>{
+ render(<App/>);publish({scene:'village',prologueComplete:true,playerHP:43});
+ expect(screen.queryByRole('button',{name:'Visit Puffy'})).not.toBeInTheDocument();
+ const state={scene:'village',prologueComplete:true,activeCharacter:'buba',playerHP:43,rescued:[{id:'puffy'}]};
+ publish(state);
+ fireEvent.click(screen.getByRole('button',{name:'Visit Puffy'}));
+ expect(command).toHaveBeenCalledWith('openPanel','healer');
+ publish({...state,panel:'healer'});
+ expect(screen.getByRole('dialog',{name:'Puffy’s healing spring'})).toBeInTheDocument();
+ expect(screen.getByText('43 / 110 HP')).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'Restore health'}));
+ expect(command).toHaveBeenCalledWith('healWithPuffy',undefined);
+ publish({...state,playerHP:110,panel:'healer'});
+ expect(screen.getByRole('button',{name:'Fully healed'})).toBeDisabled();
+ expect(screen.getByRole('status')).toHaveTextContent('Full health. Ready for your next adventure.');
 });

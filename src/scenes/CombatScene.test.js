@@ -8,7 +8,7 @@ jest.mock('../game/bodyPartAttacks',()=>({bodyPartAttack:jest.fn()}));
 jest.mock('phaser',()=>({__esModule:true,default:{Scene:class Scene{}}}));
 jest.mock('../game/world',()=>({backdrop:jest.fn(),fighter:jest.fn(),slash:jest.fn(),paintBurst:jest.fn()}));
 function displayObject(){const o={};['setOrigin','setDepth','setAlpha','playAction','setStrokeStyle','setPosition','setScale','setAngle'].forEach(name=>{o[name]=jest.fn(()=>o);});return o;}
-function encounter(enemy=bosses.momo,roomIndex=2,tutorial=false){
+function encounter(enemy=bosses.puffy,roomIndex=2,tutorial=false){
  const combat=new CombatScene(),session=createSession(jest.fn());
  if(!tutorial){session.finishTutorial();session.finishPrologue();}
  session.patch({phase:'PLAYER_TURN',scene:'combat',enemy,enemyHP:enemy.maxHP,roomIndex,tutorial});
@@ -32,9 +32,9 @@ test.each(Object.entries(characterCards).flatMap(([hero,cards]) => cards.map(car
  jest.advanceTimersByTime(120);
  expect(bodyPartAttack).toHaveBeenCalledTimes(1);
  expect(bodyPartAttack).toHaveBeenCalledWith(combat,combat.player,card,{x:850,y:420});
- expect(session.state.enemyHP).toBe(bosses.momo.maxHP);
+ expect(session.state.enemyHP).toBe(bosses.puffy.maxHP);
  jest.advanceTimersByTime(240);
- expect(session.state.enemyHP).toBe(bosses.momo.maxHP-card.damage);
+ expect(session.state.enemyHP).toBe(bosses.puffy.maxHP-card.damage);
 });
 test('one card per turn applies damage once before telegraph and dodge',()=>{
  const {combat,session}=encounter();
@@ -63,12 +63,20 @@ test('Buba defeat checkpoints the dialogue and never grants a corruption rescue'
  expect(combat.scene.start).toHaveBeenCalledWith('DialogueScene');
  expect(combat.dodge.start).not.toHaveBeenCalled();
 });
-test('Momo defeat waits for the amulet action before granting a rescue or XP',()=>{
+test('Puffy defeat waits for the amulet action before granting a rescue or XP',()=>{
  const {combat,session}=encounter();
  session.patch({enemyHP:12});combat.playCard('horn-lance');jest.advanceTimersByTime(1400);
  expect(session.state.result).toEqual({kind:'purify'});
  expect(session.state.rescued).toHaveLength(0);
  expect(session.state.completedStages).toHaveLength(0);
+ expect(combat.scene.start).toHaveBeenCalledWith('VictoryScene');
+});
+
+test('replaying a rescued Puffy grants replay rewards without a second purification',()=>{
+ const {combat,session}=encounter();session.rescue();session.completeStage(2);
+ session.patch({enemyHP:12});combat.playCard('horn-lance');jest.advanceTimersByTime(1400);
+ expect(session.state.result).toEqual({kind:'cleared',xp:20,coins:15,first:false});
+ expect(session.state.rescued).toHaveLength(1);expect(session.state.bonus).toBe(.05);
  expect(combat.scene.start).toHaveBeenCalledWith('VictoryScene');
 });
 test('a normal clear unlocks the next node and grants first-clear rewards',()=>{

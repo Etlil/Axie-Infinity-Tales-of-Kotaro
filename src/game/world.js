@@ -21,8 +21,9 @@ export function backdrop(scene, kind = 'village', { image = true } = {}) {
   }
 }
 export function fighter(scene,x,y,kind='kotaro',scale=1,facing='right') {
+  if (kind === 'puffy') return puffyFighter(scene,x,y,scale,facing);
   if (!['kotaro','buba'].includes(kind)) {
-    const mob = drawAxie(scene,x,y,{kind:kind==='momo'?'momo':'mob',scale:scale*1.65,idle:false});
+    const mob = drawAxie(scene,x,y,{kind:'mob',scale:scale*1.65,idle:false});
     mob.setData('kind',kind);mob.playAction=()=>{};return mob;
   }
   const root=scene.add.container(x,y);
@@ -67,6 +68,27 @@ export function fighter(scene,x,y,kind='kotaro',scale=1,facing='right') {
       root.bringToTop(weapon);
       weapon.setVisible(true);scene.tweens.add({targets:weapon,angle:facing==='right'?110:-110,duration:190,yoyo:true,onComplete:()=>{if(kind==='kotaro')weapon.setVisible(false);}});
     }
+  };
+  root.playAction('idle');
+  return root;
+}
+
+function puffyFighter(scene,x,y,scale,facing) {
+  const root=scene.add.container(x,y).setScale(scale);
+  const shadow=scene.add.ellipse(0,68,120,22,0x16251e,.25);
+  const aura=scene.add.ellipse(0,12,173,151,0x764ca8,.22).setStrokeStyle(3,0xae7fe2,.45).setVisible(false);
+  const sprite=scene.add.sprite(0,0,'puffy-sheet',0).setFlipX(facing==='right');
+  root.add([shadow,aura,sprite]);root.sprite=sprite;root.kind='puffy';
+  root.setCorrupted=corrupted=>{
+    aura.setVisible(corrupted);
+    if(corrupted)sprite.setTint(0xa5b7ed);else sprite.clearTint();
+    return root;
+  };
+  root.playAction=(action='idle')=>{
+    const key='puffy-'+action;
+    if(!scene.anims.exists(key))return;
+    sprite.removeAllListeners('animationcomplete');sprite.play(key,true);
+    if(action!=='idle'&&action!=='run')sprite.once('animationcomplete',()=>{if(sprite.active)sprite.play('puffy-idle');});
   };
   root.playAction('idle');
   return root;

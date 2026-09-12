@@ -26,17 +26,19 @@ window.bakeKotaro=()=>{
 };
 window.kotaroReady=true;
 
-window.bubaReady=false;
+for(const character of ['buba','puffy']){
+window[character+'Ready']=false;
 const spineGame=new Phaser.Game({type:Phaser.WEBGL,width:SIZE,height:SIZE,transparent:true,antialias:true,preserveDrawingBuffer:true,banner:false,
  plugins:{scene:[{key:'SpinePlugin',plugin:window.SpinePlugin,mapping:'spine'}]},
- scene:{preload(){this.load.spine('buba','/public/assets/atia/buba.json','/public/assets/atia/buba.atlas',true);},create(){
- const buba=this.add.spine(SIZE*.5,SIZE*.73,'buba','action/idle/normal',true);buba.setScale(.20);buba.timeScale=0;
- const names=['action/idle/normal','attack/melee/normal-attack','attack/ranged/cast-tail','defense/hit-by-normal','action/run','activity/victory-pose-back-flip'];
- window.bakeBuba=async()=>{const sheet=document.createElement('canvas');sheet.width=SIZE*FRAMES;sheet.height=SIZE*6;const ctx=sheet.getContext('2d');
+ scene:{preload(){this.load.spine(character,'/public/assets/atia/'+character+'.json','/public/assets/atia/'+character+'.atlas',true);},create(){
+ const axie=this.add.spine(SIZE*.5,SIZE*.73,character,'action/idle/normal',true);axie.setScale(.20);axie.timeScale=0;
+ const names=['action/idle/normal',character==='puffy'?'attack/ranged/cast-low':'attack/melee/normal-attack',character==='puffy'?'attack/ranged/cast-multi':'attack/ranged/cast-tail','defense/hit-by-normal','action/run',character==='puffy'?'battle/get-buff':'activity/victory-pose-back-flip'];
+ window['bake'+character[0].toUpperCase()+character.slice(1)]=async()=>{const sheet=document.createElement('canvas');sheet.width=SIZE*FRAMES;sheet.height=SIZE*6;const ctx=sheet.getContext('2d');
  for(let row=0;row<names.length;row++){
- const animation=buba.skeleton.data.findAnimation(names[row]);const track=buba.state.setAnimation(0,names[row],true);
- for(let i=0;i<FRAMES;i++){track.trackTime=animation.duration*i/FRAMES;buba.state.apply(buba.skeleton);buba.skeleton.updateWorldTransform();
+ const animation=axie.skeleton.data.findAnimation(names[row]);const track=axie.state.setAnimation(0,names[row],true);
+ for(let i=0;i<FRAMES;i++){track.trackTime=animation.duration*i/FRAMES;axie.state.apply(axie.skeleton);axie.skeleton.updateWorldTransform();
  await new Promise(resolve=>spineGame.events.once('postrender',resolve));ctx.drawImage(spineGame.canvas,i*SIZE,row*SIZE);}}
- return sheet.toDataURL('image/png');};window.bubaReady=true;
+ return sheet.toDataURL('image/png');};window[character+'Ready']=true;
  }} });
+}
 </script></body></html>

@@ -32,7 +32,7 @@ export default function JourneyMap({ game, command }) {
           onClick={() => command('selectStage', index)}>
           {selected && <span className={'route-companion portrait ' + game.activeCharacter} aria-hidden="true"/>}
           <span className="journey-medal">{locked ? <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V6a4 4 0 0 1 8 0v4"/></svg> : completed ? '✓' : index + 1}</span>
-          <strong>{node.title}</strong><small>{locked ? 'LOCKED' : completed ? 'CLEARED' : node.type === 'boss' ? 'RESCUE MOMO' : selected ? 'NEXT ENCOUNTER' : 'EXPLORE'}</small>
+          <strong>{node.title}</strong><small>{locked ? 'LOCKED' : completed ? 'CLEARED' : node.type === 'boss' ? 'RESCUE PUFFY' : selected ? 'NEXT ENCOUNTER' : 'EXPLORE'}</small>
         </button>;
       })}
     </div>

@@ -9,7 +9,7 @@ test('reset confirmation preserves canceled saves and restarts paused combat dur
   await page.evaluate(key=>{
     localStorage.setItem('settings-test-unrelated','preserved');
     localStorage.setItem(key,JSON.stringify({version:1,tutorialWon:true,prologueComplete:true,amulet:true,
-      activeCharacter:'buba',xp:460,coins:999,wood:30,essence:40,claimedRewards:[1,2],completedStages:[0,1],rescued:[{id:'momo'}]}));
+      activeCharacter:'buba',xp:460,coins:999,wood:30,essence:40,claimedRewards:[1,2],completedStages:[0,1],rescued:[{id:'puffy'}]}));
   },SAVE_KEY);
   await page.reload();
   await expect(page.locator('.scene-village')).toBeVisible();

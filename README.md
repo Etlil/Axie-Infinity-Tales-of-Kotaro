@@ -34,8 +34,8 @@ For a public web release, run `npm run build` and serve the `build/` directory t
 1. Follow the arrival story and fight Buba in Atia’s clearing.
 2. Listen to his account of the raid, accept his handmade amulet, and unlock Buba as a playable companion.
 3. Explore the village hub. Buba’s tent contains Adventure Rank rewards; the gate opens a winding stage map.
-4. Clear Whispering Woods, the Hollow Crossing, and Momo’s Lagoon in order.
-5. Weaken Momo, then **Use the amulet** to reverse the corruption and bring Momo home.
+4. Clear Whispering Woods, the Hollow Crossing, and Puffy’s Lagoon in order.
+5. Weaken Puffy, then **Use the amulet** to reverse the corruption and bring Puffy home.
 6. Replay cleared stages to earn more XP. At ranks 3 and 5, Buba improves his tent into a mended shelter and then a lodge.
 
 | Action | Touch / mouse | Keyboard |
@@ -66,7 +66,9 @@ The four cards sit side by side in landscape and form a compact two-by-two hand 
 
 Each enemy attack has a 6.5-second dodge phase. Move your Axie, jump onto ledges, and dash through the actual projectiles. Guard reduces a hit and recovery abilities heal up to the character’s maximum HP. Three abilities charge an ultimate: Kotaro’s **Moonlit Eclipse** or Buba’s paintbrush **Paintstorm**.
 
-Momo’s blessing adds 5% to the dodge phase and warning window. It is deterministic, permanent in this browser’s save, and never stacks from repeat rescues.
+Puffy’s blessing adds 5% to the dodge phase and warning window. It is deterministic, permanent in this browser’s save, and never stacks from repeat rescues.
+
+Puffy is the aquatic guardian, using the official Origins starter artwork and animations. Purifying Puffy removes the corruption effect and unlocks **Atia’s village healer**. After returning injured, tap Puffy’s spring or **Puffy** in the village dock, then **Restore health** to recover all missing HP for free. Puffy uses healing water and bubbles, and the panel shows your current/max HP. Healing is available only in the village after the rescue. Existing fresh-health encounter/retry rules still apply. Saves from the earlier Momo prototype automatically retain their rescue, blessing, ranks, and rewards under Puffy’s name.
 
 ## Progress and rewards
 

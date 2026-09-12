@@ -29,7 +29,9 @@ export function restoreProfile(storage) {
     clean.claimedRewards = Array.isArray(saved.claimedRewards) ? [...new Set(saved.claimedRewards.filter(x => Number.isInteger(x) && x >= 1 && x <= 5))] : [];
     clean.completedStages = Array.isArray(saved.completedStages) ? [...new Set(saved.completedStages.filter(x => Number.isInteger(x) && x >= 0 && x <= 2))] : [];
     clean.unlockedStage = Math.min(2, clean.completedStages.length ? Math.max(...clean.completedStages) + 1 : 0);
-    clean.rescued = clean.amulet && Array.isArray(saved.rescued) && saved.rescued.some(x => x?.id === 'momo') ? [{ id:'momo',name:'Momo',rescueBonus:bosses.momo.rescueBonus }] : [];
+    // The first prototype called the aquatic guardian Momo. Migrate its rescue
+    // to Puffy without losing the blessing or letting both entries stack.
+    clean.rescued = clean.amulet && Array.isArray(saved.rescued) && saved.rescued.some(x => x?.id === 'puffy' || x?.id === 'momo') ? [{ id:'puffy',name:'Puffy',rescueBonus:bosses.puffy.rescueBonus }] : [];
     clean.introStep = Number.isInteger(saved.introStep) ? Math.max(0,Math.min(3,saved.introStep)) : 0;
     clean.dialogueIndex = Number.isInteger(saved.dialogueIndex) ? Math.max(0,Math.min(5,saved.dialogueIndex)) : 0;
     return clean;
@@ -40,7 +42,7 @@ export function derive(state) {
   const active = validIds.has(state.activeCharacter) ? state.activeCharacter : 'kotaro';
   return { ...state, level, tentStage: level >= 5 ? 2 : level >= 3 ? 1 : 0,
     playerMaxHP: active === 'buba' ? 110 : 100, cards: characterCards[active], ultimate: ultimates[active],
-    bonus: state.rescued.some(x => x.id === 'momo') ? .05 : 0,
+    bonus: state.rescued.some(x => x.id === 'puffy') ? .05 : 0,
     rankXP: state.xp - rankThresholds[level - 1], nextRankXP: level < 5 ? rankThresholds[level] - rankThresholds[level - 1] : 0,
     availableRewards: rankRewards.filter(r => r.rank <= level && !state.claimedRewards.includes(r.rank)).length };
 }
@@ -48,6 +50,7 @@ export function createSession(onState, { storage = null } = {}) {
   let lastSaved = '';
   const profile = restoreProfile(storage);
   const state = derive({ ...initialState(), ...profile, saveAvailable: Boolean(storage) });
+  state.playerHP = state.playerMaxHP;
   if (state.prologueComplete) state.scene = 'village';
   else if (state.tutorialWon) state.scene = 'dialogue';
   return {
@@ -90,9 +93,16 @@ export function createSession(onState, { storage = null } = {}) {
         unlockedStage:Math.min(2,Math.max(this.state.unlockedStage,index + 1)) });
       return { xp, coins:first ? 40 : 15, first };
     },
-    rescue(boss = bosses.momo) {
+    rescue(boss = bosses.puffy) {
       if (!this.state.amulet || this.state.rescued.some(x => x.id === boss.id)) return false;
-      this.patch({ rescued:[...this.state.rescued,{id:boss.id,name:'Momo',rescueBonus:boss.rescueBonus}] }); return true;
+      this.patch({ rescued:[...this.state.rescued,{id:boss.id,name:'Puffy',rescueBonus:boss.rescueBonus}] }); return true;
+    },
+    healAtVillage() {
+      if (this.state.scene !== 'village' || !this.state.prologueComplete || !this.state.rescued.some(x => x.id === 'puffy')) return 0;
+      const healed = Math.max(0, this.state.playerMaxHP - this.state.playerHP);
+      if (!healed) return 0;
+      this.patch({ playerHP:this.state.playerMaxHP, message:'Puffy restores ' + healed + ' health. You’re ready for another adventure.' });
+      return healed;
     },
     claimReward(rank) {
       const reward = rankRewards.find(r => r.rank === rank);

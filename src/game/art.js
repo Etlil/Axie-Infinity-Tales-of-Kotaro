@@ -353,7 +353,7 @@ export function drawAxie(scene, x, y, { kind = 'traveler', scale = 1, flip = fal
   const g = scene.add.graphics();
   container.add(g);
   container.setScale(flip ? -scale : scale, scale);
-  const aqua = kind === 'momo', mob = kind === 'mob';
+  const aqua = kind === 'aqua', mob = kind === 'mob';
   const body = aqua ? 0x91d2b4 : mob ? 0xb6a6cf : 0xe8b96d;
   const dark = aqua ? 0x5ca78f : mob ? 0x8d7dac : 0xc39450;
   const light = aqua ? 0xc0e7c5 : mob ? 0xd5c9e3 : 0xf7d99a;

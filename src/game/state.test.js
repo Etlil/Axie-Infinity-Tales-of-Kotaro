@@ -40,19 +40,19 @@ test('sequential clears unlock the route and grow the shelter; replays give redu
   expect(s.prepareEncounter(1)).toBe(true);
   expect(s.completeStage(1)).toMatchObject({xp:45,first:true});
   expect(s.state.tentStage).toBe(0);
-  s.rescue(bosses.momo);s.completeStage(2);
+  s.rescue(bosses.puffy);s.completeStage(2);
   expect(s.state).toMatchObject({level:3,tentStage:1,unlockedStage:2});
   expect(s.completeStage(0)).toMatchObject({xp:20,first:false});
   s.patch({xp:460});
   expect(s.state).toMatchObject({level:5,tentStage:2,nextRankXP:0});
 });
 
-test('rescue requires the amulet and the Momo blessing never stacks',()=>{
+test('rescue requires the amulet and the Puffy blessing never stacks',()=>{
   const s=createSession();
-  expect(s.rescue(bosses.momo)).toBe(false);
+  expect(s.rescue(bosses.puffy)).toBe(false);
   s.finishTutorial();s.finishPrologue();
-  expect(s.rescue(bosses.momo)).toBe(true);
-  expect(s.rescue(bosses.momo)).toBe(false);
+  expect(s.rescue(bosses.puffy)).toBe(true);
+  expect(s.rescue(bosses.puffy)).toBe(false);
   expect(s.state.rescued).toHaveLength(1);
   expect(s.state.bonus).toBe(.05);
 });
@@ -64,7 +64,7 @@ test('reload resumes the Buba dialogue checkpoint, then the village after comple
   s.finishPrologue();s.selectCharacter('buba');s.completeStage(0);
   s.patch({scene:'combat',playerHP:3});
   const restored=createSession(null,{storage});
-  expect(restored.state).toMatchObject({scene:'village',activeCharacter:'buba',unlockedStage:1});
+  expect(restored.state).toMatchObject({scene:'village',activeCharacter:'buba',unlockedStage:1,playerHP:110,playerMaxHP:110});
   restored.prepareEncounter(1);
   expect(restored.state.playerHP).toBe(110);
 });
@@ -87,12 +87,39 @@ test('new encounters restore health but retain companions, ranks, claims and ble
   expect(s.state).toMatchObject({playerHP:100,roomIndex:0,turn:1,guard:0,dodges:0,hits:0,dodgeActive:false,dodgeX:330,dodgeY:600,grounded:true,bonus:.05,claimedRewards:[1]});
 });
 
+test.each([['kotaro',37,63,100],['buba',37,73,110],['kotaro',0,100,100]])('Puffy heals %s from %i HP at home without changing earned progress',(hero,hp,healed,maxHP)=>{
+  const storage=memory(),s=unlocked(storage);
+  s.rescue();s.claimReward(1);s.completeStage(0);s.selectCharacter(hero);
+  s.patch({scene:'village',phase:'VILLAGE',playerHP:hp});
+  const before=s.state,saved=storage.getItem(SAVE_KEY);
+  expect(s.healAtVillage()).toBe(healed);
+  expect(s.state).toEqual({...before,playerHP:maxHP,message:'Puffy restores ' + healed + ' health. You’re ready for another adventure.'});
+  expect(storage.getItem(SAVE_KEY)).toBe(saved);
+  const healthy=s.state;
+  expect(s.healAtVillage()).toBe(0);
+  expect(s.state).toBe(healthy);
+});
+
+test.each(['intro','dialogue','map','combat','victory','defeat'])('Puffy cannot heal from the %s scene',scene=>{
+  const s=unlocked();s.rescue();s.patch({scene,playerHP:12});
+  const before=s.state;
+  expect(s.healAtVillage()).toBe(0);
+  expect(s.state).toBe(before);
+});
+
+test.each([{prologueComplete:false,rescued:[{id:'puffy'}]},{prologueComplete:true,rescued:[]}])('Puffy healing requires both the village story and his rescue (%j)',gate=>{
+  const s=unlocked();s.patch({scene:'village',playerHP:12,...gate});
+  const before=s.state;
+  expect(s.healAtVillage()).toBe(0);
+  expect(s.state).toBe(before);
+});
+
 test('reset clears every checkpoint and encounter while preserving unrelated browser data',()=>{
   const storage=memory(),s=unlocked(storage);
   storage.setItem('another-app','keep this');
   s.rescue();s.claimReward(1);s.completeStage(0);s.selectCharacter('buba');
   s.patch({scene:'combat',phase:'DODGE_PHASE',loading:false,introStep:3,dialogueIndex:5,xp:460,wood:90,
-    playerHP:3,charge:3,enemy:bosses.momo,enemyHP:15,dodgeActive:true,panel:'settings',result:{kind:'rescued'}});
+    playerHP:3,charge:3,enemy:bosses.puffy,enemyHP:15,dodgeActive:true,panel:'settings',result:{kind:'rescued'}});
   expect(s.resetSave()).toBe(true);
   expect(s.state).toEqual(derive(initialState()));
   expect(storage.getItem('another-app')).toBe('keep this');
@@ -116,4 +143,17 @@ test('reset also works for a session with no storage',()=>{
   const s=unlocked();
   expect(s.resetSave()).toBe(true);
   expect(s.state).toEqual(derive({...initialState(),saveAvailable:false}));
+});
+
+test.each([['momo'],['puffy'],['momo','puffy','momo']])('restoring rescued residents %j retains one Puffy blessing and all earned progress',(...ids)=>{
+  const storage=memory(),s=unlocked(storage);
+  s.patch({introStep:3,dialogueIndex:5,xp:460,coins:999,wood:30,essence:40,
+    activeCharacter:'buba',claimedRewards:[1,2],completedStages:[0,1,2],rescued:ids.map(id=>({id}))});
+  const restored=createSession(null,{storage});
+  expect(restored.state).toMatchObject({scene:'village',activeCharacter:'buba',level:5,xp:460,coins:999,wood:30,
+    essence:40,claimedRewards:[1,2],completedStages:[0,1,2],unlockedStage:2,bonus:.05,
+    rescued:[{id:'puffy',name:'Puffy',rescueBonus:bosses.puffy.rescueBonus}]});
+  expect(restored.rescue()).toBe(false);
+  restored.emit();
+  expect(JSON.parse(storage.getItem(SAVE_KEY)).rescued).toEqual([{id:'puffy',name:'Puffy',rescueBonus:bosses.puffy.rescueBonus}]);
 });

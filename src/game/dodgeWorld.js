@@ -27,7 +27,7 @@ export function drawHazards(g,view,enemyId){
   }
   for(const shot of view.shots){
     const {x,y,radius:r,kind}=shot;
-    const color=kind==='rain'?(enemyId==='buba'?0xff96c8:0xc193f6):enemyId==='momo'?0x83e9ff:kind.includes('thorn')?0xc2ea7c:0xfad18b;
+    const color=kind==='rain'?(enemyId==='buba'?0xff96c8:0xc193f6):enemyId==='puffy'?0x83e9ff:kind.includes('thorn')?0xc2ea7c:0xfad18b;
     g.fillStyle(color,.13).fillCircle(x,y,r+12);
     if(kind.includes('blade')){
       g.lineStyle(9,color).beginPath().arc(x,y,r,-2,2).strokePath();
