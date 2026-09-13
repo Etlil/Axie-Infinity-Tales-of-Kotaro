@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="none" fill="none">
+  <defs><linearGradient id="sea" x2="1" y2="1"><stop stop-color="#749d8c"/><stop offset="1" stop-color="#4e91a2"/></linearGradient><linearGradient id="land" x2=".7" y2="1"><stop stop-color="#adc481"/><stop offset="1" stop-color="#82ad70"/></linearGradient></defs>
+  <path fill="url(#sea)" d="M0 0h1200v800H0z"/>
+  <path d="M-70-30h1080c-46 113 12 139-48 218s-19 115-97 160c-97 55-56 148-179 185-81 26-67 120-183 140C360 699 251 648 181 737c-44 56-154 83-251 84Z" fill="#427b74" opacity=".45" transform="translate(8 18)"/>
+  <path d="M-70-30h1080c-46 113 12 139-48 218s-19 115-97 160c-97 55-56 148-179 185-81 26-67 120-183 140C360 699 251 648 181 737c-44 56-154 83-251 84Z" fill="url(#land)" stroke="#d4da9e" stroke-width="18"/>
+  <path d="M-34 555c146-63 151 89 329 9 122-56 42-133 166-179 64-22 98-101 183-67 79 32 139-36 157-100 31-102 117-95 162-171" stroke="#659a79" stroke-width="25" opacity=".2"/>
+  <path d="M-20 546c128-59 169 64 307-2 123-57 40-143 169-180 91-25 102-119 194-80 105 47 137-35 154-91 24-79 109-103 141-160" stroke="#d3d998" stroke-width="4" opacity=".65"/>
+  <g fill="#668e5e" opacity=".42"><path d="m38 122 18-25 18 25-7 13H46Z"/><path d="m76 109 14-20 15 20-5 11H83Z"/><path d="m99 137 19-29 20 29-7 14h-26Z"/><path d="m310 712 19-28 19 28-7 13h-24Z"/><path d="m343 694 14-21 16 21-6 12h-18Z"/><path d="m1130 63 17-26 20 26-6 12h-25Z"/></g>
+  <g stroke="#e2ecc9" stroke-width="5" stroke-linecap="round" opacity=".4"><path d="M993 579h45m-10 15h67m-68 91h55m-103 57h34M835 671h24m274-222h37M914 406h37"/></g>
+  <g fill="#e3e8c3" opacity=".28"><path d="M97 65c-30 0-39-19-18-28 1-21 37-27 50-11 24-9 40 6 35 21 24 5 15 22-8 21Z"/><path d="M1102 342c-35 0-41-18-21-27 0-20 40-27 54-10 20-7 37 5 35 20 21 7 13 22-10 21Z"/></g>
+  <g fill="#efeac0" opacity=".6"><circle cx="348" cy="72" r="3"/><circle cx="378" cy="88" r="2"/><circle cx="675" cy="687" r="3"/><circle cx="99" cy="354" r="3"/><circle cx="510" cy="612" r="2"/></g>
+</svg>

@@ -106,6 +106,7 @@ Browser checks exercise the prologue, the level map, all three puzzles, contact-
 - `src/App.js`, `src/App.css`: story, village HUD, touch controls, accessible panels, and responsive layouts.
 - `src/origins-theme.css`: cartoon interface, Origins parchment/wood artwork, and locally hosted Changa One / Nunito fonts. Changa One is a visual match; the exact Origins font has not been verified. Font and artwork sources are recorded in the asset provenance document.
 - `src/mobile-game.css`, `src/ui/WorldView.js`: full-screen world composition, safe-area HUD, measured world framing, scrolling panels, and compact battle controls. The CSS owns the canvas display bounds; Phaser refreshes its input scale from those measured bounds.
+- `public/assets/map/`: original SVG forest shrine, amber mine, flooded sanctuary, and shoreline terrain for the selection screen. See its README for editing notes.
 - `src/ui/DungeonSelection.js`, `src/expedition-map.css`, `src/scenes/LevelSelectScene.js`: responsive level map, dungeon previews, and selection.
 - `src/game/dungeonLayout.js`: distinct maps, puzzle rules, collision, and slime pathfinding.
 - `src/scenes/VillageScene.js`, `src/game/townLayout.js`, `src/ui/TownControls.js`, `src/town.css`: walkable town, flat placeholder buildings, collision, pathfinding, and destination interactions.
