@@ -25,7 +25,7 @@ On the Android phone, open Chrome and enter `http://YOUR-COMPUTER-IP:3000`. Find
 
 At the time of this build, this computer’s address was **http://192.168.1.25:3000**. Your router may assign a different address later.
 
-The game is designed **landscape first**, with a full-screen village, a compact edge HUD, touch cards, and a separate ultimate button. Portrait is also playable: drag the village sideways or use Camp / Square / Gate to explore, and use the four-way touch pad to explore the dungeon. Desktop keyboard controls remain available. Fullscreen is available in Settings and the guide. Open Settings with the gear on story and village screens, or through the battle pause menu. Browser progress is stored per device and site address; saves do not sync between your PC and phone.
+The game is designed **landscape first**, with a full-screen village, a compact edge HUD, touch cards, and a separate ultimate button. Portrait is also playable: use the four-way touch pad to walk around both Atia and the dungeons. Desktop keyboard controls remain available. Fullscreen is available in Settings and the guide. Open Settings with the gear on story and village screens, or through the battle pause menu. Browser progress is stored per device and site address; saves do not sync between your PC and phone.
 
 For a public web release, run `npm run build` and serve the `build/` directory through an HTTPS static host. No backend is required. The manifest supports a standalone home-screen window; offline play and a service worker are not included.
 
@@ -33,10 +33,10 @@ For a public web release, run `npm run build` and serve the `build/` directory t
 
 1. Follow the arrival story and fight Buba in Atia’s clearing.
 2. Listen to his account of the raid, accept his handmade amulet, and unlock Buba as a playable companion.
-3. Explore the village hub. Buba’s tent contains Adventure Rank rewards; the gate enters the Sunken Halls dungeon.
-4. Walk through the Mossy Hall and Sunken Passage. One slime appears at a time; contact starts a turn-based battle. Win, then choose Continue journey to resume exploring.
-5. Defeat both slimes to unlock the final chamber. Walk up to Puffy to start the boss fight, weaken Puffy, then **Use the amulet** to reverse the corruption and bring Puffy home.
-6. Exit to Atia and enter again to replay the dungeon and earn more XP. At ranks 3 and 5, Buba improves his tent into a mended shelter and then a lodge.
+3. Walk around Atia Town. Buildings and the old well have solid footprints; paths connect the tent, gate, spring, and abandoned homes. Approach a destination and press E or tap the interaction button. Buba’s tent contains Adventure Rank rewards, and the gate opens a winding level-selection map.
+4. Select Mosslight Grove, Amber Quarry, or Sunken Sanctuary. Each has three rooms, its own route and colors, and a different puzzle. Levels unlock sequentially; completed levels remain replayable.
+5. Slimes appear one at a time and chase as you walk. Contact starts a turn-based battle; Continue journey resumes that dungeon. Solve its puzzle to open the last room. Only the final encounter completes a level and grants its clear rewards. Puffy guards the last room of Sunken Sanctuary: defeat him, then **Use the amulet** to bring him home.
+6. Return to the level map to choose another dungeon or replay a cleared one for more XP. At ranks 3 and 5, Buba improves his tent into a mended shelter and then a lodge.
 
 | Action | Touch / mouse | Keyboard |
 | --- | --- | --- |
@@ -46,7 +46,11 @@ For a public web release, run `npm run build` and serve the `build/` directory t
 | Run | Hold Left / Right | A / D or Left / Right |
 | Jump | Tap Jump while moving | Space / W / Up |
 | Dash | Tap Dash | Shift |
-| Explore dungeon | Hold the four-way pad | WASD / arrow keys |
+| Explore town / dungeon | Hold the four-way pad | WASD / arrow keys |
+| Interact in town | Nearby interaction button | E |
+| Walk to a town destination | Tap its building or Buba’s tent / Puffy / Adventure | Tab to the destination button and press Enter |
+| Turn a nearby valve | Use valve button | E |
+| Reset an unsolved puzzle | Reset puzzle button | Tab to the button, then Enter |
 | Close a panel | Close button or backdrop | Escape |
 | Pause battle | Pause button at the top right | Focus the pause button and press Enter |
 | Resume / retreat | Choose an action in the pause menu | Tab to the action and press Enter |
@@ -64,7 +68,11 @@ Each companion has four body-part attacks, with matching attachment-point animat
 
 The four cards sit side by side in landscape and form a compact two-by-two hand in portrait. The ultimate remains a separate charged ability.
 
-The dungeon has three connected chambers, narrow corridors, solid walls, a following camera, and a sealed boss entrance. The two slimes move one tile for every two steps you take. Puffy waits in the final chamber. Exploration pauses during contact transitions and battles. Leaving the dungeon or reloading returns you to the village; completed encounters, XP, rescues, and rewards remain saved.
+Each dungeon has connected chambers, narrow corridors, solid walls, and a following camera. Mosslight Grove asks you to step on SUN, LEAF, then MOON; a wrong rune resets the sequence. Amber Quarry asks you to push a block onto a pressure plate. Sunken Sanctuary has three valves that toggle different combinations of lamps; light all three. Clues and puzzle progress stay visible on phones. Reset puzzle restores an unfinished mechanism if you get stuck.
+
+Slimes move one tile for every two steps you take; only one is active at a time. The puzzle gate keeps the last enemy in its chamber until the puzzle and earlier encounters are cleared. Exploration freezes during battles and resumes with the same puzzle state and player position. Level map abandons the current expedition; Exit to Atia returns to the village. Reloads also return to Atia. Dungeon clears, XP, rescues, and rewards remain saved, while unfinished runs and puzzles restart.
+
+Town and dungeon scenery and overworld characters use simple replaceable placeholders. Atia uses flat tile footprints and block markers without illustrated town art. Its camera follows the character, and destination buttons find a walkable path to the building before opening its menu. Manual movement takes over from automatic walking; opening a menu stops movement. Town position survives visits to the level map during the current session and resets to the square after reloading.
 
 Dungeon scenery and overworld characters use simple replaceable shapes. Change `src/scenes/DungeonMapScene.js` for visuals and `src/game/dungeonLayout.js` for tiles/spawns. Combat uses the existing ability and dodge system with shape-based slimes and a stone-room backdrop.
 
@@ -72,11 +80,11 @@ Each enemy attack has a 6.5-second dodge phase. Move your Axie, jump onto ledges
 
 Puffy’s blessing adds 5% to the dodge phase and warning window. It is deterministic, permanent in this browser’s save, and never stacks from repeat rescues.
 
-Puffy is the aquatic guardian, using the official Origins starter artwork and animations. Purifying Puffy removes the corruption effect and unlocks **Atia’s village healer**. After returning injured, tap Puffy’s spring or **Puffy** in the village dock, then **Restore health** to recover all missing HP for free. Puffy uses healing water and bubbles, and the panel shows your current/max HP. Healing is available only in the village after the rescue. Existing fresh-health encounter/retry rules still apply. Saves from the earlier Momo prototype automatically retain their rescue, blessing, ranks, and rewards under Puffy’s name.
+Puffy is the aquatic guardian, using the official Origins starter artwork and animations. Purifying Puffy removes the corruption effect and unlocks **Atia’s village healer**. After returning injured, walk to Puffy’s spring or tap **Puffy** to walk there automatically, then choose **Restore health** to recover all missing HP for free. The healing panel shows your current/max HP. Healing is available only in the village after the rescue. Existing fresh-health encounter/retry rules still apply. Saves from the earlier Momo prototype automatically retain their rescue, blessing, ranks, and rewards under Puffy’s name.
 
 ## Progress and rewards
 
-Adventure Rank thresholds are 0, 50, 140, 280, and 460 total XP. Buba’s encounter grants 60 XP once. First clears grant 30 / 45 / 90 XP; repeat clears grant 20 XP. Each rank’s supplies can be claimed once. Coins, timber, and essence are collected for the restoration prototype; tent improvements currently follow rank automatically.
+Adventure Rank thresholds are 0, 50, 140, 280, and 460 total XP. Buba’s encounter grants 60 XP once. Completed dungeons grant 30 / 45 / 90 XP on their first clear; replay clears grant 20 XP. Intermediate slime wins do not grant dungeon-clear rewards or unlock levels. Each rank’s supplies can be claimed once. Coins, timber, and essence are collected for the restoration prototype; tent improvements currently follow rank automatically.
 
 The local save key is `atia-adventure-v1`. Story checkpoints, companions, claims, cleared stages, resources, and rescued villagers survive reloads. An unfinished encounter restarts from the village (or Buba’s introduction before the prologue is complete). Retry restores full health at the same encounter. If browser storage is blocked, a notice explains that progress lasts only for the current session.
 
@@ -91,13 +99,16 @@ npm run test:e2e
 npm run build
 ```
 
-Browser checks exercise the prologue, contact-triggered dungeon battles through Puffy’s rescue, save restoration, one-time rewards, village healing, and Android touch emulation in portrait and landscape. Unit tests cover lethal hits and encounter state. They also check an actual touch drag across the village, camp navigation, simultaneous movement and jump touches, a frozen dodge timer in the pause menu, and identical canvas frames while choosing an attack. Screenshots are written to `test-results/` (git-ignored).
+Browser checks exercise the prologue, the level map, all three puzzles, contact-triggered battles through Puffy’s rescue, save restoration, one-time rewards, village healing, and Android touch emulation in portrait and landscape. Unit tests cover lethal hits and encounter state. They also check town touch movement, building collisions, automatic destination walking, nearby interactions, simultaneous movement and jump touches, a frozen dodge timer in the pause menu, and identical canvas frames while choosing an attack. Screenshots are written to `test-results/` (git-ignored).
 
 ## Source and assets
 
 - `src/App.js`, `src/App.css`: story, village HUD, touch controls, accessible panels, and responsive layouts.
 - `src/origins-theme.css`: cartoon interface, Origins parchment/wood artwork, and locally hosted Changa One / Nunito fonts. Changa One is a visual match; the exact Origins font has not been verified. Font and artwork sources are recorded in the asset provenance document.
-- `src/mobile-game.css`, `src/ui/WorldView.js`, `src/ui/JourneyMap.js`: full-screen world composition, safe-area HUD, village panning, portrait stage route, scrolling panels, and compact battle controls. The CSS owns the canvas display bounds; Phaser refreshes its input scale from those measured bounds.
+- `src/mobile-game.css`, `src/ui/WorldView.js`: full-screen world composition, safe-area HUD, measured world framing, scrolling panels, and compact battle controls. The CSS owns the canvas display bounds; Phaser refreshes its input scale from those measured bounds.
+- `src/ui/DungeonSelection.js`, `src/expedition-map.css`, `src/scenes/LevelSelectScene.js`: responsive level map, dungeon previews, and selection.
+- `src/game/dungeonLayout.js`: distinct maps, puzzle rules, collision, and slime pathfinding.
+- `src/scenes/VillageScene.js`, `src/game/townLayout.js`, `src/ui/TownControls.js`, `src/town.css`: walkable town, flat placeholder buildings, collision, pathfinding, and destination interactions.
 - `src/main.js`: Phaser lifecycle and React bridge.
 - `src/scenes/`: loading, arrival, Buba’s dialogue, village, tile-based dungeon exploration, combat, rescue, and defeat.
 - `src/game/state.js`: validated local saves, unlocks, ranks, rewards, and encounter state.
@@ -111,4 +122,4 @@ Browser checks exercise the prologue, contact-triggered dungeon battles through 
 
 Read the [saved Axie references](docs/ASSET_REFERENCES.md) and [asset sources, licenses, and village generation prompt](docs/ASSET_PROVENANCE.md) before further art work. Imported Axie materials remain Sky Mavis IP and are limited to Axie Vibeathon / approved programs, as described by the included notices.
 
-This prototype includes one story chapter, two playable companions, three dungeon stages, five Adventure Ranks, and one rescuable guardian. Later map regions are visibly locked. Audio, additional regions, wallet integration, multiplayer, cloud saves, and offline play are outside this slice.
+This prototype includes one story chapter, two playable companions, three dungeon stages, five Adventure Ranks, and one rescuable guardian. Existing saves retain their previously unlocked stages. Audio, additional regions, wallet integration, multiplayer, cloud saves, and offline play are outside this slice.

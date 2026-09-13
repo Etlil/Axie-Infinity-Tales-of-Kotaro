@@ -1,6 +1,23 @@
 import { bosses } from '../data/bosses';
 import { createSession, derive, initialState, SAVE_KEY } from './state';
+import {DUNGEONS} from './dungeonLayout';
 const memory = () => { const data={};return {getItem:key=>data[key],setItem:(key,value)=>{data[key]=value;},removeItem:key=>{delete data[key];}}; };
+test('only a whole dungeon unlocks the next level, and saved clears survive a fresh expedition',()=>{
+  const storage=memory(),s=unlocked(storage);const xp=s.state.xp;
+  expect(s.startDungeon(1)).toBe(false);expect(s.startDungeon(-1)).toBe(false);
+  expect(s.startDungeon(0)).toBe(true);expect(s.prepareEncounter(1)).toBe(false);
+  s.prepareEncounter(0);expect(s.finishDungeonEncounter()).toEqual({kind:'encounter'});
+  expect(s.state).toMatchObject({unlockedStage:0,completedStages:[],xp});
+  s.patch({dungeonRun:{...s.state.dungeonRun,puzzle:{...s.state.dungeonRun.puzzle,solved:true}}});
+  expect(s.prepareEncounter(0)).toBe(true);
+  expect(s.finishDungeonEncounter()).toMatchObject({kind:'cleared',first:true});
+  expect(s.state.completedStages).toEqual([0]);expect(s.state.unlockedStage).toBe(1);
+  const restored=createSession(null,{storage});expect(restored.state.dungeonRun).toBeNull();
+  expect(restored.startDungeon(1)).toBe(true);expect(restored.state.dungeonRun.level).toBe(1);
+  expect(restored.prepareEncounter(DUNGEONS[1].encounters[0])).toBe(true);
+  expect(restored.state.enemy.location).toBe('Amber Quarry');
+  restored.startDungeon(0);expect(restored.state.dungeonRun).toMatchObject({defeated:0,puzzle:{solved:false}});
+});
 function unlocked(storage) { const s=createSession(jest.fn(),{storage});s.finishTutorial();s.finishPrologue();return s; }
 
 test('Buba must be defeated before the amulet and playable companion unlock',()=>{

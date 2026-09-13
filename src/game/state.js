@@ -1,6 +1,7 @@
 import { characterCards, ultimates } from '../data/playerCards';
 import { bosses, dungeonRooms } from '../data/bosses';
 import { rankRewards, rankThresholds } from '../data/story';
+import {DUNGEONS,createDungeonRun,dungeonFor} from './dungeonLayout';
 export const SAVE_KEY = 'atia-adventure-v1';
 
 export function initialState() {
@@ -10,7 +11,7 @@ export function initialState() {
     playerHP: 100, playerMaxHP: 100, enemyHP: 0, enemy: null, roomIndex: 0, tutorial: false, turn: 1, dungeonRun:null,
     selectedAttack: 0, dodgeX: 330, dodgeY: 600, grounded: true, dashReady: true, dashCooldown: 0, dodgeDuration: 6.5, dodgeRemaining: 0, warningRemaining: 0, warningActive: false, dodgeActive: false,
     guard: 0, charge: 0, dodges: 0, hits: 0, lastDamage: 0, cards: characterCards.kotaro, ultimate: ultimates.kotaro,
-    message: 'A new story waits beyond the gate.', panel: null, result: null, saveAvailable: true };
+    message: 'A new story waits beyond the gate.', panel: null, result: null, townPosition:null, saveAvailable: true };
 }
 const profileKeys = ['introStep','dialogueIndex','tutorialWon','prologueComplete','activeCharacter','unlockedCharacters','amulet','xp','coins','wood','essence','claimedRewards','completedStages','unlockedStage','rescued'];
 const validIds = new Set(['kotaro','buba']);
@@ -74,14 +75,32 @@ export function createSession(onState, { storage = null } = {}) {
       onState?.({ ...this.state });
     },
     prepareEncounter(index = 0, tutorial = false) {
-      const enemy = tutorial ? bosses.buba : dungeonRooms[index];
-      if (!enemy || (!tutorial && (!this.state.prologueComplete || index > this.state.unlockedStage))) return false;
+      const baseEnemy = tutorial ? bosses.buba : dungeonRooms[index];
+      const run=this.state.dungeonRun;
+      const enemy=baseEnemy&&run&&!tutorial?{...baseEnemy,location:dungeonFor(run).name}:baseEnemy;
+      const allowed=run?run.level<=this.state.unlockedStage&&dungeonFor(run).encounters[run.defeated]===index:index<=this.state.unlockedStage;
+      if (!enemy || (!tutorial && (!this.state.prologueComplete || !allowed))) return false;
       this.patch({ tutorial, roomIndex:index, enemy, enemyHP:enemy.maxHP, playerHP:this.state.playerMaxHP, guard:0, charge:0,
         turn:1, selectedAttack:0, dodgeX:330, dodgeY:600, grounded:true, dashReady:true, dashCooldown:0, dodgeActive:false, warningActive:false, dodges:0, hits:0, lastDamage:0, result:null, panel:null });
       return true;
     },
     finishTutorial() {
       if (!this.state.tutorialWon) this.patch({ tutorialWon:true, xp:this.state.xp + 60, coins:this.state.coins + 50, dialogueIndex:0 });
+    },
+    startDungeon(level) {
+      if(!this.state.prologueComplete||!Number.isInteger(level)||!DUNGEONS[level]||level>this.state.unlockedStage)return false;
+      this.patch({selectedStage:level,dungeonRun:createDungeonRun(level),result:null,playerHP:this.state.playerMaxHP});return true;
+    },
+    finishDungeonEncounter() {
+      const run=this.state.dungeonRun;
+      if(!run)return null;
+      const d=dungeonFor(run);
+      if(run.defeated>=d.encounters.length)return this.state.result;
+      const next={...run,defeated:run.defeated+1};
+      this.patch({dungeonRun:next});
+      if(next.defeated<d.encounters.length)return {kind:'encounter'};
+      if(this.state.enemy.id==='puffy'&&!this.state.rescued.some(x=>x.id==='puffy'))return {kind:'purify'};
+      return {kind:'cleared',...this.completeStage(run.level)};
     },
     finishPrologue() { if(!this.state.tutorialWon)return false; this.patch({ prologueComplete:true, amulet:true, unlockedCharacters:['kotaro','buba'], panel:null, playerHP:this.state.playerMaxHP }); return true; },
     completeStage(index) {

@@ -4,7 +4,7 @@ Consult [ASSET_REFERENCES.md](ASSET_REFERENCES.md) for the user’s saved refere
 
 ## Dungeon placeholder art
 
-The Sunken Halls dungeon uses original rectangles, ellipses, circles, and triangles drawn in `src/scenes/DungeonMapScene.js`. Its stone tiles, torches, exit marker, hero marker, slimes, and Puffy boss marker are deliberately replaceable placeholders. Tile collision and spawn data live separately in `src/game/dungeonLayout.js`. Slime battle art lives in `src/game/world.js`; the stone battle backdrop and touch pad use CSS in `src/dungeon.css`. No Pokémon images or new external assets were imported. Existing Axie combat animations and village artwork remain available.
+The Mosslight Grove, Amber Quarry, and Sunken Sanctuary dungeons use original rectangles, ellipses, circles, and triangles drawn in `src/scenes/DungeonMapScene.js`. Its stone tiles, torches, exit marker, hero marker, slimes, and Puffy boss marker are deliberately replaceable placeholders. Tile collision and spawn data live separately in `src/game/dungeonLayout.js`. Slime battle art lives in `src/game/world.js`; the stone battle backdrop and touch pad use CSS in `src/dungeon.css`. No Pokémon images or new external assets were imported. Existing Axie combat animations and village artwork remain available.
 
 ## Official Axie materials
 
@@ -81,3 +81,7 @@ The 2026-09-12 mobile layout reuses these same assets. `src/ui/WorldView.js` fra
 The four body-part ability icons and the horn, bite, back-weapon, and tail effects in `src/game/bodyPartAttacks.js` are original SVG/Phaser drawings. Their names are prototype abilities created for Kotaro and Buba, not imported official card names. Attachment points in `src/game/world.js` follow the existing character sprites; Buba's paintbrush tail also launches Paintstorm. This update adds no external artwork.
 
 The cinematic dialogue frame in `src/ui/DialogueBox.js` and `src/cinematic-game.css` is original CSS/SVG inspired by the Celeste dialogue screenshot supplied by the user. It reuses the existing Axie portraits and local fonts; no Celeste artwork or fonts are imported. The ledges, attack warnings, water waves, thorns, shields, and paint projectiles in `src/game/dodgeWorld.js` are original Phaser drawings for the moving-character dodge arena.
+
+The dungeon-selection map in `src/ui/DungeonSelection.js` and `src/expedition-map.css` uses original SVG/CSS paths, circles, and colored regions inspired by node-based mobile level maps. Rune stones, counterweight blocks, plates, valves, and tidal lamps are original Phaser shapes. No Candy Crush or Pokemon artwork was imported.
+
+Atia Town now renders flat rectangular tiles, building footprints, and block character markers in `src/scenes/VillageScene.js`. These are original temporary placeholders, with collision and walking destinations in `src/game/townLayout.js`; no new illustrated town assets were added. The earlier village bitmap remains available for the existing prologue and is not used as the walkable town background.

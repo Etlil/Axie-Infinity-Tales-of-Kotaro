@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import DungeonMapScene from './scenes/DungeonMapScene';
+import LevelSelectScene from './scenes/LevelSelectScene';
 import CombatScene from './scenes/CombatScene';
 import VictoryScene from './scenes/VictoryScene';
 import VillageScene from './scenes/VillageScene';
@@ -47,7 +48,7 @@ export function createGame(parent, onState) {
       height: 800,
     },
     render: { antialias: true, pixelArt: false },
-    scene: [BootScene, IntroScene, DialogueScene, DungeonMapScene, CombatScene, VictoryScene, VillageScene, DefeatScene],
+    scene: [BootScene, IntroScene, DialogueScene, LevelSelectScene, DungeonMapScene, CombatScene, VictoryScene, VillageScene, DefeatScene],
     callbacks: {
       preBoot: (instance) => {
         instance.session = session;

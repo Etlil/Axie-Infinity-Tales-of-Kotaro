@@ -4,7 +4,7 @@ const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 // Keep village art and its HTML destinations on one coordinate system. On
 // narrow screens the same full-height world can be explored by dragging.
-export default function WorldView({ scene, children }) {
+export default function WorldView({ scene, children, walkableTown=false }) {
   const viewport = useRef(null), gesture = useRef(null);
   const [size, setSize] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
   const [focus, setFocus] = useState(.525);
@@ -21,7 +21,7 @@ export default function WorldView({ scene, children }) {
     return () => { observer?.disconnect(); window.removeEventListener('resize', measure); };
   }, []);
   useEffect(() => { setFocus(.525); gesture.current = null; setDragging(false); }, [scene]);
-  const village = scene === 'village';
+  const village = scene === 'village'&&!walkableTown;
   const width = Math.max(size.width, size.height * 1.5);
   const height = width / 1.5;
   const limit = size.width / width / 2;

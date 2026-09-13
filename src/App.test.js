@@ -3,6 +3,7 @@ import App from './App';
 import {createGame} from './main';
 import {initialState,derive} from './game/state';
 import {bosses} from './data/bosses';
+import {createDungeonRun} from './game/dungeonLayout';
 jest.mock('./main',()=>({createGame:jest.fn()}));
 const command=jest.fn(),destroy=jest.fn();let publish;
 beforeEach(()=>{
@@ -18,6 +19,18 @@ test('first launch introduces Atia and unmount releases the engine',()=>{
  fireEvent.click(screen.getByRole('button',{name:'Begin journey'}));
  expect(command).toHaveBeenCalledWith('nextIntro',undefined);
  view.unmount();expect(destroy).toHaveBeenCalledTimes(1);
+});
+test('the gate map respects locks and clearing a run before scene navigation never crashes the controls',()=>{
+ render(<App/>);publish({scene:'map',prologueComplete:true});
+ expect(screen.getByRole('button',{name:'Level 2: Amber Quarry'})).toBeDisabled();
+ fireEvent.click(screen.getByRole('button',{name:'Enter dungeon'}));
+ expect(command).toHaveBeenCalledWith('enterDungeon',undefined);
+ publish({scene:'dungeon',prologueComplete:true,dungeonRun:createDungeonRun(0)});
+ expect(screen.getByRole('button',{name:'Walk up'})).toBeInTheDocument();
+ publish({scene:'dungeon',prologueComplete:true,dungeonRun:null});
+ expect(screen.queryByRole('button',{name:'Walk up'})).not.toBeInTheDocument();
+ publish({scene:'village',prologueComplete:true});
+ expect(screen.getByRole('button',{name:'Adventure',exact:true})).toBeInTheDocument();
 });
 test('cards dispatch the selected ability and lock throughout animations',()=>{
  render(<App/>);publish({scene:'combat',phase:'PLAYER_TURN',enemy:bosses.buba,enemyHP:120});
@@ -144,7 +157,7 @@ test('rescued Puffy offers village healing and locks the button at full health',
  const state={scene:'village',prologueComplete:true,activeCharacter:'buba',playerHP:43,rescued:[{id:'puffy'}]};
  publish(state);
  fireEvent.click(screen.getByRole('button',{name:'Visit Puffy'}));
- expect(command).toHaveBeenCalledWith('openPanel','healer');
+ expect(command).toHaveBeenCalledWith('townTravel','spring');
  publish({...state,panel:'healer'});
  expect(screen.getByRole('dialog',{name:'Puffy’s healing spring'})).toBeInTheDocument();
  expect(screen.getByText('43 / 110 HP')).toBeInTheDocument();
@@ -152,5 +165,5 @@ test('rescued Puffy offers village healing and locks the button at full health',
  expect(command).toHaveBeenCalledWith('healWithPuffy',undefined);
  publish({...state,playerHP:110,panel:'healer'});
  expect(screen.getByRole('button',{name:'Fully healed'})).toBeDisabled();
- expect(screen.getByRole('status')).toHaveTextContent('Full health. Ready for your next adventure.');
+ expect(screen.getByText('Full health. Ready for your next adventure.')).toBeInTheDocument();
 });

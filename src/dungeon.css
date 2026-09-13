@@ -14,5 +14,9 @@
 .dungeon-hint { padding:10px 14px; display:flex; flex:1; flex-direction:column; gap:5px; color:#e6f1d7; background:#152430dc; border-radius:12px; max-width:430px; }
 .dungeon-hint b { font-size:14px; }.dungeon-hint span { font-size:11px; }.dungeon-hint small { font-size:8px; color:#9eb8b7; }
 .dungeon-exit { pointer-events:auto; min-height:48px; margin-left:auto; }
+.dungeon-actions { display:flex; flex-direction:column; gap:6px; pointer-events:auto; margin-left:auto; }
+.dungeon-actions .small-button { min-height:44px; margin:0; font-size:12px; }
+.dungeon-objective .puzzle-clue { margin-top:7px; font-size:11px; line-height:1.4; color:#f2ddb1; }
 @media (orientation:landscape) and (max-height:600px) { .dungeon-objective { top:76px; padding:7px 12px; max-width:360px; }.dungeon-objective h1 { font-size:21px; }.dungeon-objective p { font-size:10px; }.dungeon-hint { display:none; }.dungeon-bottom { gap:10px; } }
 @media (orientation:portrait) and (max-width:700px) { .dungeon-objective { top:96px; right:var(--safe-right); }.dungeon-objective h1 { font-size:23px; }.dungeon-hint { display:none; }.dungeon-bottom { gap:10px; }.dungeon-exit { max-width:130px; } }
+@media (orientation:landscape) and (max-height:600px) { .dungeon-objective { width:290px; max-width:calc(50vw - 54px); }.dungeon-objective .puzzle-clue { font-size:9px; margin-top:4px; }.dungeon-objective h1 { font-size:19px; margin:3px 0; }.dungeon-actions { display:grid; grid-template-columns:repeat(2,auto); gap:5px; }.dungeon-actions .small-button { font-size:10px; padding:6px 9px; } }

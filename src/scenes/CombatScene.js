@@ -142,9 +142,9 @@ export default class CombatScene extends SceneBase {
     this.time.delayedCall(600, () => {
       if (this.state.tutorial) { this.session.finishTutorial(); this.scene.start('DialogueScene'); }
       else {
-        if(this.state.dungeonRun)this.session.patch({dungeonRun:{...this.state.dungeonRun,defeated:this.state.roomIndex+1}});
-        const result = this.enemy.id === 'puffy' && !this.state.rescued.some(x => x.id === 'puffy')
-          ? { kind: 'purify' } : { kind: 'cleared', ...this.session.completeStage(this.state.roomIndex) };
+        const result = this.state.dungeonRun ? this.session.finishDungeonEncounter() :
+          this.enemy.id === 'puffy' && !this.state.rescued.some(x => x.id === 'puffy')
+            ? { kind: 'purify' } : { kind: 'cleared', ...this.session.completeStage(this.state.roomIndex) };
         this.session.patch({ result });
         this.scene.start('VictoryScene');
       }

@@ -1,0 +1,16 @@
+.scene-village .world-stage { width:max(100vw,150dvh); height:max(66.667vw,100dvh); left:50%; top:50%; transform:translate(-50%,-50%); }
+.scene-village .world-fill { background:#293d34; }
+.scene-village .world-shade { pointer-events:none; background:radial-gradient(ellipse at center,transparent 45%,#192d3277); }
+.scene-village .location-title { display:none; }
+.town-info { position:absolute; top:100px; left:var(--safe-left); padding:13px 18px; background:#233d35e8; border-left:3px solid #d9c17c; border-radius:0 16px 16px 0; color:#fff0c6; max-width:350px; }
+.town-info small { font-size:9px; letter-spacing:1.5px; }.town-info h1 { font:400 28px var(--display-font); margin:5px 0; }.town-info p { font-size:11px; margin:9px 0 0; color:#d3e5c9; }
+.town-info .town-quest { position:static; display:block; width:auto; min-width:0; min-height:0; margin:0; padding:0; background:none; border:0; border-image:none; box-shadow:none; color:#eed795; font:700 11px var(--body-font); text-align:left; }
+.town-bottom { position:absolute; bottom:var(--safe-bottom); left:var(--safe-left); right:var(--safe-right); display:flex; gap:20px; align-items:flex-end; pointer-events:none; }
+.town-status { flex:1; max-width:340px; padding:12px 16px; background:#233d35e8; border-radius:12px; color:#edf1d3; font-size:12px; line-height:1.5; }
+.town-actions { pointer-events:auto; width:330px; margin-left:auto; display:flex; flex-direction:column; gap:8px; }.town-interact { min-height:46px; font-size:14px; }.town-shortcuts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }.town-shortcuts .small-button,.town-shortcuts .gold-button { min-height:44px; padding:7px 5px; font-size:12px; }.town-shortcuts .gold-button { font-size:16px; }
+@media (orientation:landscape) and (max-height:600px) {
+  .town-info { top:76px; width:260px; max-width:calc(50vw - 54px); padding:8px 12px; }.town-info small { font-size:7px; letter-spacing:.5px; }.town-info h1 { font-size:22px; margin:4px 0; }.town-info p { font-size:9px; margin-top:6px; }.town-info .town-quest { font-size:9px; }.town-status { display:none; }.town-bottom { gap:10px; }.town-actions { width:265px; gap:5px; }.town-shortcuts { gap:5px; }.town-shortcuts .small-button { font-size:10px; }.town-shortcuts .gold-button { font-size:13px; }.town-interact { font-size:11px; min-height:44px; }
+}
+@media (orientation:portrait) and (max-width:700px) {
+  .town-info { top:96px; right:var(--safe-right); max-width:none; }.town-info h1 { font-size:25px; }.town-status { display:none; }.town-bottom { gap:10px; }.town-actions { width:calc(100% - 164px); gap:6px; }.town-shortcuts { grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }.town-shortcuts .small-button { font-size:10px; }.town-shortcuts .gold-button { font-size:12px; }.town-interact { font-size:11px; min-height:46px; padding:7px; }
+}
