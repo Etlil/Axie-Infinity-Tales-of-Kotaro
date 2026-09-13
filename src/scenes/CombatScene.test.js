@@ -84,6 +84,15 @@ test('a normal clear unlocks the next node and grants first-clear rewards',()=>{
  session.patch({enemyHP:12});combat.playCard('horn-lance');jest.advanceTimersByTime(1400);
  expect(session.state).toMatchObject({unlockedStage:1,completedStages:[0],result:{kind:'cleared',xp:30}});
 });
+
+test('dungeon victory removes one slime and retains the exploration return tile',()=>{
+ const {combat,session}=encounter(dungeonRooms[0],0);
+ session.patch({dungeonRun:{x:7,y:8,defeated:0},enemyHP:12});
+ combat.playCard('horn-lance');jest.advanceTimersByTime(1400);
+ expect(session.state.dungeonRun).toEqual({x:7,y:8,defeated:1});
+ expect(session.state.result.kind).toBe('cleared');
+ expect(session.state.completedStages).toEqual([0]);
+});
 test('healing is capped, shields are consumed on contact, and lethal contact opens defeat',()=>{
  const {combat,session}=encounter();
  session.patch({playerHP:98});combat.playCard('moon-fang');expect(session.state.playerHP).toBe(100);

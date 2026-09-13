@@ -2,6 +2,10 @@
 
 Consult [ASSET_REFERENCES.md](ASSET_REFERENCES.md) for the user’s saved reference collection.
 
+## Dungeon placeholder art
+
+The Sunken Halls dungeon uses original rectangles, ellipses, circles, and triangles drawn in `src/scenes/DungeonMapScene.js`. Its stone tiles, torches, exit marker, hero marker, slimes, and Puffy boss marker are deliberately replaceable placeholders. Tile collision and spawn data live separately in `src/game/dungeonLayout.js`. Slime battle art lives in `src/game/world.js`; the stone battle backdrop and touch pad use CSS in `src/dungeon.css`. No Pokémon images or new external assets were imported. Existing Axie combat animations and village artwork remain available.
+
 ## Official Axie materials
 
 Imported character and world files are under `public/assets/atia/`; interface artwork is under `src/assets/ui/`. Axie characters, models, artwork, and animations remain Sky Mavis / Axie Infinity intellectual property. This repository is an Axie Vibeathon project. These are limited-use builder resources, not generally licensed stock art.

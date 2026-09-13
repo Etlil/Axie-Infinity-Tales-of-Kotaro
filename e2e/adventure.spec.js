@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const {contactFirstSlime}=require('./helpers');
 const SAVE_KEY = 'atia-adventure-v1';
 const profile = { version:1, tutorialWon:true, prologueComplete:true, amulet:true, activeCharacter:'kotaro', xp:60, coins:50, wood:0, essence:0, claimedRewards:[], completedStages:[], rescued:[] };
 
@@ -38,47 +39,7 @@ async function visibleControls(page, selector) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
 }
 
-test('four body-part keyboard attacks work for both companions; key 5 uses the charged ultimate',async({page})=>{
-  test.setTimeout(150000);
-  const errors=[];page.on('pageerror',error=>errors.push(error.message));
-  await savedVillage(page,{completedStages:[0,1],xp:135});
-  for (const hero of ['kotaro','buba']) {
-    if (hero==='buba') {
-      await page.getByRole('button',{name:'Team',exact:true}).click();
-      await page.getByRole('button',{name:'Choose Buba',exact:true}).click();
-    }
-    await page.getByRole('button',{name:'Adventure',exact:true}).click();
-    await page.getByRole('button',{name:/Stage 3:/}).click();
-    await page.getByRole('button',{name:'Enter encounter',exact:true}).click();
-    await expect(page.locator('.ability-card')).toHaveCount(4);
-    await page.keyboard.press('5');
-    await expect(page.locator('.ability-card').first()).toBeEnabled();
-    await page.waitForTimeout(350);
-    const frozen=await page.locator('canvas').screenshot();
-    await page.waitForTimeout(700);
-    expect((await page.locator('canvas').screenshot()).equals(frozen)).toBe(true);
-    for (const [index,part] of ['horn','mouth','back','tail'].entries()) {
-      const card=page.locator('.ability-card').nth(index);
-      await expect(card).toBeEnabled();
-      await expect(card).toHaveAttribute('data-part',part);
-      const name=await card.locator('strong').textContent();
-      await page.keyboard.press(index===0?'x':String(index+1));
-      await expect(page.getByRole('status')).toContainText(name+'!');
-      await expect(card).toBeDisabled();
-      await expect(card).toBeEnabled({timeout:10000});
-    }
-    await expect(page.locator('.ultimate-button')).toBeEnabled();
-    await page.keyboard.press('5');
-    await expect(page.getByRole('status')).toContainText(hero==='buba'?'Paintstorm!':'Moonlit Eclipse!');
-    await expect(page.locator('.ultimate-button')).toBeDisabled();
-    await page.getByRole('button',{name:'Pause encounter'}).click();
-    await page.getByRole('button',{name:'Retreat from encounter'}).click();
-    await expect(page.locator('.scene-village')).toBeVisible();
-  }
-  expect(errors).toEqual([]);
-});
-
-test('complete prologue, Buba unlock, rank rewards, route, amulet rescue and durable save', async ({page}) => {
+test('complete prologue, Buba unlock, rank rewards and durable save', async ({page}) => {
   test.setTimeout(240000);
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/');
@@ -113,43 +74,11 @@ test('complete prologue, Buba unlock, rank rewards, route, amulet rescue and dur
   await page.getByRole('button',{name:'Team',exact:true}).click();
   await page.getByRole('button',{name:'Choose Buba'}).click();
   await expect(page.locator('.profile-block')).toContainText('Buba');
-  await page.getByRole('button',{name:/Village gate/}).click();
-  await expect(page.locator('.scene-map')).toBeVisible();
-  await page.screenshot({path:'test-results/atia-map-desktop.png'});
-  for(let i=0;i<3;i++){
-    await page.getByRole('button',{name:'Stage '+(i+1)+': '+['Whispering Woods','The Hollow Crossing','Puffy’s Lagoon'][i],exact:true}).click();
-    await page.getByRole('button',{name:'Enter encounter',exact:true}).click();
-    await expect(page.locator('.ability-card').first()).toContainText('Leaf Horn');
-    await fight(page);
-    if(i<2)await page.getByRole('button',{name:'Continue journey'}).click();
-  }
-  await expect(page.getByRole('button',{name:'Use the amulet'})).toBeVisible();
-  expect(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).rescued.length,SAVE_KEY)).toBe(0);
-  await page.getByRole('button',{name:'Use the amulet'}).click();
-  await expect(page.getByRole('heading',{name:'Welcome home, Puffy.'})).toBeVisible();
-  await page.getByRole('button',{name:'Bring Puffy home'}).click();
-  await expect(page.locator('.quest-card')).toContainText('+5% dodge time');
   await page.reload();
   await expect(page.locator('.scene-village')).toBeVisible();
   await expect(page.locator('.profile-block')).toContainText('Buba');
-  await expect(page.locator('.profile-block')).toContainText('Adventure Rank 3');
-  await page.getByRole('button',{name:/Buba’s tent/}).click();
-  await expect(page.getByText('A mended canvas tent',{exact:true})).toBeVisible();
-  await expect(page.getByRole('button',{name:'Rank 1 claimed'})).toBeDisabled();
+  await expect(page.locator('.profile-block')).toContainText('Adventure Rank 2');
   expect(errors).toEqual([]);
-});
-
-test('failed dodges lead to defeat; retry restores the same guardian with full health',async({page})=>{
-  await savedVillage(page,{completedStages:[0,1],xp:135});
-  await page.getByRole('button',{name:'Adventure',exact:true}).click();
-  await page.getByRole('button',{name:'Stage 3: Puffy’s Lagoon'}).click();
-  await page.getByRole('button',{name:'Enter encounter'}).click();
-  await fight(page,{dodge:false,weak:true});
-  await expect(page.getByRole('heading',{name:'Your story isn’t over.'})).toBeVisible();
-  await page.getByRole('button',{name:'Try again'}).click();
-  await expect(page.locator('.health').first()).toContainText('100 / 100');
-  await expect(page.locator('.enemy-health')).toContainText('Corrupted Puffy');
-  await expect(page.locator('.ability-card').first()).toBeEnabled();
 });
 
 test('Android touch controls, portrait and landscape, panel focus and save restoration',async({browser})=>{
@@ -175,7 +104,7 @@ test('Android touch controls, portrait and landscape, panel focus and save resto
   await page.getByRole('button',{name:'Close panel'}).tap();
   await page.getByRole('button',{name:'Adventure',exact:true}).tap();
   await page.screenshot({path:'test-results/atia-map-mobile.png'});
-  await page.getByRole('button',{name:'Enter encounter'}).tap();
+  await contactFirstSlime(page);
   await visibleControls(page,'.ability-card,.ultimate-button');
   await page.screenshot({path:'test-results/atia-combat-mobile.png'});
   await page.locator('.ability-card').first().tap();

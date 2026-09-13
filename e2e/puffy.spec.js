@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const {contactFirstSlime}=require('./helpers');
 const SAVE_KEY='atia-adventure-v1';
 
 test('legacy Momo rescue becomes Puffy without losing progress or granting another rescue',async({browser})=>{
@@ -22,10 +23,9 @@ test('legacy Momo rescue becomes Puffy without losing progress or granting anoth
     expect(migrated.rescued).toEqual([{id:'puffy',name:'Puffy',rescueBonus:{stat:'dodgeAccuracy',value:.05}}]);
     await page.screenshot({path:'test-results/puffy-village-landscape.png'});
     await page.getByRole('button',{name:'Adventure',exact:true}).tap();
-    await page.getByRole('button',{name:'Stage 3: Puffy’s Lagoon'}).tap();
-    await page.getByRole('button',{name:'Replay encounter',exact:true}).tap();
-    await expect(page.locator('.scene-combat')).toHaveAttribute('data-enemy','puffy');
-    await expect(page.locator('.enemy-health')).toContainText('Corrupted Puffy');
+    await contactFirstSlime(page);
+    await expect(page.locator('.scene-combat')).toHaveAttribute('data-enemy','slime-moss');
+    await expect(page.locator('.enemy-health')).toContainText('Moss Slime');
     await expect(page.locator('.ability-card').first()).toBeEnabled();
     expect(loaded.some(url=>url.endsWith('/puffy-sheet.png'))).toBe(true);
     expect(loaded.some(url=>url.endsWith('/momo-avatar.png'))).toBe(false);

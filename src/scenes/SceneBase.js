@@ -28,14 +28,14 @@ export default class SceneBase extends Phaser.Scene {
       else if(action==='selectCharacter'){
         if(this.session.selectCharacter(payload))this.scene.restart();
       } else if(action==='visitVillage'||action==='returnVillage'){
-        if(this.state.prologueComplete)this.scene.start('VillageScene');
+        if(this.state.prologueComplete){this.session.patch({dungeonRun:null});this.scene.start('VillageScene');}
       } else if(action==='returnMap'||action==='openMap'){
         if(this.state.prologueComplete)this.scene.start('DungeonMapScene');
       } else if(action==='retry'){
         this.session.prepareEncounter(this.state.roomIndex,this.state.tutorial);this.scene.start('CombatScene');
       } else if(action==='retreat'){
         if(this.state.tutorial){this.session.patch({introStep:3});this.scene.start('IntroScene');}
-        else this.scene.start('VillageScene');
+        else {this.session.patch({dungeonRun:null});this.scene.start('VillageScene');}
       } else this.onCommand(action,payload);
     };
     this.session.handler=handler;

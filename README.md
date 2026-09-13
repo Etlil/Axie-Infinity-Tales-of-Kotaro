@@ -25,7 +25,7 @@ On the Android phone, open Chrome and enter `http://YOUR-COMPUTER-IP:3000`. Find
 
 At the time of this build, this computer’s address was **http://192.168.1.25:3000**. Your router may assign a different address later.
 
-The game is designed **landscape first**, with a full-screen village, a compact edge HUD, touch cards, and a separate ultimate button. Portrait is also playable: drag the village sideways or use Camp / Square / Gate to explore, and scroll the winding dungeon map to select a stage. Desktop keyboard controls remain available. Fullscreen is available in Settings and the guide. Open Settings with the gear on story and village screens, or through the battle pause menu. Browser progress is stored per device and site address; saves do not sync between your PC and phone.
+The game is designed **landscape first**, with a full-screen village, a compact edge HUD, touch cards, and a separate ultimate button. Portrait is also playable: drag the village sideways or use Camp / Square / Gate to explore, and use the four-way touch pad to explore the dungeon. Desktop keyboard controls remain available. Fullscreen is available in Settings and the guide. Open Settings with the gear on story and village screens, or through the battle pause menu. Browser progress is stored per device and site address; saves do not sync between your PC and phone.
 
 For a public web release, run `npm run build` and serve the `build/` directory through an HTTPS static host. No backend is required. The manifest supports a standalone home-screen window; offline play and a service worker are not included.
 
@@ -33,10 +33,10 @@ For a public web release, run `npm run build` and serve the `build/` directory t
 
 1. Follow the arrival story and fight Buba in Atia’s clearing.
 2. Listen to his account of the raid, accept his handmade amulet, and unlock Buba as a playable companion.
-3. Explore the village hub. Buba’s tent contains Adventure Rank rewards; the gate opens a winding stage map.
-4. Clear Whispering Woods, the Hollow Crossing, and Puffy’s Lagoon in order.
-5. Weaken Puffy, then **Use the amulet** to reverse the corruption and bring Puffy home.
-6. Replay cleared stages to earn more XP. At ranks 3 and 5, Buba improves his tent into a mended shelter and then a lodge.
+3. Explore the village hub. Buba’s tent contains Adventure Rank rewards; the gate enters the Sunken Halls dungeon.
+4. Walk through the Mossy Hall and Sunken Passage. One slime appears at a time; contact starts a turn-based battle. Win, then choose Continue journey to resume exploring.
+5. Defeat both slimes to unlock the final chamber. Walk up to Puffy to start the boss fight, weaken Puffy, then **Use the amulet** to reverse the corruption and bring Puffy home.
+6. Exit to Atia and enter again to replay the dungeon and earn more XP. At ranks 3 and 5, Buba improves his tent into a mended shelter and then a lodge.
 
 | Action | Touch / mouse | Keyboard |
 | --- | --- | --- |
@@ -46,7 +46,7 @@ For a public web release, run `npm run build` and serve the `build/` directory t
 | Run | Hold Left / Right | A / D or Left / Right |
 | Jump | Tap Jump while moving | Space / W / Up |
 | Dash | Tap Dash | Shift |
-| Stage | Select a node and Enter encounter | Enter selected stage |
+| Explore dungeon | Hold the four-way pad | WASD / arrow keys |
 | Close a panel | Close button or backdrop | Escape |
 | Pause battle | Pause button at the top right | Focus the pause button and press Enter |
 | Resume / retreat | Choose an action in the pause menu | Tab to the action and press Enter |
@@ -63,6 +63,10 @@ Each companion has four body-part attacks, with matching attachment-point animat
 | Tail | Tail Sweep | Brush Tail (heal 6) |
 
 The four cards sit side by side in landscape and form a compact two-by-two hand in portrait. The ultimate remains a separate charged ability.
+
+The dungeon has three connected chambers, narrow corridors, solid walls, a following camera, and a sealed boss entrance. The two slimes move one tile for every two steps you take. Puffy waits in the final chamber. Exploration pauses during contact transitions and battles. Leaving the dungeon or reloading returns you to the village; completed encounters, XP, rescues, and rewards remain saved.
+
+Dungeon scenery and overworld characters use simple replaceable shapes. Change `src/scenes/DungeonMapScene.js` for visuals and `src/game/dungeonLayout.js` for tiles/spawns. Combat uses the existing ability and dodge system with shape-based slimes and a stone-room backdrop.
 
 Each enemy attack has a 6.5-second dodge phase. Move your Axie, jump onto ledges, and dash through the actual projectiles. Guard reduces a hit and recovery abilities heal up to the character’s maximum HP. Three abilities charge an ultimate: Kotaro’s **Moonlit Eclipse** or Buba’s paintbrush **Paintstorm**.
 
@@ -87,7 +91,7 @@ npm run test:e2e
 npm run build
 ```
 
-Browser checks exercise the full prologue and rescue loop, defeat/retry, save restoration, one-time rewards, and Android touch emulation in portrait and landscape. They also check an actual touch drag across the village, camp navigation, simultaneous movement and jump touches, a frozen dodge timer in the pause menu, and identical canvas frames while choosing an attack. Screenshots are written to `test-results/` (git-ignored).
+Browser checks exercise the prologue, contact-triggered dungeon battles through Puffy’s rescue, save restoration, one-time rewards, village healing, and Android touch emulation in portrait and landscape. Unit tests cover lethal hits and encounter state. They also check an actual touch drag across the village, camp navigation, simultaneous movement and jump touches, a frozen dodge timer in the pause menu, and identical canvas frames while choosing an attack. Screenshots are written to `test-results/` (git-ignored).
 
 ## Source and assets
 
@@ -95,7 +99,7 @@ Browser checks exercise the full prologue and rescue loop, defeat/retry, save re
 - `src/origins-theme.css`: cartoon interface, Origins parchment/wood artwork, and locally hosted Changa One / Nunito fonts. Changa One is a visual match; the exact Origins font has not been verified. Font and artwork sources are recorded in the asset provenance document.
 - `src/mobile-game.css`, `src/ui/WorldView.js`, `src/ui/JourneyMap.js`: full-screen world composition, safe-area HUD, village panning, portrait stage route, scrolling panels, and compact battle controls. The CSS owns the canvas display bounds; Phaser refreshes its input scale from those measured bounds.
 - `src/main.js`: Phaser lifecycle and React bridge.
-- `src/scenes/`: loading, arrival, Buba’s dialogue, village, winding route, combat, rescue, and defeat.
+- `src/scenes/`: loading, arrival, Buba’s dialogue, village, tile-based dungeon exploration, combat, rescue, and defeat.
 - `src/game/state.js`: validated local saves, unlocks, ranks, rewards, and encounter state.
 - `src/entities/DodgeSystem.js`: fixed-step movement, jumps, ledge collisions, dashes, attack patterns, projectile collisions, and input cleanup.
 - `src/game/dodgeWorld.js`: arena ledges, attack telegraphs, and projectile rendering.

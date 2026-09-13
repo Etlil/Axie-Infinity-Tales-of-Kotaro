@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const {contactFirstSlime}=require('./helpers');
 const SAVE_KEY = 'atia-adventure-v1';
 
 test('reset confirmation preserves canceled saves and restarts paused combat durably', async ({ page }) => {
@@ -23,8 +24,7 @@ test('reset confirmation preserves canceled saves and restarts paused combat dur
   expect(await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY)).toBe(saved);
   await expect(page.locator('.profile-block')).toContainText('Buba');
   await page.getByRole('button',{name:'Adventure',exact:true}).click();
-  await page.getByRole('button',{name:/Stage 3:/}).click();
-  await page.getByRole('button',{name:'Enter encounter'}).click();
+  await contactFirstSlime(page);
   await page.locator('.ability-card').first().click();
   await expect(page.locator('.dodge-controls')).toBeVisible();
   await page.getByRole('button',{name:'Pause encounter'}).click();

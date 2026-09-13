@@ -13,7 +13,7 @@ export default class CombatScene extends SceneBase {
     backdrop(this,this.state.tutorial?'village':this.enemy.id==='puffy'?'lagoon':'battle',{image:false});
     this.bindScene('combat','PLAYER_FOCUS','Take a breath. Choose your next move.',{enemyCard:null,selectedAttack:0});
     this.player=fighter(this,320,460,this.state.activeCharacter,1.35).setDepth(8);
-    this.enemySprite=fighter(this,890,445,this.enemy.id==='buba'?'buba':this.enemy.id==='puffy'?'puffy':'mob',1.35,'left');
+    this.enemySprite=fighter(this,890,445,this.enemy.id==='buba'?'buba':this.enemy.id==='puffy'?'puffy':this.enemy.id.startsWith('slime')?'slime':'mob',1.35,'left');
     this.enemySprite.setCorrupted?.(this.enemy.id==='puffy');
     this.arenaGraphics=this.add.graphics().setDepth(4);
     this.hazardGraphics=this.add.graphics().setDepth(12);
@@ -142,6 +142,7 @@ export default class CombatScene extends SceneBase {
     this.time.delayedCall(600, () => {
       if (this.state.tutorial) { this.session.finishTutorial(); this.scene.start('DialogueScene'); }
       else {
+        if(this.state.dungeonRun)this.session.patch({dungeonRun:{...this.state.dungeonRun,defeated:this.state.roomIndex+1}});
         const result = this.enemy.id === 'puffy' && !this.state.rescued.some(x => x.id === 'puffy')
           ? { kind: 'purify' } : { kind: 'cleared', ...this.session.completeStage(this.state.roomIndex) };
         this.session.patch({ result });
