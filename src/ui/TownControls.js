@@ -12,7 +12,7 @@ export default function TownControls({game,command}){
         <button className="small-button" onClick={()=>command('openPanel','amulet')}>Amulet</button>
         <button className="small-button" aria-label="Rewards" onClick={()=>command('townTravel','tent')}>Buba’s tent{game.availableRewards>0?' · '+game.availableRewards:''}</button>
         {puffy&&<button className="small-button" aria-label="Visit Puffy" onClick={()=>command('townTravel','spring')}>Puffy</button>}
-        <button className="small-button" onClick={()=>command('openPanel','journal')}>Journal</button>
+        <button className="small-button" onClick={()=>command('townTravel','well')}>Save fountain</button>
         <button className="gold-button" onClick={()=>command('townTravel','gate')}>Adventure</button>
       </nav></div>
     </div>

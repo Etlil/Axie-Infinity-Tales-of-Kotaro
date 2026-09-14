@@ -4,7 +4,7 @@ export const BUILDINGS=[
   {id:'tent',x:4,y:5,w:5,h:4,name:'BUBA’S TENT'},
   {id:'gate',x:24,y:2,w:5,h:3,name:'VILLAGE GATE'},
   {id:'spring',x:21,y:14,w:5,h:4,name:'HEALING SPRING'},
-  {id:'well',x:13,y:9,w:3,h:3,name:'OLD WELL'},
+  {id:'well',x:13,y:9,w:3,h:3,name:'SAVE FOUNTAIN'},
   {id:'ruins-north',x:12,y:3,w:5,h:3,name:'EMPTY HOMES'},
   {id:'ruins-west',x:3,y:15,w:5,h:4,name:'ABANDONED SHOP'},
 ];
@@ -12,7 +12,7 @@ export const TOWN_PLACES=[
   {id:'gate',x:26,y:5,name:'Village gate',action:'Choose a dungeon'},
   {id:'tent',x:6,y:9,name:'Buba’s tent',action:'Claim rank rewards'},
   {id:'spring',x:23,y:18,name:'Puffy’s spring',action:'Visit the healer'},
-  {id:'well',x:14,y:12,name:'Old well',action:'Read Atia’s story'},
+  {id:'well',x:14,y:12,name:'Save fountain',action:'Save your adventure'},
 ];
 export function townWalkable(x,y){
   return x>=1&&x<TOWN_SIZE.width-1&&y>=1&&y<TOWN_SIZE.height-1&&

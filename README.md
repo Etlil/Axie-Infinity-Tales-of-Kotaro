@@ -31,9 +31,9 @@ For a public web release, run `npm run build` and serve the `build/` directory t
 
 ## The journey
 
-1. Follow the arrival story and fight Buba in Atia’s clearing.
+1. Choose **Start** on the title screen, then select one of five save slots. Empty slots begin a new adventure; occupied slots resume it. Follow the arrival story and fight Buba in Atia’s clearing.
 2. Listen to his account of the raid, accept his handmade amulet, and unlock Buba as a playable companion.
-3. Walk around Atia Town. Buildings and the old well have solid footprints; paths connect the tent, gate, spring, and abandoned homes. Approach a destination and press E or tap the interaction button. Buba’s tent contains Adventure Rank rewards, and the gate opens a winding level-selection map.
+3. Walk around Atia Town. Buildings and the save fountain have solid footprints; paths connect the tent, gate, spring, and abandoned homes. Approach a destination and press E or tap the interaction button. Buba’s tent contains Adventure Rank rewards, and the gate opens a winding level-selection map.
 4. Select Mosslight Grove, Amber Quarry, or Sunken Sanctuary. Each has three rooms, its own route and colors, and a different puzzle. Levels unlock sequentially; completed levels remain replayable.
 5. Slimes appear one at a time and chase as you walk. Contact starts a turn-based battle; Continue journey resumes that dungeon. Solve its puzzle to open the last room. Only the final encounter completes a level and grants its clear rewards. Puffy guards the last room of Sunken Sanctuary: defeat him, then **Use the amulet** to bring him home.
 6. Return to the level map to choose another dungeon or replay a cleared one for more XP. At ranks 3 and 5, Buba improves his tent into a mended shelter and then a lodge.
@@ -72,7 +72,7 @@ Each dungeon has connected chambers, narrow corridors, solid walls, and a follow
 
 Slimes move one tile for every two steps you take; only one is active at a time. The puzzle gate keeps the last enemy in its chamber until the puzzle and earlier encounters are cleared. Exploration freezes during battles and resumes with the same puzzle state and player position. Level map abandons the current expedition; Exit to Atia returns to the village. Reloads also return to Atia. Dungeon clears, XP, rescues, and rewards remain saved, while unfinished runs and puzzles restart.
 
-Town and dungeon scenery and overworld characters use simple replaceable placeholders. Atia uses flat tile footprints and block markers without illustrated town art. Its camera follows the character, and destination buttons find a walkable path to the building before opening its menu. Manual movement takes over from automatic walking; opening a menu stops movement. Town position survives visits to the level map during the current session and resets to the square after reloading.
+Town and dungeon scenery and overworld characters use simple replaceable placeholders. Atia uses flat tile footprints and block markers without illustrated town art. Its camera follows the character, and destination buttons find a walkable path to the building before opening its menu. Manual movement takes over from automatic walking; opening a menu stops movement. Town position survives visits to the level map during the current session. Use **Save fountain** in the town square to save the current slot and set your return point there; otherwise, loading returns you to the square. Puffy’s healing spring remains a separate destination.
 
 Dungeon scenery and overworld characters use simple replaceable shapes. Change `src/scenes/DungeonMapScene.js` for visuals and `src/game/dungeonLayout.js` for tiles/spawns. Combat uses the existing ability and dodge system with shape-based slimes and a stone-room backdrop.
 
@@ -86,9 +86,9 @@ Puffy is the aquatic guardian, using the official Origins starter artwork and an
 
 Adventure Rank thresholds are 0, 50, 140, 280, and 460 total XP. Buba’s encounter grants 60 XP once. Completed dungeons grant 30 / 45 / 90 XP on their first clear; replay clears grant 20 XP. Intermediate slime wins do not grant dungeon-clear rewards or unlock levels. Each rank’s supplies can be claimed once. Coins, timber, and essence are collected for the restoration prototype; tent improvements currently follow rank automatically.
 
-The local save key is `atia-adventure-v1`. Story checkpoints, companions, claims, cleared stages, resources, and rescued villagers survive reloads. An unfinished encounter restarts from the village (or Buba’s introduction before the prologue is complete). Retry restores full health at the same encounter. If browser storage is blocked, a notice explains that progress lasts only for the current session.
+The title menu includes Start, Settings, Credits, and Quit. **Start** opens five independent save slots. Your existing save is retained as Slot 1 (`atia-adventure-v1`); Slots 2–5 use `atia-adventure-v1-slot-2` through `atia-adventure-v1-slot-5`. The title screen never overwrites a save before you choose a slot. Story checkpoints, companions, claims, cleared stages, resources, and rescued villagers survive reloads. An unfinished encounter restarts from the village (or Buba’s introduction before the prologue is complete). Retry restores full health at the same encounter. A pulsing **star in the lower-left corner** confirms each autosave and disappears after a moment. The loading screen and title menu explain the icon: wait until it disappears before closing. Failed saves show a persistent warning; Settings offers Retry save. Failed writes remain in memory while switching slots, but will be lost if the tab closes. Damaged or unreadable saves are preserved and disabled in the slot list.
 
-To replay from the beginning, choose **Settings → Reset save data → Delete save and restart**. Confirmation clears this browser’s Atia progress and restarts the intro as Kotaro, including when an encounter is paused. **Keep my save** cancels without deleting anything. Other browser data is untouched. The new adventure saves normally; a failed deletion keeps your current adventure and shows an error.
+To replay from the beginning, choose **Settings → Reset save data → Delete save and restart**. Confirmation clears only the selected slot’s Atia progress and restarts the intro as Kotaro, including when an encounter is paused. **Keep my save** cancels without deleting anything. Other slots and browser data are untouched. **Settings → Return to main menu** saves the active slot and ends the current expedition. **Quit** explains how to close the browser tab and warns if any slot still has unsaved session progress. The new adventure saves normally; a failed deletion keeps your current adventure and shows an error.
 
 ## Validate
 
@@ -111,6 +111,8 @@ Browser checks exercise the prologue, the level map, all three puzzles, contact-
 - `src/game/dungeonLayout.js`: distinct maps, puzzle rules, collision, and slime pathfinding.
 - `src/scenes/VillageScene.js`, `src/game/townLayout.js`, `src/ui/TownControls.js`, `src/town.css`: walkable town, flat placeholder buildings, collision, pathfinding, and destination interactions.
 - `src/main.js`: Phaser lifecycle and React bridge.
+- `src/ui/MainMenu.js`, `src/main-menu.css`, `src/ui/SaveIndicator.js`: title menu, slot selection, credits, quit screen, and autosave feedback.
+- `src/game/saveSlots.js`: five-slot storage, legacy Slot 1 compatibility, and failed-write recovery.
 - `src/scenes/`: loading, arrival, Buba’s dialogue, village, tile-based dungeon exploration, combat, rescue, and defeat.
 - `src/game/state.js`: validated local saves, unlocks, ranks, rewards, and encounter state.
 - `src/entities/DodgeSystem.js`: fixed-step movement, jumps, ledge collisions, dashes, attack patterns, projectile collisions, and input cleanup.

@@ -9,6 +9,8 @@ import { createSession } from './game/state';
 import BootScene from './scenes/BootScene';
 import IntroScene from './scenes/IntroScene';
 import DialogueScene from './scenes/DialogueScene';
+import MainMenuScene from './scenes/MainMenuScene';
+import {createSaveSlots} from './game/saveSlots';
 
 export function createGame(parent, onState) {
   let destroyed = false;
@@ -21,7 +23,7 @@ export function createGame(parent, onState) {
   try { storage = window.localStorage; } catch { /* Session play still works when storage is blocked. */ }
   const session = createSession((snapshot) => {
     if (!destroyed && onState) onState(snapshot);
-  }, { storage });
+  }, { slotStore:createSaveSlots(storage) });
   const applyInput = (instance) => {
     if (!instance?.input) return;
     instance.input.enabled = inputEnabled;
@@ -48,7 +50,7 @@ export function createGame(parent, onState) {
       height: 800,
     },
     render: { antialias: true, pixelArt: false },
-    scene: [BootScene, IntroScene, DialogueScene, LevelSelectScene, DungeonMapScene, CombatScene, VictoryScene, VillageScene, DefeatScene],
+    scene: [BootScene, MainMenuScene, IntroScene, DialogueScene, LevelSelectScene, DungeonMapScene, CombatScene, VictoryScene, VillageScene, DefeatScene],
     callbacks: {
       preBoot: (instance) => {
         instance.session = session;
@@ -82,6 +84,18 @@ export function createGame(parent, onState) {
       } else if (action === 'setPaused') {
         paused = Boolean(payload);
         applyPause();
+      } else if(action==='selectSlot'||action==='returnToMenu'){
+        if(!game?.scene||session.state.loading)return {ok:false,error:'The game is still loading.'};
+        // Stop paused combat too, so queued attacks cannot reach another save slot.
+        if(action==='selectSlot'&&session.state.scene!=='menu')return {ok:false,error:'Choose a slot from the main menu.'};
+        const result=action==='selectSlot'?session.selectSlot(payload):{ok:session.toMainMenu()};
+        if(!result.ok)return result;
+        session.handler=null;game.scene.getScenes(false).forEach(scene=>game.scene.stop(scene.sys.settings.key));
+        paused=false;inputEnabled=true;applyInput(game);
+        const key=action==='returnToMenu'?'MainMenuScene':session.state.prologueComplete?'VillageScene':session.state.tutorialWon?'DialogueScene':'IntroScene';
+        game.scene.start(key);return result;
+      } else if(action==='retrySave'){
+        return {ok:session.saveNow('manual')};
       } else if (action === 'resetSave') {
         if (!game?.scene || session.state.loading) return { ok: false, error: 'The adventure is still loading. Please try again in a moment.' };
         if (!session.resetSave()) return { ok: false, error: 'Your browser could not delete the save. Your adventure is unchanged. Please try again.' };

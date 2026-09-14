@@ -1,10 +1,11 @@
+const {enterAdventure}=require('./helpers');
 const { test, expect } = require('@playwright/test');
 const {contactFirstSlime}=require('./helpers');
 const SAVE_KEY = 'atia-adventure-v1';
 
 test('reset confirmation preserves canceled saves and restarts paused combat durably', async ({ page }) => {
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
-  await page.goto('/');
+  await page.goto('/');await enterAdventure(page);
   await expect(page.getByRole('button',{name:'Begin journey'})).toBeVisible();
   // Seed only this isolated test page, once. Reloading after reset cannot reseed it.
   await page.evaluate(key=>{
@@ -12,7 +13,7 @@ test('reset confirmation preserves canceled saves and restarts paused combat dur
     localStorage.setItem(key,JSON.stringify({version:1,tutorialWon:true,prologueComplete:true,amulet:true,
       activeCharacter:'buba',xp:460,coins:999,wood:30,essence:40,claimedRewards:[1,2],completedStages:[0,1],rescued:[{id:'puffy'}]}));
   },SAVE_KEY);
-  await page.reload();
+  await page.reload();await enterAdventure(page);
   await expect(page.locator('.scene-village')).toBeVisible();
   const saved=await page.evaluate(key=>localStorage.getItem(key),SAVE_KEY);
   await page.getByRole('button',{name:'Settings',exact:true}).click();
@@ -45,7 +46,7 @@ test('reset confirmation preserves canceled saves and restarts paused combat dur
   // The old encounter must not resume or overwrite the fresh checkpoint.
   await page.waitForTimeout(7500);
   await expect(page.getByRole('button',{name:'Begin journey'})).toBeVisible();
-  await page.reload();
+  await page.reload();await enterAdventure(page);
   await expect(page.getByRole('button',{name:'Begin journey'})).toBeVisible();
   await page.getByRole('button',{name:'Begin journey'}).click();
   await page.getByRole('button',{name:'Settings',exact:true}).click();
@@ -69,7 +70,7 @@ for (const viewport of [{width:568,height:320},{width:390,height:844}]) {
     const context=await browser.newContext({viewport,isMobile:true,hasTouch:true,deviceScaleFactor:1});
     const page=await context.newPage();
     try {
-      await page.goto('/');
+      await page.goto('/');await enterAdventure(page);
       await page.getByRole('button',{name:'Settings',exact:true}).tap();
       await expect(page.getByRole('dialog',{name:'Settings'})).toBeVisible();
       await page.screenshot({path:`test-results/settings-${viewport.width}x${viewport.height}.png`});

@@ -19,7 +19,7 @@ export default class VillageScene extends SceneBase{
     }
     // Flat tile footprints and block markers only; replace these with town assets later.
     BUILDINGS.forEach(b=>{
-      const fill=b.id==='tent'?[0x9d794b,0xb69258,0xc9a66b][this.state.tentStage]:b.id==='spring'?0x507e92:b.id==='gate'?0x656e64:b.id==='well'?0x616c68:0x68705b;
+      const fill=b.id==='tent'?[0x9d794b,0xb69258,0xc9a66b][this.state.tentStage]:b.id==='spring'?0x507e92:b.id==='gate'?0x656e64:b.id==='well'?0x4dabb7:0x68705b;
       this.add.rectangle((b.x+b.w/2)*TILE,(b.y+b.h/2)*TILE,b.w*TILE-8,b.h*TILE-8,0x293a34);
       const inset=b.id==='tent'?24-this.state.tentStage*8:12;
       this.add.rectangle((b.x+b.w/2)*TILE,(b.y+b.h/2)*TILE,b.w*TILE-inset*2,b.h*TILE-inset*2,fill);
@@ -28,7 +28,7 @@ export default class VillageScene extends SceneBase{
     });
     TOWN_PLACES.forEach(p=>{
       this.add.rectangle((p.x+.5)*TILE,(p.y+.5)*TILE,32,32,0xe5d493,.7).setStrokeStyle(2,0xffefb2);
-      label(this,(p.x+.5)*TILE,(p.y+1.3)*TILE,p.id==='gate'?'DUNGEONS':p.id==='tent'?'BUBA':p.id==='spring'?(this.state.rescued.length?'PUFFY':'QUIET SPRING'):'STORY',10).setOrigin(.5);
+      label(this,(p.x+.5)*TILE,(p.y+1.3)*TILE,p.id==='gate'?'DUNGEONS':p.id==='tent'?'BUBA':p.id==='spring'?(this.state.rescued.length?'PUFFY':'QUIET SPRING'):'SAVE ★',10).setOrigin(.5);
     });
     if(this.state.activeCharacter!=='buba')this.add.rectangle(6.5*TILE,8.6*TILE,24,25,0xe9b54f).setStrokeStyle(2,0x563d2b);
     if(this.state.rescued.some(r=>r.id==='puffy'))this.add.rectangle(23.5*TILE,17.6*TILE,26,24,0x91dfed).setStrokeStyle(2,0x426879);
@@ -77,7 +77,7 @@ export default class VillageScene extends SceneBase{
     this.route=[];this.destination=null;this.held={};
     if(place.id==='gate')this.scene.start('LevelSelectScene');
     else if(place.id==='tent')this.session.patch({panel:'rewards'});
-    else if(place.id==='well')this.session.patch({panel:'journal'});
+    else if(place.id==='well')this.session.patch({panel:'fountain'});
     else if(this.state.rescued.some(r=>r.id==='puffy'))this.session.patch({panel:'healer'});
     else this.session.patch({message:'The spring is quiet. Rescue Puffy in the Sunken Sanctuary to bring its healer home.'});
   }
@@ -86,6 +86,7 @@ export default class VillageScene extends SceneBase{
     if(action==='townStep'){this.route=[];this.destination=null;this.move(payload);}
     if(action==='townTravel')this.walkTo(payload);
     if(action==='townInteract')this.interact();
+    if(action==='saveAtFountain')this.session.saveAtFountain();
     if(action==='healWithPuffy'){
       const healed=this.session.healAtVillage();
       if(healed)floatingText(this,this.hero.x,this.hero.y-35,'+'+healed+' HP','#b4ffdf');

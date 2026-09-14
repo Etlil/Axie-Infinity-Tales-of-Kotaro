@@ -1,3 +1,4 @@
+const {enterAdventure}=require('./helpers');
 const { test, expect } = require('@playwright/test');
 const {contactFirstSlime}=require('./helpers');
 const SAVE_KEY='atia-adventure-v1';
@@ -13,7 +14,7 @@ test('legacy Momo rescue becomes Puffy without losing progress or granting anoth
         amulet:true,activeCharacter:'buba',xp:460,coins:999,wood:30,essence:40,claimedRewards:[1,2],completedStages:[0,1,2],
         rescued:[{id:'momo',name:'Momo'}]}));
     },SAVE_KEY);
-    await page.goto('/');
+    await page.goto('/');await enterAdventure(page);
     await expect(page.locator('.scene-village')).toBeVisible();
     await expect(page.locator('.quest-card')).toContainText('Puffy rescued');
     await expect(page.locator('.quest-card')).toContainText('+5% dodge time');
@@ -52,7 +53,7 @@ test('legacy Momo rescue becomes Puffy without losing progress or granting anoth
     await page.screenshot({path:'test-results/puffy-healer-portrait.png'});
     const afterHealing=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),SAVE_KEY);
     expect(afterHealing).toMatchObject({xp:460,coins:999,wood:30,essence:40,claimedRewards:[1,2]});
-    await page.reload();
+    await page.reload();await enterAdventure(page);
     await expect(page.locator('.quest-card')).toContainText('Puffy rescued');
     expect((await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),SAVE_KEY)).rescued).toHaveLength(1);
     expect(errors).toEqual([]);

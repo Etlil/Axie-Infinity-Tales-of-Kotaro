@@ -1,3 +1,4 @@
+const {enterAdventure}=require('./helpers');
 const { test, expect } = require('@playwright/test');
 const {contactFirstSlime}=require('./helpers');
 const SAVE_KEY = 'atia-adventure-v1';
@@ -5,7 +6,7 @@ const profile = { version:1, tutorialWon:true, prologueComplete:true, amulet:tru
 
 async function savedVillage(page, overrides = {}) {
   await page.addInitScript(({key, saved}) => { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(saved)); }, {key:SAVE_KEY,saved:{...profile,...overrides}});
-  await page.goto('/');
+  await page.goto('/');await enterAdventure(page);
   await expect(page.locator('.scene-village')).toBeVisible();
 }
 async function fight(page, { dodge = true, weak = false, shot = null } = {}) {
@@ -42,7 +43,7 @@ async function visibleControls(page, selector) {
 test('complete prologue, Buba unlock, rank rewards and durable save', async ({page}) => {
   test.setTimeout(240000);
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('/');
+  await page.goto('/');await enterAdventure(page);
   await expect(page.locator('canvas')).toHaveCount(1);
   await page.getByRole('button',{name:'Begin journey'}).click();
   await page.getByRole('button',{name:'Reveal dialogue'}).click();
@@ -74,7 +75,7 @@ test('complete prologue, Buba unlock, rank rewards and durable save', async ({pa
   await page.getByRole('button',{name:'Team',exact:true}).click();
   await page.getByRole('button',{name:'Choose Buba'}).click();
   await expect(page.locator('.profile-block')).toContainText('Buba');
-  await page.reload();
+  await page.reload();await enterAdventure(page);
   await expect(page.locator('.scene-village')).toBeVisible();
   await expect(page.locator('.profile-block')).toContainText('Buba');
   await expect(page.locator('.profile-block')).toContainText('Adventure Rank 2');
@@ -135,7 +136,7 @@ test('Android touch controls, portrait and landscape, panel focus and save resto
   await page.getByRole('button',{name:'Retreat from encounter'}).tap();
   await expect(page.locator('.scene-village')).toBeVisible();
   await page.screenshot({path:'test-results/atia-village-landscape.png'});
-  await page.reload();
+  await page.reload();await enterAdventure(page);
   await expect(page.locator('.scene-village')).toBeVisible();
   expect(errors).toEqual([]);
   await context.close();

@@ -23,7 +23,6 @@ export default class BootScene extends Phaser.Scene {
       this.anims.create({key:id+'-'+action,frames:this.anims.generateFrameNumbers(id+'-sheet',{start:row*12,end:row*12+(id==='puffy'?11:action==='hit'?2:action==='greeting'?3:11)}),
         frameRate:action==='idle'?8:action==='ultimate'?18:20,repeat:['idle','run'].includes(action)?-1:0});
     });
-    const s=this.game.session.state;
-    this.scene.start(s.prologueComplete?'VillageScene':s.tutorialWon?'DialogueScene':'IntroScene');
+    this.scene.start('MainMenuScene');
   }
 }

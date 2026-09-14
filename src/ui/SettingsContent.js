@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-export default function SettingsContent({ saveAvailable, fullscreen, showHelp, resetSave }) {
+export default function SettingsContent({ saveAvailable, activeSlot, inMenu, fullscreen, showHelp, resetSave,returnToMenu,retrySave }) {
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState('');
   const cancel = useRef(null), reset = useRef(null);
@@ -13,7 +13,7 @@ export default function SettingsContent({ saveAvailable, fullscreen, showHelp, r
   if (confirming) return <div className="reset-confirmation">
     <span className="settings-emblem" aria-hidden="true">!</span>
     <h3>Reset your adventure?</h3>
-    <p>This deletes your story progress, companions, Adventure Rank, rewards, and rescued villagers saved in this browser.</p>
+    <p>This deletes the story progress, companions, Adventure Rank, rewards, and rescued villagers in Slot {activeSlot} only. Your other slots stay unchanged.</p>
     <p>You’ll restart the intro as Kotaro. <strong>This can’t be undone.</strong></p>
     {error && <p className="reset-error" role="alert">{error}</p>}
     <div className="reset-actions">
@@ -28,12 +28,14 @@ export default function SettingsContent({ saveAvailable, fullscreen, showHelp, r
     <div className="settings-options">
       <button className="small-button" onClick={fullscreen}>Toggle fullscreen</button>
       <button className="small-button" onClick={showHelp}>How to play</button>
+      {!inMenu&&<button className="small-button" onClick={returnToMenu}>Return to main menu</button>}
+      {activeSlot&&!saveAvailable&&<button className="small-button" onClick={retrySave}>Retry save</button>}
     </div>
     <div className="settings-save">
       <span className="eyebrow">YOUR ADVENTURE</span>
       <h3>A fresh beginning</h3>
-      <p>{saveAvailable ? 'Your progress saves automatically in this browser.' : 'Browser storage is unavailable. You’re playing a session-only adventure.'} Reset to replay your arrival in Atia and meet Buba again.</p>
-      <button ref={reset} className="small-button danger-button" onClick={() => setConfirming(true)}>Reset save data</button>
+      <p>{activeSlot?('Slot '+activeSlot+' · '+(saveAvailable ? 'Your progress saves automatically in this browser.' : 'Browser storage is unavailable. You’re playing a session-only adventure.')+' Reset this slot to replay your arrival in Atia and meet Buba again.'):'Choose a save slot from Start to begin or reset an adventure. You have five separate slots.'}</p>
+      <button ref={reset} className="small-button danger-button" disabled={!activeSlot} onClick={() => setConfirming(true)}>Reset save data</button>
     </div>
   </div>;
 }

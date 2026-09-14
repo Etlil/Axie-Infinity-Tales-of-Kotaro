@@ -4,12 +4,13 @@ import {createGame} from './main';
 import {initialState,derive} from './game/state';
 import {bosses} from './data/bosses';
 import {createDungeonRun} from './game/dungeonLayout';
+import {createSaveSlots} from './game/saveSlots';
 jest.mock('./main',()=>({createGame:jest.fn()}));
 const command=jest.fn(),destroy=jest.fn();let publish;
 beforeEach(()=>{
  command.mockReset();destroy.mockClear();
  createGame.mockImplementation((parent,onState)=>{
-  publish=update=>act(()=>onState(derive({...initialState(),loading:false,...update})));
+  publish=update=>act(()=>onState(derive({...initialState(),loading:false,activeSlot:1,...update})));
   onState(derive({...initialState(),loading:false}));return {command,destroy};
  });
 });
@@ -19,6 +20,32 @@ test('first launch introduces Atia and unmount releases the engine',()=>{
  fireEvent.click(screen.getByRole('button',{name:'Begin journey'}));
  expect(command).toHaveBeenCalledWith('nextIntro',undefined);
  view.unmount();expect(destroy).toHaveBeenCalledTimes(1);
+});
+
+test('title menu exposes five slots and disables resetting before choosing an adventure',()=>{
+ render(<App/>);publish({scene:'menu',menuPage:'home',activeSlot:null,saveSlots:createSaveSlots(null).list()});
+ fireEvent.click(screen.getByRole('button',{name:'Start',exact:true}));
+ expect(command).toHaveBeenCalledWith('showSlots',undefined);
+ publish({scene:'menu',menuPage:'slots',activeSlot:null,saveSlots:createSaveSlots(null).list()});
+ const slots=screen.getAllByRole('button',{name:/Slot \d: New adventure/});expect(slots).toHaveLength(5);
+ command.mockReturnValue({ok:true});fireEvent.click(slots[4]);expect(command).toHaveBeenCalledWith('selectSlot',5);
+ publish({scene:'menu',menuPage:'home',activeSlot:null});
+ fireEvent.click(screen.getByRole('button',{name:'Settings',exact:true}));
+ publish({scene:'menu',menuPage:'home',activeSlot:null,panel:'settings'});
+ expect(screen.getByRole('button',{name:'Reset save data'})).toBeDisabled();
+});
+
+test('autosave star disappears after confirmation but a failed save warning persists',()=>{
+ jest.useFakeTimers();
+ const view=render(<App/>);
+ publish({saveRevision:1,saveStatus:'saved'});
+ expect(screen.getByText('Autosaved · Slot 1')).toBeInTheDocument();
+ act(()=>jest.advanceTimersByTime(2000));
+ expect(screen.queryByText('Autosaved · Slot 1')).not.toBeInTheDocument();
+ publish({saveRevision:2,saveStatus:'failed',saveAvailable:false});
+ act(()=>jest.advanceTimersByTime(5000));
+ expect(screen.getByText('Save failed · keep this tab open')).toBeInTheDocument();
+ view.unmount();jest.useRealTimers();
 });
 test('the gate map respects locks and clearing a run before scene navigation never crashes the controls',()=>{
  render(<App/>);publish({scene:'map',prologueComplete:true});

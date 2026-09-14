@@ -11,4 +11,9 @@ async function contactFirstSlime(page){
   await page.keyboard.up('ArrowRight');
   await expect(page.locator('.ability-card').first()).toBeEnabled();
 }
-module.exports={contactFirstSlime};
+async function enterAdventure(page,slot=1){
+  await page.getByRole('button',{name:'Start',exact:true}).click();
+  await page.locator('[data-save-slot="'+slot+'"]').click();
+  await expect(page.locator('.scene-menu')).toHaveCount(0);
+}
+module.exports={contactFirstSlime,enterAdventure};

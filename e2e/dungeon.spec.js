@@ -1,10 +1,11 @@
+const {enterAdventure}=require('./helpers');
 const {test,expect}=require('@playwright/test');
 
 test('level map, three distinct puzzles, sequential dungeon clears and Puffy rescue',async({page})=>{
   test.setTimeout(600000);
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>{if(!localStorage.getItem('atia-adventure-v1'))localStorage.setItem('atia-adventure-v1',JSON.stringify({version:1,tutorialWon:true,prologueComplete:true,amulet:true,activeCharacter:'kotaro'}));});
-  await page.goto('/');await page.getByRole('button',{name:'Adventure',exact:true}).click();
+  await page.goto('/');await enterAdventure(page);await page.getByRole('button',{name:'Adventure',exact:true}).click();
   await expect(page.locator('.scene-map')).toBeVisible();
   await expect(page.getByRole('button',{name:'Level 2: Amber Quarry',exact:true})).toBeDisabled();
   await page.screenshot({path:'test-results/dungeon-level-map.png'});
@@ -74,7 +75,7 @@ test('level map, three distinct puzzles, sequential dungeon clears and Puffy res
   await page.getByRole('button',{name:'Use the amulet',exact:true}).click();
   await page.getByRole('button',{name:'Bring Puffy home',exact:true}).click();
   await expect(page.getByRole('button',{name:'Visit Puffy',exact:true})).toBeVisible();
-  await page.reload();await page.getByRole('button',{name:'Adventure',exact:true}).click();
+  await page.reload();await enterAdventure(page);await page.getByRole('button',{name:'Adventure',exact:true}).click();
   await expect(page.locator('.expedition-node.cleared')).toHaveCount(3);
   await page.getByRole('button',{name:'Replay dungeon'}).click();
   await expect(page.locator('.dungeon-bottom')).toHaveAttribute('data-puzzle-solved','false');

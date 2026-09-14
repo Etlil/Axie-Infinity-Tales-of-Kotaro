@@ -138,7 +138,7 @@ test('reset clears every checkpoint and encounter while preserving unrelated bro
   s.patch({scene:'combat',phase:'DODGE_PHASE',loading:false,introStep:3,dialogueIndex:5,xp:460,wood:90,
     playerHP:3,charge:3,enemy:bosses.puffy,enemyHP:15,dodgeActive:true,panel:'settings',result:{kind:'rescued'}});
   expect(s.resetSave()).toBe(true);
-  expect(s.state).toEqual(derive(initialState()));
+  expect(s.state).toEqual({...derive(initialState()),saveStatus:'saved',saveRevision:1,lastSavedAt:expect.any(String)});
   expect(storage.getItem('another-app')).toBe('keep this');
   expect(createSession(null,{storage}).state).toEqual(derive(initialState()));
   // A new adventure still autosaves normally after resetting.

@@ -1,9 +1,10 @@
+const {enterAdventure}=require('./helpers');
 const {test,expect}=require('@playwright/test');
 test('sanctuary clues and valve controls leave the hero visible on a short phone',async({browser})=>{
   const context=await browser.newContext({viewport:{width:568,height:320},isMobile:true,hasTouch:true}),page=await context.newPage();
   try{
     await page.addInitScript(()=>localStorage.setItem('atia-adventure-v1',JSON.stringify({version:1,tutorialWon:true,prologueComplete:true,amulet:true,completedStages:[0,1]})));
-    await page.goto('/');await page.getByRole('button',{name:'Adventure',exact:true}).tap();
+    await page.goto('/');await enterAdventure(page);await page.getByRole('button',{name:'Adventure',exact:true}).tap();
     await page.getByRole('button',{name:'Level 3: Sunken Sanctuary',exact:true}).tap();
     await page.getByRole('button',{name:'Enter dungeon'}).tap();
     await expect(page.locator('.dungeon-bottom')).toHaveAttribute('data-level','2');
@@ -22,7 +23,7 @@ for(const viewport of [{width:568,height:320},{width:390,height:844}]){
     const page=await context.newPage();
     try{
       await page.addInitScript(()=>localStorage.setItem('atia-adventure-v1',JSON.stringify({version:1,tutorialWon:true,prologueComplete:true,amulet:true})));
-      await page.goto('/');await page.getByRole('button',{name:'Adventure',exact:true}).tap();
+      await page.goto('/');await enterAdventure(page);await page.getByRole('button',{name:'Adventure',exact:true}).tap();
       await expect(page.locator('.scene-map')).toBeVisible();
       await expect(page.getByRole('button',{name:'Level 2: Amber Quarry',exact:true})).toBeDisabled();
       await page.screenshot({path:`test-results/level-map-${viewport.width}x${viewport.height}.png`});

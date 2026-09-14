@@ -2,6 +2,7 @@ import { characterCards, ultimates } from '../data/playerCards';
 import { bosses, dungeonRooms } from '../data/bosses';
 import { rankRewards, rankThresholds } from '../data/story';
 import {DUNGEONS,createDungeonRun,dungeonFor} from './dungeonLayout';
+import {nearbyPlace} from './townLayout';
 export const SAVE_KEY = 'atia-adventure-v1';
 
 export function initialState() {
@@ -11,9 +12,10 @@ export function initialState() {
     playerHP: 100, playerMaxHP: 100, enemyHP: 0, enemy: null, roomIndex: 0, tutorial: false, turn: 1, dungeonRun:null,
     selectedAttack: 0, dodgeX: 330, dodgeY: 600, grounded: true, dashReady: true, dashCooldown: 0, dodgeDuration: 6.5, dodgeRemaining: 0, warningRemaining: 0, warningActive: false, dodgeActive: false,
     guard: 0, charge: 0, dodges: 0, hits: 0, lastDamage: 0, cards: characterCards.kotaro, ultimate: ultimates.kotaro,
-    message: 'A new story waits beyond the gate.', panel: null, result: null, townPosition:null, saveAvailable: true };
+    message: 'A new story waits beyond the gate.', panel: null, result: null, townPosition:null,townCheckpoint:null,
+    activeSlot:null,saveSlots:[],menuPage:'home',saveRevision:0,saveStatus:'idle',saveKind:'auto',lastSavedAt:null,saveAvailable: true };
 }
-const profileKeys = ['introStep','dialogueIndex','tutorialWon','prologueComplete','activeCharacter','unlockedCharacters','amulet','xp','coins','wood','essence','claimedRewards','completedStages','unlockedStage','rescued'];
+const profileKeys = ['introStep','dialogueIndex','tutorialWon','prologueComplete','activeCharacter','unlockedCharacters','amulet','xp','coins','wood','essence','claimedRewards','completedStages','unlockedStage','rescued','townCheckpoint'];
 const validIds = new Set(['kotaro','buba']);
 
 export function restoreProfile(storage) {
@@ -35,6 +37,7 @@ export function restoreProfile(storage) {
     clean.rescued = clean.amulet && Array.isArray(saved.rescued) && saved.rescued.some(x => x?.id === 'puffy' || x?.id === 'momo') ? [{ id:'puffy',name:'Puffy',rescueBonus:bosses.puffy.rescueBonus }] : [];
     clean.introStep = Number.isInteger(saved.introStep) ? Math.max(0,Math.min(3,saved.introStep)) : 0;
     clean.dialogueIndex = Number.isInteger(saved.dialogueIndex) ? Math.max(0,Math.min(5,saved.dialogueIndex)) : 0;
+    clean.townCheckpoint=clean.prologueComplete&&saved.townCheckpoint?.x===14&&saved.townCheckpoint?.y===12?{x:14,y:12}:null;
     return clean;
   } catch { return {}; }
 }
@@ -47,32 +50,68 @@ export function derive(state) {
     rankXP: state.xp - rankThresholds[level - 1], nextRankXP: level < 5 ? rankThresholds[level] - rankThresholds[level - 1] : 0,
     availableRewards: rankRewards.filter(r => r.rank <= level && !state.claimedRewards.includes(r.rank)).length };
 }
-export function createSession(onState, { storage = null } = {}) {
-  let lastSaved = '';
+export function createSession(onState, { storage = null, slotStore=null } = {}) {
+  if(slotStore)storage=slotStore.adapter;
+  let lastSaved = '',lastAttempt='';
   const profile = restoreProfile(storage);
   const state = derive({ ...initialState(), ...profile, saveAvailable: Boolean(storage) });
   state.playerHP = state.playerMaxHP;
   if (state.prologueComplete) state.scene = 'village';
   else if (state.tutorialWon) state.scene = 'dialogue';
+  if(slotStore){state.scene='menu';state.phase='MENU';state.saveSlots=slotStore.list();state.saveAvailable=slotStore.available;}
   return {
     state, handler: null,
+    selectSlot(id){
+      if(!slotStore?.select(id))return {ok:false,error:'This slot could not be loaded. Please choose another slot.'};
+      const profile=restoreProfile(storage);
+      this.state=derive({...initialState(),...profile,loading:false,activeSlot:id,saveSlots:slotStore.list(),saveAvailable:slotStore.available});
+      this.state.playerHP=this.state.playerMaxHP;this.state.townPosition=this.state.townCheckpoint;
+      this.state.scene=this.state.prologueComplete?'village':this.state.tutorialWon?'dialogue':'intro';
+      lastSaved='';lastAttempt='';this.emit();return {ok:true};
+    },
+    toMainMenu(){
+      if(!slotStore)return false;
+      if(slotStore.activeId)this.saveNow('auto');
+      this.patch({scene:'menu',phase:'MENU',menuPage:'home',loading:false,panel:null,dungeonRun:null,saveSlots:slotStore.list()});return true;
+    },
     resetSave() {
       // Remove only Atia's profile. A blocked deletion must leave the current
       // adventure intact, so the UI can report the failure and offer a retry.
+      if(slotStore&&!slotStore.activeId)return false;
       try { storage?.removeItem(SAVE_KEY); } catch { return false; }
-      this.state = derive({ ...initialState(), saveAvailable: Boolean(storage) });
-      lastSaved = '';
+      this.state = derive({ ...initialState(),activeSlot:slotStore?.activeId||null,saveSlots:slotStore?.list()||[],saveAvailable:slotStore?slotStore.available:Boolean(storage) });
+      lastSaved = '';lastAttempt='';
       this.emit();
       return true;
     },
     patch(update) { this.state = derive({ ...this.state, ...update }); this.emit(); return this.state; },
+    serialize(){const profile={version:1};profileKeys.forEach(key=>{profile[key]=this.state[key];});return JSON.stringify(profile);},
+    writeSave(json,kind='auto'){
+      lastAttempt=json;
+      try{
+        if(!storage)throw Error('Storage unavailable');
+        storage.setItem(SAVE_KEY,json);lastSaved=json;
+        Object.assign(this.state,{saveAvailable:true,saveStatus:'saved',saveKind:kind,saveRevision:this.state.saveRevision+1,lastSavedAt:new Date().toISOString()});
+      }catch{Object.assign(this.state,{saveAvailable:false,saveStatus:'failed',saveKind:kind,saveRevision:this.state.saveRevision+1});}
+      if(slotStore)this.state.saveSlots=slotStore.list();
+      return this.state.saveStatus==='saved';
+    },
+    saveNow(kind='manual'){
+      if(slotStore&&!slotStore.activeId)return false;
+      const ok=this.writeSave(this.serialize(),kind);onState?.({...this.state});return ok;
+    },
+    saveAtFountain(){
+      if(this.state.scene!=='village'||!this.state.prologueComplete||nearbyPlace(this.state.townPosition)?.id!=='well')return false;
+      this.state.townCheckpoint={x:14,y:12};
+      const ok=this.saveNow('fountain');
+      this.patch({message:ok?'Your adventure is saved at the fountain.':'Could not save to this browser. Keep this tab open and try again.'});return ok;
+    },
     emit() {
-      if (storage) {
-        const profile = { version:1 }; profileKeys.forEach(key => { profile[key] = this.state[key]; });
-        const json = JSON.stringify(profile);
-        if (lastSaved !== json) { try { storage.setItem(SAVE_KEY, json); lastSaved = json; } catch { this.state.saveAvailable = false; } }
+      if(storage&&(!slotStore||slotStore.activeId)){
+        const json=this.serialize();
+        if(lastSaved!==json&&lastAttempt!==json)this.writeSave(json);
       }
-      onState?.({ ...this.state });
+      onState?.({...this.state});
     },
     prepareEncounter(index = 0, tutorial = false) {
       const baseEnemy = tutorial ? bosses.buba : dungeonRooms[index];

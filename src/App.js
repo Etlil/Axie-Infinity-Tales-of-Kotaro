@@ -10,6 +10,8 @@ import PuffyHealer from './ui/PuffyHealer';
 import DungeonControls from './ui/DungeonControls';
 import DungeonSelection from './ui/DungeonSelection';
 import TownControls from './ui/TownControls';
+import MainMenu,{SAVE_TIP} from './ui/MainMenu';
+import SaveIndicator from './ui/SaveIndicator';
 import { projectileDamage } from './entities/DodgeSystem';
 import './App.css';
 import './origins-theme.css';
@@ -20,6 +22,7 @@ import './puffy-healer.css';
 import './dungeon.css';
 import './expedition-map.css';
 import './town.css';
+import './main-menu.css';
 
 function Icon({ name, size = 22 }) {
   const paths = {
@@ -75,6 +78,7 @@ function AbilityCard({ card, index, disabled, selected, command }) {
   </button>;
 }
 
+const heroNameFor=id=>id==='buba'?'Buba':'Kotaro';
 function Panel({ game, command, close, panel, fullscreen, showHelp, showSettings, resetSave }) {
   const dialog = useRef(null);
   useEffect(() => {
@@ -92,13 +96,14 @@ function Panel({ game, command, close, panel, fullscreen, showHelp, showSettings
     document.addEventListener('keydown', onKey);
     return () => { document.removeEventListener('keydown', onKey); if (previous?.isConnected) previous.focus(); };
   }, [close]);
-  const titles = { rewards: "Buba’s tent", team: 'Your companions', journal: 'The Atia journal', amulet: 'A little light, handmade', help: 'Traveler’s guide', pause: 'Game paused', settings: 'Settings', healer: 'Puffy’s healing spring' };
+  const titles = { rewards: "Buba’s tent", team: 'Your companions', journal: 'The Atia journal', amulet: 'A little light, handmade', help: 'Traveler’s guide', pause: 'Game paused', settings: 'Settings', healer: 'Puffy’s healing spring', fountain:'Save fountain' };
   return <div className="modal-backdrop" onClick={close}><section ref={dialog} className={'panel panel-' + panel} role="dialog" aria-modal="true" aria-labelledby="panel-title" onClick={event => event.stopPropagation()}>
     <button className="icon-button close-panel" onClick={close} aria-label="Close panel"><Icon name="close"/></button>
     <p className="eyebrow">{panel === 'rewards' ? 'A HOME, ONE RANK AT A TIME' : 'ATIA • CHAPTER ONE'}</p><h2 id="panel-title">{titles[panel]}</h2>
     <div className="panel-body">
     {panel === 'pause' && <div className="pause-actions"><p>Take your time. The encounter will wait for you.</p><GoldButton onClick={close}><Icon name="play"/>Resume encounter</GoldButton><button className="small-button" onClick={showSettings}><Icon name="settings"/>Settings</button><button className="small-button" onClick={showHelp}><Icon name="book"/>How to play</button><button className="text-button" aria-label="Retreat from encounter" onClick={() => command('retreat')}>{game.tutorial ? 'Return to the clearing' : 'Return to Atia'}</button></div>}
-    {panel === 'settings' && <SettingsContent saveAvailable={game.saveAvailable} fullscreen={fullscreen} showHelp={showHelp} resetSave={resetSave}/>}
+    {panel === 'settings' && <SettingsContent saveAvailable={game.saveAvailable} activeSlot={game.activeSlot} inMenu={game.scene==='menu'} fullscreen={fullscreen} showHelp={showHelp} resetSave={resetSave} returnToMenu={()=>command('returnToMenu')} retrySave={()=>command('retrySave')}/>}
+    {panel === 'fountain' && <><div className="fountain-emblem" aria-hidden="true">★</div><p>A quiet light rests in the water. Save your journey here and return to this fountain next time you load your adventure.</p><p className="muted">Slot {game.activeSlot} · {heroNameFor(game.activeCharacter)} · Adventure Rank {game.level}</p><GoldButton onClick={()=>command('saveAtFountain')}>Save at fountain</GoldButton>{game.saveKind==='fountain'&&<p className={'fountain-status '+(game.saveStatus==='failed'?'is-failed':'')} role="status">{game.saveStatus==='failed'?'Save failed. Keep this tab open and try again.':'Adventure saved. Your return point is now this fountain.'}</p>}<p className="muted">Your story and rewards also save automatically as you play. Watch for the star in the lower-left corner.</p></>}
     {panel === 'healer' && <PuffyHealer game={game} command={command}/>}
     {panel === 'help' && <button className="small-button guide-fullscreen" onClick={fullscreen}><Icon name="expand"/>Toggle fullscreen</button>}
     {panel === 'rewards' && <>
@@ -113,7 +118,7 @@ function Panel({ game, command, close, panel, fullscreen, showHelp, showSettings
     {panel === 'team' && <><p className="muted">Choose who leads the next expedition. Each Axie has its own abilities and ultimate.</p><div className="team-grid">{['kotaro', 'buba'].map(id => <article className={'hero-card ' + (game.activeCharacter === id ? 'chosen' : '')} key={id}><Portrait character={id}/><span className="eyebrow">{id === 'kotaro' ? 'THE WHITE WANDERER' : 'THE LAST VILLAGER'}</span><h3>{id === 'kotaro' ? 'Kotaro' : 'Buba'}</h3><p>{id === 'kotaro' ? 'An icy horn, moon fangs, back blades, and a sweeping tail.' : 'A leafy horn, a beast bite, a back shield, and a paintbrush tail.'}</p><div className="hero-stats"><span><Icon name="heart" size={16}/>{id === 'kotaro' ? 100 : 110} HP</span><span><Icon name="spark" size={16}/>{id === 'kotaro' ? 'Moonlit Eclipse' : 'Paintstorm'}</span></div><button className="small-button" disabled={game.activeCharacter === id || !game.unlockedCharacters.includes(id)} onClick={() => command('selectCharacter', id)}>{!game.unlockedCharacters.includes(id) ? 'Meet Buba first' : game.activeCharacter === id ? 'Leading the journey' : 'Choose ' + (id === 'kotaro' ? 'Kotaro' : 'Buba')}</button></article>)}</div></>}
     {panel === 'amulet' && <><div className="amulet-art"><Icon name="spark" size={72}/></div><blockquote>“It cannot mend everything. But it can bring someone back.”<cite>— Buba</cite></blockquote><p>Buba made this amulet from fragments of Atia’s old light. Weaken a corrupted guardian in battle, then use its light to reverse the corruption.</p><div className="journal-note"><Icon name="heart"/><div><strong>{game.rescued.length ? 'Puffy is home' : 'Your first rescue awaits'}</strong><p>{game.rescued.length ? 'Puffy heals you for free at the village spring. Puffy’s blessing also grants 5% more dodge time.' : 'Follow the level map to the Sunken Sanctuary and reach Puffy’s chamber. Bring a villager back to Atia.'}</p></div></div></>}
     {panel === 'journal' && <div className="journal-pages"><span className="journal-date">SIX MONTHS AFTER THE RAID</span><h3>The village that waited</h3><p>Nightmare Axies raided Atia six months ago. Almost everyone became corrupted. Some now serve the enemy; others wander alone, lost in what remains of their old lives.</p><p>Only Buba stayed. He built a small tent from what he could salvage and guarded the empty village. When a white wanderer arrived, fear made him draw his sword.</p><h3>A promise in the clearing</h3><p>After the battle, Buba found the courage to trust again. He gave you his handmade amulet and asked for help restoring Atia, one home and one friend at a time.</p><div className="journal-note"><Icon name="compass"/><div><strong>{game.rescued.length ? 'Chapter one complete' : 'A promise to keep'}</strong><p>{game.rescued.length ? 'Puffy is safe. Keep exploring to grow your Adventure Rank and improve Buba’s home.' : 'Enter the village gate, clear the dungeon chambers, and reverse Puffy’s corruption.'}</p></div></div></div>}
-    {panel === 'help' && <><ol className="guide-list"><li><strong>Play an ability.</strong> Time freezes on your turn. Select with A / D and press X, tap a body-part card, or use 1 / 2 / 3 / 4. Three abilities charge your ultimate (5).</li><li><strong>Watch, then dodge.</strong> Move with A / D or arrows. Jump with Space / W / Up; dash with Shift. On mobile, hold the movement arrows and tap Jump or Dash together. Jump onto ledges, avoid the actual projectiles, and use your brief dash invulnerability to cross attacks.</li><li><strong>Bring Atia back.</strong> The village gate opens your level map. Select a dungeon, then walk with WASD, arrows, or the touch pad. Touching a slime starts a battle. Solve each dungeon’s puzzle and clear its encounters to unlock the next level. Use E or the action button beside water valves. Claim Adventure Rank rewards at Buba’s tent. Switch companions from the Team menu.</li><li><strong>Use Buba’s amulet.</strong> Defeat the corrupted lagoon guardian, then choose “Use the amulet” to rescue Puffy.</li></ol><p className="journal-note">Your story, companions, rewards, and rank save automatically in this browser. An unfinished encounter restarts from the village or Buba’s clearing after a reload.</p><p className="muted">Walk around Atia with WASD, arrows, or the touch pad. Press E or use the interaction button beside a building. Tap Buba’s tent, Puffy, or Adventure to walk to that destination automatically. Touch controls work in portrait and landscape.</p></>}
+    {panel === 'help' && <><ol className="guide-list"><li><strong>Play an ability.</strong> Time freezes on your turn. Select with A / D and press X, tap a body-part card, or use 1 / 2 / 3 / 4. Three abilities charge your ultimate (5).</li><li><strong>Watch, then dodge.</strong> Move with A / D or arrows. Jump with Space / W / Up; dash with Shift. On mobile, hold the movement arrows and tap Jump or Dash together. Jump onto ledges, avoid the actual projectiles, and use your brief dash invulnerability to cross attacks.</li><li><strong>Bring Atia back.</strong> The village gate opens your level map. Select a dungeon, then walk with WASD, arrows, or the touch pad. Touching a slime starts a battle. Solve each dungeon’s puzzle and clear its encounters to unlock the next level. Use E or the action button beside water valves. Claim Adventure Rank rewards at Buba’s tent. Switch companions from the Team menu.</li><li><strong>Use Buba’s amulet.</strong> Defeat the corrupted lagoon guardian, then choose “Use the amulet” to rescue Puffy.</li></ol><p className="journal-note">Your story, companions, rewards, and rank save automatically to your chosen slot in this browser. Watch for the star at the lower left. Save at the town fountain to set your return point. Unfinished expeditions restart from town; the prologue resumes at your story checkpoint.</p><p className="muted">Walk around Atia with WASD, arrows, or the touch pad. Press E or use the interaction button beside a building. Tap Buba’s tent, Puffy, or Adventure to walk to that destination automatically. Touch controls work in portrait and landscape.</p></>}
     </div>
   </section></div>;
 }
@@ -141,7 +146,7 @@ export default function App() {
     return () => document.removeEventListener('visibilitychange', hide);
   }, [game.scene]);
   const command = (action, payload) => {
-    if (action === 'retreat') {
+    if (['retreat','returnToMenu','selectSlot'].includes(action)) {
       setHelp(false); setPaused(false); setSettings(false);
       controller.current?.command('setPaused', false);
       controller.current?.command('setInputEnabled', true);
@@ -174,7 +179,7 @@ export default function App() {
     <WorldView scene={game.scene} walkableTown><div className="game-mount" ref={mount} aria-label="Atia game world"/>
     </WorldView>
     <div className="world-shade" aria-hidden="true"/>
-    {!story && !game.loading && <header className={'game-header ' + (combat ? 'battle-header' : '')}>
+    {!story && game.scene!=='menu' && !game.loading && <header className={'game-header ' + (combat ? 'battle-header' : '')}>
       {combat ? <>
         <button className="icon-button pause-control" aria-label="Pause encounter" onClick={() => setPaused(true)}><Icon name="pause"/></button>
         <Health name={heroName} hp={game.playerHP} max={game.playerMaxHP} guard={game.guard}/>
@@ -188,7 +193,8 @@ export default function App() {
       <div className="utility-buttons">{!combat && <button className="icon-button" aria-label="Settings" onClick={() => setSettings(true)}><Icon name="settings" size={19}/></button>}<button className="icon-button" disabled={combat} aria-label="How to play" onClick={() => setHelp(true)}><Icon name="book" size={19}/></button></div>
     </header>}
     {story && !game.loading && <button className="icon-button story-settings" aria-label="Settings" onClick={() => setSettings(true)}><Icon name="settings"/></button>}
-    {game.loading && <section className="loading-screen"><span className="eyebrow">A NEW STORY IN LUNACIA</span><h1>ATIA</h1><p>{game.assetError ? 'An asset could not load. Please refresh to try again.' : 'Finding the way home…'}</p><div className="progress-track"><span style={{ width: (game.loadProgress || 0) + '%' }}/></div></section>}
+    {game.loading && <section className="loading-screen"><span className="eyebrow">A NEW STORY IN LUNACIA</span><h1>ATIA</h1><p>{game.assetError ? 'An asset could not load. Please refresh to try again.' : 'Finding the way home…'}</p><div className="progress-track"><span style={{ width: (game.loadProgress || 0) + '%' }}/></div><p className="loading-save-tip">{SAVE_TIP}</p></section>}
+    {!game.loading && game.scene==='menu' && <MainMenu game={game} command={command}/>}
     {!game.loading && game.scene === 'intro' && <>
       <div className="story-brand"><Icon name="spark" size={18}/><span>AXIE · TALES OF ATIA</span><small>CHAPTER I</small></div>
       {game.introStep === 0 && <div className="title-treatment"><p className="eyebrow">EVERY LIGHT STARTS WITH A LITTLE COURAGE</p><h1>ATIA</h1><span className="title-rule"/><p className="title-subtitle">Echoes of a lost village</p></div>}
@@ -210,7 +216,8 @@ export default function App() {
     </>}
     {!game.loading && game.scene === 'victory' && <section className="result-card"><span className="result-emblem">{game.roomIndex === 2 ? <img src="/assets/atia/puffy-avatar.png" alt="Puffy"/> : <Icon name={game.result?.kind === 'purify' ? 'spark' : 'check'} size={34}/>}</span><p className="eyebrow">{game.result?.kind === 'purify' ? 'THE AMULET IS GLOWING' : game.result?.kind === 'rescued' ? 'A LIGHT RETURNS TO ATIA' : 'THE PATH IS CLEAR'}</p><h1>{game.result?.kind === 'purify' ? 'There’s still a light inside.' : game.result?.kind === 'rescued' ? 'Welcome home, Puffy.' : game.result?.kind === 'encounter' ? 'The path ahead opens.' : 'Dungeon cleared!'}</h1><p>{game.result?.kind === 'purify' ? 'The nightmare is weakened. Use Buba’s amulet to bring Puffy back.' : game.result?.kind === 'rescued' ? 'The corruption fades. Puffy returns as Atia’s healer, offering free healing in the village and 5% more time to dodge.' : game.result?.kind === 'encounter' ? 'Keep exploring. Solve the chamber puzzle and find the remaining enemies.' : 'Supplies secured for Atia. Choose your next dungeon on the level map.'}</p>{game.result?.xp && <div className="result-rewards"><span><Icon name="spark"/>+{game.result.xp} XP</span><span><Icon name="coin"/>+{game.result.coins}</span><span>Rank {game.level}</span></div>}{game.result?.kind === 'purify' ? <GoldButton onClick={() => command('purify')}>Use the amulet</GoldButton> : <><GoldButton onClick={() => command(game.result?.kind === 'rescued' ? 'visitVillage' : 'returnMap')}>{game.result?.kind === 'rescued' ? 'Bring Puffy home' : game.result?.kind === 'encounter' ? 'Continue journey' : 'Back to level map'}</GoldButton><button className="text-button" onClick={() => command('visitVillage')}>Return to Atia</button></>}</section>}
     {!game.loading && game.scene === 'defeat' && <section className="result-card"><span className="result-emblem"><Icon name="heart" size={34}/></span><p className="eyebrow">TAKE A BREATH, WANDERER</p><h1>Your story isn’t over.</h1><p>{game.tutorial ? 'Buba is frightened. Jump over his sword waves and dash through danger.' : 'Rest a moment. Return with full health and try this encounter again.'}</p><GoldButton onClick={() => command('retry')}>Try again</GoldButton><button className="text-button" onClick={() => command('retreat')}>{game.tutorial ? 'Back to the clearing' : 'Return to Atia'}</button></section>}
-    {!game.saveAvailable && <div className="save-notice" role="status">Browser storage is unavailable. Progress will last for this session.</div>}
+    {!game.saveAvailable && !game.activeSlot && <div className="save-notice" role="status">Browser storage is unavailable. Progress will last for this session.</div>}
+    <SaveIndicator game={game}/>
     {fullscreenNote && <button className="save-notice" onClick={() => setFullscreenNote('')}>{fullscreenNote} ×</button>}
     {panel && <Panel key={panel} game={game} command={command} close={stableClose} panel={panel} fullscreen={fullscreen} showHelp={() => setHelp(true)} showSettings={() => setSettings(true)} resetSave={resetSave}/>}
   </main>;
