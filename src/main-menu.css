@@ -1,4 +1,12 @@
 .scene-menu .world-stage { visibility:hidden; }
+/* Keep the supplied artwork intact, including its white background. */
+.menu-brand { min-width:0; width:100%; }
+.menu-brand .brand-logo,.loading-screen .brand-logo,.title-treatment .brand-logo { margin:0 auto; padding:0; font-size:0; line-height:0; letter-spacing:0; text-shadow:none; -webkit-text-stroke:0; width:100%; max-width:620px; }
+.brand-logo img { display:block; width:100%; height:auto; border-radius:16px; border:2px solid #e6c88d; box-shadow:0 6px 0 #594330,0 14px 32px #10262c55; }
+.loading-screen .brand-logo { width:min(72vw,440px); }
+.title-treatment { width:min(44vw,530px); }
+@media (orientation:landscape) and (max-height:450px) { .loading-screen .brand-logo { width:min(36vw,260px); }.loading-screen { gap:8px; }.loading-screen .loading-save-tip { margin:8px 24px; }.title-treatment { width:36vw; } }
+@media (orientation:portrait) { .title-treatment { width:76vw; }.menu-page-home .menu-brand { max-width:440px; justify-self:center; }.menu-page-slots .menu-brand,.menu-page-credits .menu-brand { width:210px; justify-self:center; } }
 .scene-menu .world-fill { background:linear-gradient(90deg,#132b32b8,#172f3155),var(--village-image) center/cover; filter:blur(2px); transform:scale(1.02); }
 .scene-menu .world-shade { background:linear-gradient(0deg,#12272deb,transparent 40%,#182c3144); }
 .main-menu { position:absolute; inset:0; z-index:4; padding:32px max(32px,env(safe-area-inset-right)) 72px max(32px,env(safe-area-inset-left)); display:grid; grid-template-columns:1fr 1fr; align-items:center; gap:40px; overflow:auto; color:#fff2cd; }

@@ -1,4 +1,8 @@
-# Atia — Echoes of a Lost Village
+# Axie Infinity: Tales of Kotaro
+
+Repository: [Etlil/Axie-Infinity-Tales-of-Kotaro](https://github.com/Etlil/Axie-Infinity-Tales-of-Kotaro).
+
+The title, loading screen, browser icon, and home-screen icon use the artwork supplied by the user on September 19, 2026. Atia remains the village name. Existing browser save keys are retained.
 
 A playable Axie Vibeathon adventure built with React and Phaser. Arrive as Kotaro, the white wanderer, earn Buba’s trust, and help restore Atia after the nightmare raid.
 

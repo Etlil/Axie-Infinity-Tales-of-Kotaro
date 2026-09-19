@@ -1,5 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import {rankThresholds} from '../data/story';
+import GameLogo from './GameLogo';
 
 export const SAVE_TIP='When the ★ icon appears in the lower-left corner, your adventure is saving. Wait for it to disappear before closing the game.';
 
@@ -10,7 +11,7 @@ export default function MainMenu({game,command}){
   useEffect(()=>{setError('');root.current?.querySelector('button:not(:disabled)')?.focus();},[page]);
   const back=<button className="small-button menu-back" onClick={()=>command('menuHome')}>← Back</button>;
   return <section ref={root} className={'main-menu menu-page-'+page} aria-label="Main menu">
-    <div className="menu-brand"><span className="eyebrow">AXIE · TALES OF</span><h1>ATIA</h1><p>Echoes of a lost village</p><span className="menu-chapter">CHAPTER I · A LITTLE LIGHT</span></div>
+    <div className="menu-brand"><GameLogo/><span className="menu-chapter">CHAPTER I · A LITTLE LIGHT</span></div>
     {page==='home'&&<nav className="title-actions" aria-label="Title menu">
       <button className="gold-button menu-start" onClick={()=>command('showSlots')}>Start <span aria-hidden="true">▶</span></button>
       <button className="small-button" onClick={()=>command('openPanel','settings')}>Settings</button>

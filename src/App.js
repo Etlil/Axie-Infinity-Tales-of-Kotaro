@@ -12,6 +12,7 @@ import DungeonSelection from './ui/DungeonSelection';
 import TownControls from './ui/TownControls';
 import MainMenu,{SAVE_TIP} from './ui/MainMenu';
 import SaveIndicator from './ui/SaveIndicator';
+import GameLogo from './ui/GameLogo';
 import { projectileDamage } from './entities/DodgeSystem';
 import './App.css';
 import './origins-theme.css';
@@ -193,11 +194,11 @@ export default function App() {
       <div className="utility-buttons">{!combat && <button className="icon-button" aria-label="Settings" onClick={() => setSettings(true)}><Icon name="settings" size={19}/></button>}<button className="icon-button" disabled={combat} aria-label="How to play" onClick={() => setHelp(true)}><Icon name="book" size={19}/></button></div>
     </header>}
     {story && !game.loading && <button className="icon-button story-settings" aria-label="Settings" onClick={() => setSettings(true)}><Icon name="settings"/></button>}
-    {game.loading && <section className="loading-screen"><span className="eyebrow">A NEW STORY IN LUNACIA</span><h1>ATIA</h1><p>{game.assetError ? 'An asset could not load. Please refresh to try again.' : 'Finding the way home…'}</p><div className="progress-track"><span style={{ width: (game.loadProgress || 0) + '%' }}/></div><p className="loading-save-tip">{SAVE_TIP}</p></section>}
+    {game.loading && <section className="loading-screen"><span className="eyebrow">A NEW STORY IN LUNACIA</span><GameLogo/><p>{game.assetError ? 'An asset could not load. Please refresh to try again.' : 'Finding the way home…'}</p><div className="progress-track"><span style={{ width: (game.loadProgress || 0) + '%' }}/></div><p className="loading-save-tip">{SAVE_TIP}</p></section>}
     {!game.loading && game.scene==='menu' && <MainMenu game={game} command={command}/>}
     {!game.loading && game.scene === 'intro' && <>
-      <div className="story-brand"><Icon name="spark" size={18}/><span>AXIE · TALES OF ATIA</span><small>CHAPTER I</small></div>
-      {game.introStep === 0 && <div className="title-treatment"><p className="eyebrow">EVERY LIGHT STARTS WITH A LITTLE COURAGE</p><h1>ATIA</h1><span className="title-rule"/><p className="title-subtitle">Echoes of a lost village</p></div>}
+      <div className="story-brand"><Icon name="spark" size={18}/><span>AXIE INFINITY · TALES OF KOTARO</span><small>CHAPTER I</small></div>
+      {game.introStep === 0 && <div className="title-treatment"><GameLogo/><p className="title-subtitle">Chapter I · Echoes of a lost village</p></div>}
       {game.introStep === 0 ? <section className="story-card opening-card"><span className="eyebrow">{step.eyebrow}</span><h2>{step.title}</h2><p>{step.text}</p><GoldButton onClick={() => command('nextIntro')}>{step.button}</GoldButton></section>
         : <DialogueBox key={'intro-'+game.introStep} speaker={game.introStep===3?'Buba':'The wanderer'} portrait={game.introStep===3?'buba':'kotaro'} title={step.title} text={step.text} buttonLabel={step.button} onAdvance={()=>command('nextIntro')} paused={Boolean(panel)}/>}
       <span className="story-footer">An Axie fan adventure · Vibeathon 2026</span>

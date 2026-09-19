@@ -1,11 +1,12 @@
 {
-  "short_name": "Atia",
-  "name": "Atia — Echoes of a Lost Village",
+  "short_name": "Tales of Kotaro",
+  "name": "Axie Infinity: Tales of Kotaro",
   "icons": [
     {
-      "src": "favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
+      "src": "assets/branding/tales-of-kotaro-icon.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "start_url": ".",

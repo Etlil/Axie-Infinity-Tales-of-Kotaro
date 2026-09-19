@@ -16,7 +16,7 @@ beforeEach(()=>{
 });
 test('first launch introduces Atia and unmount releases the engine',()=>{
  const view=render(<App/>);
- expect(screen.getByRole('heading',{name:'ATIA'})).toBeInTheDocument();
+ expect(screen.getByRole('heading',{name:'Axie Infinity: Tales of Kotaro'})).toBeInTheDocument();
  fireEvent.click(screen.getByRole('button',{name:'Begin journey'}));
  expect(command).toHaveBeenCalledWith('nextIntro',undefined);
  view.unmount();expect(destroy).toHaveBeenCalledTimes(1);
