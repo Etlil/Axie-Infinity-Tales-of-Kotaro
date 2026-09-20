@@ -117,11 +117,11 @@ export default class CombatScene extends SceneBase {
     this.lastPublishedDodge='';this.lastAction='';this.lastEnemyAction='';
     this.tweens.killTweensOf(this.player);this.tweens.killTweensOf(this.enemySprite);
     this.player.setScale(.75).setAngle(0);this.enemySprite.setPosition(1040,540).setScale(.82*(['buba','puffy'].includes(this.enemy.id)?1:1.65)).setAngle(0);
-    drawArena(this.arenaGraphics,this.enemy.id==='buba');
+    drawArena(this.arenaGraphics,this.enemy.id==='puffy');
     this.session.patch({phase:'DODGE_PHASE',dodgeActive:true,dodgeDuration:6.5,jumpTutorial:false,message:'Move freely. Jump over low attacks; dash through danger.'});
     const tutorialJump=this.state.tutorial&&this.enemy.id==='buba'&&!this.jumpLessonShown;
     this.jumpLessonShown=true;
-    this.dodge.start({pattern:this.enemyCard.pattern,damage:this.enemyCard.damage,tutorialJump,platforms:this.enemy.id==='buba'});
+    this.dodge.start({pattern:this.enemyCard.pattern,damage:this.enemyCard.damage,tutorialJump,platforms:this.enemy.id==='puffy'});
   }
   onDodgeUpdate(view){
     const p=view.player;
