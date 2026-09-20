@@ -43,7 +43,7 @@ test('one card per turn applies damage once before telegraph and dodge',()=>{
  expect(session.state.phase).toBe('PLAYER_ATTACK_ANIM');
  jest.advanceTimersByTime(360);expect(session.state.enemyHP).toBe(112);
  jest.advanceTimersByTime(440);expect(session.state.phase).toBe('BOSS_TELEGRAPH');
- jest.advanceTimersByTime(650);expect(combat.dodge.start).toHaveBeenCalledWith({pattern:'wave',damage:24});
+ jest.advanceTimersByTime(650);expect(combat.dodge.start).toHaveBeenCalledWith({pattern:'wave',damage:24,tutorialJump:false});
  combat.resolveDodge({hits:0,damage:0,player:{x:330,y:600}});
  jest.advanceTimersByTime(960);
  expect(session.state).toMatchObject({phase:'PLAYER_TURN',playerHP:100,turn:2,dodges:1,charge:1});
@@ -70,7 +70,7 @@ test('the Buba encounter opens with his crossing sword rush before a player choi
  combat.beginEncounter();expect(session.state.phase).toBe('BOSS_TELEGRAPH');
  expect(session.state.enemyCard.pattern).toBe('buba-dash');
  combat.playCard('horn-lance');expect(session.state.enemyHP).toBe(120);
- jest.advanceTimersByTime(650);expect(combat.dodge.start).toHaveBeenCalledWith({pattern:'buba-dash',damage:12});
+ jest.advanceTimersByTime(650);expect(combat.dodge.start).toHaveBeenCalledWith({pattern:'buba-dash',damage:12,tutorialJump:true});
  combat.resolveDodge({hits:0});jest.advanceTimersByTime(960);
  expect(session.state.phase).toBe('PLAYER_TURN');expect(session.state.turn).toBe(2);
  combat.playCard('horn-lance');jest.advanceTimersByTime(800);

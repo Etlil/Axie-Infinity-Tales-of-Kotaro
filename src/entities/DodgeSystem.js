@@ -23,8 +23,8 @@ export function attackPlan(pattern='thorns'){
 }
 /** Fixed-step movement and collisions; all time belongs to the Phaser scene. */
 export default class DodgeSystem {
-  constructor(scene,{onUpdate=()=>{},onHit=()=>{},onResolve=()=>{},onLaunch=()=>{},bonus=0}={}){
-    Object.assign(this,{scene,onUpdate,onHit,onResolve,onLaunch,bonus,active:false,destroyed:false});
+  constructor(scene,{onUpdate=()=>{},onHit=()=>{},onResolve=()=>{},onLaunch=()=>{},onTutorial=()=>{},bonus=0}={}){
+    Object.assign(this,{scene,onUpdate,onHit,onResolve,onLaunch,onTutorial,bonus,active:false,destroyed:false});
     this.inputs=new Map();this.captures=[];this.keyboard=scene.input?.keyboard;
     this.updateHandler=(_time,delta)=>this.update(delta);
     this.clearControls=()=>{this.inputs.clear();this.jumpBuffer=0;};
@@ -40,10 +40,11 @@ export default class DodgeSystem {
     }});
     scene.events.on('pause',this.clearControls);scene.events.once('shutdown',this.shutdown);
   }
-  start({pattern='thorns',damage=14}={}){
+  start({pattern='thorns',damage=14,tutorialJump=false}={}){
     if(this.destroyed)return false;
     this.stop();this.timing=getDodgeTiming(this.bonus);this.elapsed=0;this.hits=0;this.totalDamage=0;
     this.damage=projectileDamage(damage);
+    this.tutorialPending=tutorialJump;this.tutorialWaiting=false;
     this.player={x:330,y:ARENA.floor,vx:0,vy:0,facing:1,grounded:true,dash:0,cooldown:0,invulnerable:0};
     this.shots=[];this.plan=attackPlan(pattern);this.jumpBuffer=0;this.coyote=100;this.active=true;
     const owned=this.keyboard?.getCaptures?.()||[];
@@ -53,6 +54,10 @@ export default class DodgeSystem {
   }
   setControl(control,pressed,source='touch-'+control){
     if(!pressed){this.inputs.delete(source);return true;}
+    if(this.active&&this.tutorialWaiting){
+      if(control!=='jump')return false;
+      this.tutorialWaiting=false;this.clearControls();this.onTutorial(false);
+    }
     if(!this.active||!['left','right','jump','dash'].includes(control)||this.inputs.has(source))return false;
     this.inputs.set(source,control);
     if(control==='jump')this.jumpBuffer=140;
@@ -64,10 +69,10 @@ export default class DodgeSystem {
   }
   axis(){const held=[...this.inputs.values()];return Number(held.includes('right'))-Number(held.includes('left'));}
   update(delta=16.667){
-    if(!this.active)return;
+    if(!this.active||this.tutorialWaiting)return;
     let remaining=clamp(Number.isFinite(delta)?delta:0,0,100);
     // Substeps stop fast dashes and projectiles from tunneling through bodies.
-    while(remaining>0&&this.active){const step=Math.min(1000/120,remaining);this.step(step);remaining-=step;}
+    while(remaining>0&&this.active&&!this.tutorialWaiting){const step=Math.min(1000/120,remaining);this.step(step);remaining-=step;}
     if(this.active)this.emit();
   }
   step(ms){
@@ -92,11 +97,16 @@ export default class DodgeSystem {
       if(shot.kind==='mushroom')this.moveMushroom(shot,dt);
       else{shot.x+=shot.vx*dt;shot.y+=shot.vy*dt;}
       if(shot.kind==='shield'){shot.vy+=320*dt;if(shot.y+shot.radius>ARENA.floor){shot.y=ARENA.floor-shot.radius;shot.vy=-230;}}
+      if(this.tutorialPending&&shot.kind==='buba-dash'&&shot.vx<0&&shot.x<=p.x+210){
+        this.tutorialPending=false;this.tutorialWaiting=true;shot.tutorialSafe=true;
+        this.clearControls();p.y=ARENA.floor;p.vx=0;p.vy=0;p.grounded=true;
+        this.onTutorial(true);return;
+      }
       if(shot.kind==='buba-dash'&&shot.age>=shot.travelDuration)shot.dead=true;
       if(shot.x<ARENA.left-120||shot.x>ARENA.right+150||shot.y>ARENA.floor+80||shot.age>6000)shot.dead=true;
       const solidAttack=shot.kind==='buba-dash'||shot.kind==='mushroom';
       const canHit=shot.stage!=='turn'&&(!solidAttack||shot.hitLeg!==shot.stage);
-      if(!shot.dead&&canHit&&p.invulnerable<=0&&overlapsPlayer(p,shot)){
+      if(!shot.dead&&!shot.tutorialSafe&&canHit&&p.invulnerable<=0&&overlapsPlayer(p,shot)){
         if(solidAttack)shot.hitLeg=shot.stage;else shot.dead=true;
         p.invulnerable=760;this.hits++;this.totalDamage+=this.damage;
         this.onHit({damage:this.damage,x:p.x,y:p.y-45});if(!this.active)return;

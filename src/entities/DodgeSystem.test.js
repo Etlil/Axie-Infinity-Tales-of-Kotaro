@@ -11,6 +11,17 @@ function setup(options={}){
   const advance=ms=>{while(ms>0){const dt=Math.min(ms,1000/60);scene.events.emit('update',0,dt);ms-=dt;}};
   dodge.start();return {scene,dodge,advance,onHit,onResolve,onUpdate};
 }
+test('first Buba charge freezes until jump, safely clears the player, and only teaches once',()=>{
+ const onTutorial=jest.fn(),{dodge,advance,onHit}=setup({onTutorial});
+ dodge.start({pattern:'buba-dash',tutorialJump:true});advance(2000);
+ expect(dodge.tutorialWaiting).toBe(true);const elapsed=dodge.elapsed,x=dodge.shots[0].x;
+ advance(1000);expect(dodge.elapsed).toBe(elapsed);expect(dodge.shots[0].x).toBe(x);
+ dodge.setControl('dash',true);expect(dodge.tutorialWaiting).toBe(true);
+ dodge.setControl('jump',true);advance(250);
+ expect(dodge.player.y).toBeLessThan(ARENA.floor-50);expect(onHit).not.toHaveBeenCalled();
+ advance(1000);expect(onTutorial.mock.calls).toEqual([[true],[false]]);
+ expect(dodge.tutorialWaiting).toBe(false);expect(onHit).not.toHaveBeenCalled();
+});
 test('holding movement moves continuously, releasing decelerates, and arena bounds hold',()=>{
   const {dodge,advance}=setup();dodge.plan=[];
   dodge.setControl('right',true);advance(250);expect(dodge.player.x).toBeGreaterThan(380);expect(dodge.player.x).toBeLessThan(420);

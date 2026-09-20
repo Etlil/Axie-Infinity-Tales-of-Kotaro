@@ -31,7 +31,10 @@ async function reachBuba(page){
   await page.keyboard.press('f');
   await page.keyboard.down('w');await expect(page.locator('main')).toHaveAttribute('data-phase','INTRO_REVEAL');await page.keyboard.up('w');
   await expect(page.locator('main')).toHaveAttribute('data-phase','INTRO_VILLAGE');
-  await page.keyboard.down('w');await expect(page.locator('.scene-combat')).toBeVisible();await page.keyboard.up('w');
+  await page.keyboard.down('w');await expect(page.locator('.scene-combat')).toBeVisible({timeout:20000});await page.keyboard.up('w');
+  await expect(page.locator('.jump-lesson')).toBeVisible();
+  await page.screenshot({path:'test-results/jump-lesson.png'});
+  await page.keyboard.press('Space');await expect(page.locator('.jump-lesson')).toHaveCount(0);
 }
 async function finishBubaConversation(page,name='Luna'){
   await expect(page.locator('.scene-dialogue')).toBeVisible();

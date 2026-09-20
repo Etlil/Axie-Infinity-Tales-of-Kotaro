@@ -10,7 +10,7 @@ export default class CombatScene extends SceneBase {
   create(){
     this.enemy=this.state.enemy;this.time.paused=false;this.tweens.resumeAll();
     this.reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    this.lastPublishedDodge='';this.lastAction='';
+    this.lastPublishedDodge='';this.lastAction='';this.jumpLessonShown=false;
     backdrop(this,this.state.tutorial?'village':this.enemy.id==='puffy'?'lagoon':'battle',{image:false});
     this.bindScene('combat','PLAYER_FOCUS','Take a breath. Choose your next move.',{enemyCard:null,selectedAttack:0});
     this.player=fighter(this,320,460,this.state.activeCharacter,1.35).setDepth(8);
@@ -20,6 +20,7 @@ export default class CombatScene extends SceneBase {
     this.hazardGraphics=this.add.graphics().setDepth(12);
     this.bubaProjectiles=new BubaProjectiles(this);
     this.dodge=new DodgeSystem(this,{bonus:this.state.bonus,onUpdate:view=>this.onDodgeUpdate(view),
+      onTutorial:waiting=>{this.freezeWorld(waiting);this.session.patch({jumpTutorial:waiting});},
       onHit:hit=>this.takeHit(hit),onResolve:result=>this.resolveDodge(result),
       onLaunch:kind=>this.enemySprite.playAction(kind==='buba-dash'?'dash':kind==='mushroom'?'mushroom':this.enemyCard?.ultimate?'ultimate':'attack')});
     this.state.cards.forEach((card,i)=>this.bindKey('keydown-'+['ONE','TWO','THREE','FOUR'][i],()=>this.playCard(card.id)));
@@ -114,8 +115,10 @@ export default class CombatScene extends SceneBase {
     this.tweens.killTweensOf(this.player);this.tweens.killTweensOf(this.enemySprite);
     this.player.setScale(.75).setAngle(0);this.enemySprite.setPosition(1040,540).setScale(.82*(['buba','puffy'].includes(this.enemy.id)?1:1.65)).setAngle(0);
     drawArena(this.arenaGraphics);
-    this.session.patch({phase:'DODGE_PHASE',dodgeActive:true,dodgeDuration:6.5,message:'Move freely. Jump over low attacks; dash through danger.'});
-    this.dodge.start({pattern:this.enemyCard.pattern,damage:this.enemyCard.damage});
+    this.session.patch({phase:'DODGE_PHASE',dodgeActive:true,dodgeDuration:6.5,jumpTutorial:false,message:'Move freely. Jump over low attacks; dash through danger.'});
+    const tutorialJump=this.state.tutorial&&this.enemy.id==='buba'&&!this.jumpLessonShown;
+    this.jumpLessonShown=true;
+    this.dodge.start({pattern:this.enemyCard.pattern,damage:this.enemyCard.damage,tutorialJump});
   }
   onDodgeUpdate(view){
     const p=view.player;

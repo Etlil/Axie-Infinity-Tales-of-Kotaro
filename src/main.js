@@ -21,6 +21,14 @@ export function createGame(parent, onState) {
   let paused = false;
   let storage = null;
   try { storage = window.localStorage; } catch { /* Session play still works when storage is blocked. */ }
+  let antialias=true;
+  try { antialias=storage?.getItem('atia-antialias')!=='false'; } catch {}
+  const applyAntialias=instance=>{
+    if(!instance)return;
+    Object.values(instance.textures?.list||{}).forEach(texture=>texture.setFilter?.(antialias?0:1));
+    if(instance.renderer?.config)instance.renderer.config.antialias=antialias;
+    if(instance.canvas)instance.canvas.style.imageRendering=antialias?'auto':'pixelated';
+  };
   const session = createSession((snapshot) => {
     if (!destroyed && onState) onState(snapshot);
   }, { slotStore:createSaveSlots(storage) });
@@ -42,7 +50,7 @@ export function createGame(parent, onState) {
     width: 1200,
     height: 800,
     transparent: true,
-    antialias: true,
+    antialias,
     roundPixels: false,
     scale: {
       mode: Phaser.Scale.FIT,
@@ -50,14 +58,17 @@ export function createGame(parent, onState) {
       width: 1200,
       height: 800,
     },
-    render: { antialias: true, pixelArt: false },
+    render: { antialias, pixelArt: !antialias },
     scene: [BootScene, MainMenuScene, IntroScene, DialogueScene, LevelSelectScene, DungeonMapScene, CombatScene, VictoryScene, VillageScene, DefeatScene],
     callbacks: {
       preBoot: (instance) => {
         instance.session = session;
         applyInput(instance);
       },
-      postBoot: (instance) => applyInput(instance),
+      postBoot: (instance) => {
+        applyInput(instance);applyAntialias(instance);
+        instance.textures?.on?.('addtexture',(_key,texture)=>texture.setFilter?.(antialias?0:1));
+      },
     },
   };
   // React StrictMode mounts, cleans up, then mounts again in the same task.
@@ -79,7 +90,11 @@ export function createGame(parent, onState) {
   return {
     command(action, payload) {
       if (destroyed) return;
-      if (action === 'setInputEnabled') {
+      if(action==='setAntialias'){
+        antialias=Boolean(payload);
+        try { storage?.setItem('atia-antialias',String(antialias)); } catch {}
+        applyAntialias(game);
+      } else if (action === 'setInputEnabled') {
         inputEnabled = Boolean(payload);
         applyInput(game);
       } else if (action === 'setPaused') {

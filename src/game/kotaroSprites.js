@@ -38,7 +38,7 @@ export async function registerKotaro(scene){
  for(const [direction,frames] of Object.entries({right:[0,1],up:[2,3,4],left:[5,6],down:[7,8,9]}))anim('kotaro-walk-'+direction,'walk',frames,8);
 }
 export function overworldKotaro(scene,x,y,height=72){
- const sprite=scene.add.sprite(x,y,'kotaro-walk-drawn',9).setOrigin(.5,246/256).setDisplaySize(height,height);
+ const sprite=scene.add.sprite(x,y,'kotaro-walk-drawn',9).setOrigin(.5,246/256).setDisplaySize(height*1.2,height*1.2);
  sprite.walk=(direction,moving=true)=>{
   if(moving)sprite.play('kotaro-walk-'+direction,true);
   else {sprite.anims.stop();sprite.setFrame({right:1,up:4,left:6,down:9}[direction]??9);}

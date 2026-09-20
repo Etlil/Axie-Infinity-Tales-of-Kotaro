@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
-export default function SettingsContent({ saveAvailable, activeSlot, inMenu, fullscreen, showHelp, resetSave,returnToMenu,retrySave }) {
+export default function SettingsContent({ saveAvailable, activeSlot, inMenu, fullscreen, showHelp, resetSave,returnToMenu,retrySave,command }) {
+  const [antialias,setAntialias]=useState(()=>{try{return localStorage.getItem('atia-antialias')!=='false';}catch{return true;}});
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState('');
   const cancel = useRef(null), reset = useRef(null);
@@ -26,6 +27,7 @@ export default function SettingsContent({ saveAvailable, activeSlot, inMenu, ful
   </div>;
   return <div className="settings-content">
     <div className="settings-options">
+      <button className="small-button" role="switch" aria-checked={antialias} aria-label="Anti-aliasing" onClick={()=>{setAntialias(!antialias);command('setAntialias',!antialias);}}>Anti-aliasing: {antialias?'ON':'OFF'} · sprite smoothing</button>
       <button className="small-button" onClick={fullscreen}>Toggle fullscreen</button>
       <button className="small-button" onClick={showHelp}>How to play</button>
       {!inMenu&&<button className="small-button" onClick={returnToMenu}>Return to main menu</button>}

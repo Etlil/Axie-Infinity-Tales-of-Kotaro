@@ -77,7 +77,7 @@ export async function registerBuba(scene){
 }
 export function overworldBuba(scene,x,y,height=76){
  // Kotaro's visible height is approximately 224/256 of the requested size.
- const sprite=scene.add.sprite(x,y,'buba-village-drawn',0).setOrigin(.5,236/256).setScale(height*(224/256)/180/2);
+ const sprite=scene.add.sprite(x,y,'buba-village-drawn',0).setOrigin(.5,236/256).setScale(height*1.2*(224/256)/180/2);
  sprite.walk=(direction,moving=true)=>sprite.play('buba-drawn-'+(moving?'walk-':'idle-')+direction,true);
  sprite.walk('down',false);return sprite;
 }
