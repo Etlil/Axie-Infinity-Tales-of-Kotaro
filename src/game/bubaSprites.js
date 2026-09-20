@@ -27,19 +27,24 @@ const projectileFrames=[
 export function preloadBuba(scene){
  for(const kind of ['village','battle','dash','mushroom'])scene.load.binary('buba-source-'+kind,'assets/buba/'+kind+'.png');
 }
-async function pack(scene,kind,source,frames,reference,width=512){
+async function pack(scene,kind,source,frames,reference,width=1024){
  const canvas=document.createElement('canvas');canvas.width=source.width;canvas.height=source.height;
  const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(source,0,0);
  const pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data;
- const texture=scene.textures.createCanvas('buba-'+kind+'-drawn',width*4,256*Math.ceil(frames.length/4));
+ const columns=width===1024?2:4;
+ const texture=scene.textures.createCanvas('buba-'+kind+'-drawn',width*columns,256*Math.ceil(frames.length/columns));
  const out=texture.getContext(),sx=source.width/reference[0],sy=source.height/reference[1];
  frames.forEach((frame,i)=>{
   const [rx,ry,rw,rh]=frame.rect,x0=Math.round(rx*sx),y0=Math.round(ry*sy),x1=Math.min(source.width,Math.round((rx+rw)*sx)),y1=Math.min(source.height,Math.round((ry+rh)*sy));
   let left=x1,right=x0,top=y1,bottom=y0;
   for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++)if(pixels[(y*source.width+x)*4+3]>60){left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y);}
   if(left>right)throw new Error('Empty Buba '+kind+' frame '+i);
-  const w=right-left+1,h=bottom-top+1,scale=frame.scale?frame.scale/sy:Math.min((width-16)/w,224/h);
-  const dx=i%4*width,dy=Math.floor(i/4)*256,foot=frame.foot?frame.foot*sy:bottom;
+  const w=right-left+1,h=bottom-top+1;
+  // Normalize visible artwork, not the transparent cell. Combat measurements
+  // exclude sword trails and thrown mushrooms so effects cannot resize Buba.
+  const bodyHeight=kind==='battle'?[570,525][i]:kind==='dash'?[155,145,135,140,140,135,138,137,135,133,133,132,134,135,96,122,122,122][i]:kind==='throw'?205:null;
+  const scale=bodyHeight?160/(bodyHeight*sy):kind==='village'?180/h:Math.min((width-16)/w,224/h);
+  const dx=i%columns*width,dy=Math.floor(i/columns)*256,foot=frame.foot?frame.foot*sy:bottom;
   out.save();out.translate(dx+width/2,dy+(kind==='projectile'?128:236));if(frame.flip)out.scale(-1,1);
   out.drawImage(source,left,top,w,h,-w*scale/2,kind==='projectile'?-h*scale/2:(top-foot)*scale,w*scale,h*scale);out.restore();
   texture.add(i,0,dx,dy,width,256);
@@ -50,7 +55,7 @@ export async function registerBuba(scene){
  const sources={};
  for(const kind of ['village','battle','dash','mushroom'])sources[kind]=await createImageBitmap(new Blob([scene.cache.binary.get('buba-source-'+kind)],{type:'image/png'}));
  try{
-  await pack(scene,'village',sources.village,villageFrames,[887,1774],256);
+  await pack(scene,'village',sources.village,villageFrames,[887,1774],384);
   await pack(scene,'battle',sources.battle,[{rect:[0,0,1070,793],foot:680,scale:.29},{rect:[1070,0,913,793],foot:700,scale:.29,flip:true}],[1983,793]);
   await pack(scene,'dash',sources.dash,dashFrames,[1774,887]);
   await pack(scene,'throw',sources.mushroom,mushroomFrames,[1774,887]);
@@ -71,17 +76,18 @@ export async function registerBuba(scene){
  anim('projectile','projectile',range(14),20,-1);
 }
 export function overworldBuba(scene,x,y,height=76){
- const sprite=scene.add.sprite(x,y,'buba-village-drawn',0).setOrigin(.5,236/256).setDisplaySize(height,height);
+ // Kotaro's visible height is approximately 224/256 of the requested size.
+ const sprite=scene.add.sprite(x,y,'buba-village-drawn',0).setOrigin(.5,236/256).setScale(height*(224/256)/180/3);
  sprite.walk=(direction,moving=true)=>sprite.play('buba-drawn-'+(moving?'walk-':'idle-')+direction,true);
  sprite.walk('down',false);return sprite;
 }
 export function bubaFighter(scene,x,y,scale,facing){
  const root=scene.add.container(x,y).setScale(scale);
- const shadow=scene.add.ellipse(0,76,120,22,0x16251e,.25);
- const sprite=scene.add.sprite(0,76,'buba-battle-drawn',0).setOrigin(.5,236/256);
+ const shadow=scene.add.ellipse(0,76,40,7,0x16251e,.25);
+ const sprite=scene.add.sprite(0,76,'buba-battle-drawn',0).setOrigin(.5,236/256).setScale(1/3);
  root.add([shadow,sprite]);root.sprite=sprite;root.kind='buba';
  root.setFacing=direction=>{root.facing=direction;sprite.setFlipX(direction==='left');};root.setFacing(facing);
- root.partPosition=part=>{const [px,py]=({horn:[28,-65],mouth:[48,-15],back:[-42,-27],tail:[-85,26]})[part];return root.getWorldTransformMatrix().transformPoint(root.facing==='left'?-px:px,py);};
+ root.partPosition=part=>{const [px,py]=({horn:[28,-65],mouth:[48,-15],back:[-42,-27],tail:[-85,26]})[part];return root.getWorldTransformMatrix().transformPoint((root.facing==='left'?-px:px)/3,76+(py-76)/3);};
  root.playAction=(action='idle',part)=>{
   const pose=action==='hit'?'hit':action==='mushroom'||(action==='attack'&&part==='back')?'throw':action==='recover'?'recover':action==='ultimate'?'finish':['run','dash','attack'].includes(action)?'dash':'idle';
   sprite.removeAllListeners('animationcomplete');sprite.play('buba-drawn-'+pose,true);
