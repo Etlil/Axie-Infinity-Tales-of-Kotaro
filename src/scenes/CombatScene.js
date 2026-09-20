@@ -1,6 +1,5 @@
 import SceneBase, { floatingText } from './SceneBase';
 import { backdrop, fighter, slash } from '../game/world';
-import { bodyPartAttack } from '../game/bodyPartAttacks';
 import { drawArena, drawHazards } from '../game/dodgeWorld';
 import DodgeSystem from '../entities/DodgeSystem';
 import {BubaProjectiles} from '../game/bubaSprites';
@@ -24,10 +23,9 @@ export default class CombatScene extends SceneBase {
       onHit:hit=>this.takeHit(hit),onResolve:result=>this.resolveDodge(result),
       onLaunch:kind=>this.enemySprite.playAction(kind==='buba-dash'?'dash':kind==='mushroom'?'mushroom':this.enemyCard?.ultimate?'ultimate':'attack')});
     this.state.cards.forEach((card,i)=>this.bindKey('keydown-'+['ONE','TWO','THREE','FOUR'][i],()=>this.playCard(card.id)));
-    this.bindKey('keydown-FIVE',()=>this.playCard(this.state.ultimate.id));
     this.bindKey('keydown-X',()=>this.playCard(this.state.cards[this.state.selectedAttack||0].id));
-    ['A','LEFT'].forEach(key=>this.bindKey('keydown-'+key,()=>this.selectAttack((this.state.selectedAttack+3)%4)));
-    ['D','RIGHT'].forEach(key=>this.bindKey('keydown-'+key,()=>this.selectAttack((this.state.selectedAttack+1)%4)));
+    ['A','LEFT'].forEach(key=>this.bindKey('keydown-'+key,()=>this.selectAttack((this.state.selectedAttack+this.state.cards.length-1)%this.state.cards.length)));
+    ['D','RIGHT'].forEach(key=>this.bindKey('keydown-'+key,()=>this.selectAttack((this.state.selectedAttack+1)%this.state.cards.length)));
     this.events.once('shutdown',()=>{this.bubaProjectiles.clear();this.dodge.destroy();this.time.paused=false;});
     this.beginEncounter();
   }
@@ -46,46 +44,51 @@ export default class CombatScene extends SceneBase {
     this.dodge.stop();this.arenaGraphics.clear();this.hazardGraphics.clear();
     this.bubaProjectiles?.clear();this.mushroomInFlight=false;
     this.tweens.killTweensOf(this.player);this.tweens.killTweensOf(this.enemySprite);
-    this.player.setPosition(320,460).setScale(1.35).setAngle(0).setAlpha(1);this.player.playAction('idle');
+    this.player.setPosition(320,460).setScale(1.35).setAngle(0).setAlpha(1);this.player.playAction('stance');
     if(this.player.setFacing)this.player.setFacing('right');else this.player.sprite?.setFlipX(true);
     this.enemySprite.setPosition(890,445).setScale(1.35*(['buba','puffy'].includes(this.enemy.id)?1:1.65)).setAngle(0);this.enemySprite.playAction('idle');
     this.enemySprite.setFacing?.('left');
     this.session.patch({phase:'PLAYER_FOCUS',dodgeActive:false,enemyCard:null,guard:0,selectedAttack:0,message:'Take a breath. Your move.'});
-    this.freezeWorld(true);this.time.paused=false;
+    this.freezeWorld(false);
     const duration=this.reducedMotion?0:460;
     this.cameras.main.pan(520,430,duration,'Sine.easeInOut');
-    this.cameras.main.zoomTo(this.reducedMotion?1:1.14,duration,'Sine.easeInOut');
+    this.cameras.main.zoomTo(this.reducedMotion?1:1.18,duration,'Sine.easeInOut');
+    if(!this.reducedMotion)[this.player,this.enemySprite].forEach((actor,i)=>this.tweens.add({targets:actor,y:actor.y-7,duration:1050+i*130,yoyo:true,repeat:-1,ease:'Sine.easeInOut'}));
     this.time.delayedCall(duration,()=>{
       this.session.patch({phase:'PLAYER_TURN',message:'Time is held. Choose a move, then press X or tap its card.'});
-      this.freezeWorld(true);
     });
   }
-  selectAttack(index){if(this.state.phase==='PLAYER_TURN'&&Number.isInteger(index)&&index>=0&&index<4)this.session.patch({selectedAttack:index});}
+  selectAttack(index){if(this.state.phase==='PLAYER_TURN'&&Number.isInteger(index)&&index>=0&&index<this.state.cards.length)this.session.patch({selectedAttack:index});}
   playCard(id) {
     if (this.state.phase !== 'PLAYER_TURN') return;
-    const ultimate = id === this.state.ultimate.id;
-    const card = ultimate ? this.state.ultimate : this.state.cards.find(entry => entry.id === id);
-    if (!card || (ultimate && this.state.charge < 3)) return;
+    const card = this.state.cards.find(entry => entry.id === id);
+    if (!card) return;
     this.freezeWorld(false);
     this.cameras.main.pan(590,430,180,'Sine.easeOut');
     this.cameras.main.zoomTo(this.reducedMotion ? 1 : 1.22,180);
     this.session.patch({ phase: 'PLAYER_ATTACK_ANIM', message: card.name + '! ' + card.damage + ' damage.',
-      guard: card.guard || 0, charge: ultimate ? 0 : Math.min(3, this.state.charge + 1),
+      guard: card.guard || 0, charge: 0,
       playerHP: Math.min(this.state.playerMaxHP, this.state.playerHP + (card.heal || 0)) });
     // A fast tap may arrive during the previous return-to-position tween.
     this.tweens.killTweensOf(this.player);
+    this.tweens.killTweensOf(this.enemySprite);this.enemySprite.setPosition(890,445);
     this.player.setPosition(320,460).setScale(1.35).setAngle(0);
-    this.player.playAction(ultimate ? 'ultimate' : 'attack', card.part);
+    this.player.playAction(card.id==='slash'?'stance':this.player.kind==='kotaro'?'stance':'idle');
     if (card.guard && this.player.shield) this.player.bringToTop(this.player.shield);
-    const pose = ultimate ? (card.part === 'tail' ? { x: 420, angle: -30 } : { x: 605 }) : card.part === 'horn' ? { x: 430, y: 442, angle: 12 }
-      : card.part === 'mouth' ? { x: 390, scaleX: 1.48, scaleY: 1.23 }
-      : card.part === 'back' ? { x: 490, angle: -10 } : { x: 340, angle: -22, scaleX: 1.25, scaleY: 1.43 };
-    this.tweens.add({ targets: this.player, ...pose, duration: 190, yoyo: true, hold: 120, ease: 'Sine.easeOut' });
-    if (!ultimate || card.part === 'tail') this.time.delayedCall(120, () => bodyPartAttack(this, this.player, card, { x: 850, y: 420 }));
+    this.tweens.add({targets:this.player,x:735,duration:150,ease:'Cubic.easeIn',onComplete:()=>{
+      if(card.id==='slash'){
+        this.player.playAction('attack');slash(this,850,425,0xe5f5ff);
+      }else{
+        this.tweens.add({targets:this.enemySprite,x:920,angle:5,duration:90,yoyo:true});
+        const impact=this.add.circle(830,445,20,0xffe7a3,.65).setDepth(12);
+        this.tweens.add({targets:impact,scale:2.3,alpha:0,duration:220,onComplete:()=>impact.destroy()});
+      }
+      if(!this.reducedMotion)this.cameras.main.shake(90,.003);
+      this.time.delayedCall(180,()=>this.tweens.add({targets:this.player,x:320,duration:200,ease:'Sine.easeOut'}));
+    }});
     this.time.delayedCall(360, () => {
       const minimum=this.state.tutorial&&this.enemy.id==='buba'?Math.min(this.state.enemyHP,this.enemy.maxHP/2):0;
       this.session.patch({ enemyHP: Math.max(minimum, this.state.enemyHP - card.damage) });
-      if (ultimate && card.part === 'back') slash(this, 850, 420, 0xe2c8ff, true);
       if (card.guard) {
         const ring = this.add.ellipse(320, 455, 175, 205).setStrokeStyle(5, 0xbddcff, .8).setDepth(12);
         this.tweens.add({ targets: ring, alpha: 0, duration: 750, onComplete: () => ring.destroy() });
@@ -114,17 +117,17 @@ export default class CombatScene extends SceneBase {
     this.lastPublishedDodge='';this.lastAction='';this.lastEnemyAction='';
     this.tweens.killTweensOf(this.player);this.tweens.killTweensOf(this.enemySprite);
     this.player.setScale(.75).setAngle(0);this.enemySprite.setPosition(1040,540).setScale(.82*(['buba','puffy'].includes(this.enemy.id)?1:1.65)).setAngle(0);
-    drawArena(this.arenaGraphics);
+    drawArena(this.arenaGraphics,this.enemy.id==='buba');
     this.session.patch({phase:'DODGE_PHASE',dodgeActive:true,dodgeDuration:6.5,jumpTutorial:false,message:'Move freely. Jump over low attacks; dash through danger.'});
     const tutorialJump=this.state.tutorial&&this.enemy.id==='buba'&&!this.jumpLessonShown;
     this.jumpLessonShown=true;
-    this.dodge.start({pattern:this.enemyCard.pattern,damage:this.enemyCard.damage,tutorialJump});
+    this.dodge.start({pattern:this.enemyCard.pattern,damage:this.enemyCard.damage,tutorialJump,platforms:this.enemy.id==='buba'});
   }
   onDodgeUpdate(view){
     const p=view.player;
     this.player.setPosition(p.x,p.y-57).setScale(.75).setAngle(p.dash>0?p.facing*8:p.grounded?0:Math.max(-12,Math.min(12,p.vy/50)));
     this.player.setAlpha(p.invulnerable>210?(Math.floor(p.invulnerable/90)%2?.45:1):1);
-    const action=this.player.kind==='buba'&&p.invulnerable>400?'hit':Math.abs(p.vx)>30?'run':'idle';
+    const action=this.player.kind==='buba'&&p.invulnerable>400?'hit':!p.grounded?'jump':Math.abs(p.vx)>30?'run':'idle';
     if(this.lastAction!==action){this.player.playAction(action);this.lastAction=action;}
     if(this.player.setFacing)this.player.setFacing(p.facing===1?'right':'left');else this.player.sprite?.setFlipX(p.facing===1);
     if(view.opponent&&this.enemy.id==='buba'){

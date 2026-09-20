@@ -40,10 +40,11 @@ export default class DodgeSystem {
     }});
     scene.events.on('pause',this.clearControls);scene.events.once('shutdown',this.shutdown);
   }
-  start({pattern='thorns',damage=14,tutorialJump=false}={}){
+  start({pattern='thorns',damage=14,tutorialJump=false,platforms=false}={}){
     if(this.destroyed)return false;
     this.stop();this.timing=getDodgeTiming(this.bonus);this.elapsed=0;this.hits=0;this.totalDamage=0;
     this.damage=projectileDamage(damage);
+    this.platforms=platforms?ARENA.platforms:[];
     this.tutorialPending=tutorialJump;this.tutorialWaiting=false;
     this.player={x:330,y:ARENA.floor,vx:0,vy:0,facing:1,grounded:true,dash:0,cooldown:0,invulnerable:0};
     this.shots=[];this.plan=attackPlan(pattern);this.jumpBuffer=0;this.coyote=100;this.active=true;
@@ -84,7 +85,7 @@ export default class DodgeSystem {
     if(p.dash>0){p.dash=Math.max(0,p.dash-ms);p.vx=p.facing*760;}
     else{p.vx+=(axis*360-p.vx)*Math.min(1,dt*20);p.vy+=2100*dt;}
     const oldY=p.y;p.x=clamp(p.x+p.vx*dt,ARENA.left,ARENA.right-65);p.y+=p.vy*dt;p.grounded=false;
-    if(p.vy>=0)for(const surface of [...ARENA.platforms,{x:ARENA.left-50,y:ARENA.floor,width:1100}]){
+    if(p.vy>=0)for(const surface of [...this.platforms,{x:ARENA.left-50,y:ARENA.floor,width:1100}]){
       if(p.x+18>surface.x&&p.x-18<surface.x+surface.width&&oldY<=surface.y+1&&p.y>=surface.y){p.y=surface.y;p.vy=0;p.grounded=true;break;}
     }
     for(const event of this.plan){

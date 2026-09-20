@@ -16,7 +16,11 @@
 .dialogue-ornament.right { top:auto; left:auto; bottom:-11px; right:-11px; transform:rotate(180deg); }
 @keyframes dialogue-arrow { to { transform:translateY(3px); } }
 .story-scene:has(.dialogue-box) .story-footer { display:none; }
-.cinematic-matte { position:absolute; z-index:1; inset:0; pointer-events:none; background:linear-gradient(#15151fd9,transparent 23%,transparent 66%,#14131ccc); border-top:8px solid #15131e; border-bottom:8px solid #15131e; animation:cinematic-in .45s ease-out; }
+.cinematic-matte { position:absolute; z-index:1; inset:0; pointer-events:none; background:radial-gradient(ellipse at 50% 48%,transparent 22%,#08081170 60%,#030309ed 100%); border-top:12px solid #090910; border-bottom:12px solid #090910; animation:cinematic-in .45s ease-out; }
+.cinematic-matte::after{content:"";position:absolute;inset:0;background:#000;animation:turn-blackout .45s ease-out forwards;}
+@keyframes turn-blackout{0%,15%{opacity:.9}100%{opacity:0}}
+.scene-combat .ability-cards.two-attacks{width:min(480px,100%);margin-inline:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
+@media(prefers-reduced-motion:reduce){.cinematic-matte::after{display:none;}}
 .is-choosing .world-stage { filter:saturate(.65) contrast(1.04); }
 .scene-combat .battle-controls,.scene-combat .encounter-heading { z-index:3; }
 .turn-prompt { position:absolute; z-index:5; top:155px; left:calc(50% - 355px); display:flex; flex-direction:column; gap:5px; color:#fff1d7; text-shadow:0 3px #281f30; transform:rotate(-3deg); pointer-events:none; }

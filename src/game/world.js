@@ -42,8 +42,8 @@ export function fighter(scene,x,y,kind='kotaro',scale=1,facing='right') {
     root.setFacing=direction=>{root.facing=direction;sprite.setFlipX(direction==='left');};root.setFacing(facing);
     root.partPosition=part=>{const [px,py]=({horn:[34,-82],mouth:[34,-52],back:[-24,-9],tail:[-50,46]})[part];return root.getWorldTransformMatrix().transformPoint(root.facing==='left'?-px:px,py);};
     root.playAction=(action='idle')=>{
-      sprite.play(action==='run'?'kotaro-drawn-run':'kotaro-drawn-idle',true);
-      if(['attack','ultimate'].includes(action))scene.tweens.add({targets:sprite,angle:root.facing==='left'?-12:12,duration:140,yoyo:true});
+      const pose=['run','jump','stance','attack'].includes(action)?action:'idle';
+      sprite.play('kotaro-drawn-'+pose,true);
       if(action==='hit')scene.tweens.add({targets:sprite,alpha:.35,duration:90,yoyo:true});
     };
     root.playAction();return root;

@@ -1,5 +1,5 @@
 import { ARENA } from '../entities/DodgeSystem';
-export function drawArena(g){
+export function drawArena(g,platforms=false){
   g.clear();
   const ledge=(x,y,width)=>{
     g.fillStyle(0x263a3d,.95).fillRoundedRect(x,y,width,18,7);
@@ -8,7 +8,7 @@ export function drawArena(g){
     for(let i=12;i<width-12;i+=28)g.lineStyle(2,0x496a65).lineBetween(x+i,y+8,x+i+8,y+14);
   };
   ledge(ARENA.left-30,ARENA.floor,ARENA.right-ARENA.left+75);
-  ARENA.platforms.forEach(p=>ledge(p.x,p.y,p.width));
+  if(platforms)ARENA.platforms.forEach(p=>ledge(p.x,p.y,p.width));
 }
 export function drawHazards(g,view,enemyId){
   g.clear();
