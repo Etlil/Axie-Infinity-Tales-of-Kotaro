@@ -22,6 +22,10 @@
 .scene-combat .ability-cards.two-attacks{width:min(480px,100%);margin-inline:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
 @media(prefers-reduced-motion:reduce){.cinematic-matte::after{display:none;}}
 .is-choosing .world-stage { filter:saturate(.65) contrast(1.04); }
+.scene-combat .world-fill { transform:scale(1); transform-origin:50% 54%; transition:transform 350ms ease-in-out; }
+.scene-combat.is-choosing .world-fill { transform:scale(1.18); transition-duration:460ms; }
+.scene-combat[data-phase="PLAYER_ATTACK_ANIM"] .world-fill { transform:scale(1.22); transition-duration:180ms; }
+@media(prefers-reduced-motion:reduce){.scene-combat .world-fill,.scene-combat.is-choosing .world-fill,.scene-combat[data-phase="PLAYER_ATTACK_ANIM"] .world-fill{transform:none;transition:none;}}
 .scene-combat .battle-controls,.scene-combat .encounter-heading { z-index:3; }
 .turn-prompt { position:absolute; z-index:5; top:155px; left:calc(50% - 355px); display:flex; flex-direction:column; gap:5px; color:#fff1d7; text-shadow:0 3px #281f30; transform:rotate(-3deg); pointer-events:none; }
 .turn-prompt > span { letter-spacing:4px; font:900 9px var(--body-font); color:#bddef0; }
