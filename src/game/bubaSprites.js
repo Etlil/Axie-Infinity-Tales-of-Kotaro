@@ -77,17 +77,17 @@ export async function registerBuba(scene){
 }
 export function overworldBuba(scene,x,y,height=76){
  // Kotaro's visible height is approximately 224/256 of the requested size.
- const sprite=scene.add.sprite(x,y,'buba-village-drawn',0).setOrigin(.5,236/256).setScale(height*(224/256)/180/3);
+ const sprite=scene.add.sprite(x,y,'buba-village-drawn',0).setOrigin(.5,236/256).setScale(height*(224/256)/180/2);
  sprite.walk=(direction,moving=true)=>sprite.play('buba-drawn-'+(moving?'walk-':'idle-')+direction,true);
  sprite.walk('down',false);return sprite;
 }
 export function bubaFighter(scene,x,y,scale,facing){
  const root=scene.add.container(x,y).setScale(scale);
- const shadow=scene.add.ellipse(0,76,40,7,0x16251e,.25);
- const sprite=scene.add.sprite(0,76,'buba-battle-drawn',0).setOrigin(.5,236/256).setScale(1/3);
+ const shadow=scene.add.ellipse(0,76,60,11,0x16251e,.25);
+ const sprite=scene.add.sprite(0,76,'buba-battle-drawn',0).setOrigin(.5,236/256).setScale(1/2);
  root.add([shadow,sprite]);root.sprite=sprite;root.kind='buba';
  root.setFacing=direction=>{root.facing=direction;sprite.setFlipX(direction==='left');};root.setFacing(facing);
- root.partPosition=part=>{const [px,py]=({horn:[28,-65],mouth:[48,-15],back:[-42,-27],tail:[-85,26]})[part];return root.getWorldTransformMatrix().transformPoint((root.facing==='left'?-px:px)/3,76+(py-76)/3);};
+ root.partPosition=part=>{const [px,py]=({horn:[28,-65],mouth:[48,-15],back:[-42,-27],tail:[-85,26]})[part];return root.getWorldTransformMatrix().transformPoint((root.facing==='left'?-px:px)/2,76+(py-76)/2);};
  root.playAction=(action='idle',part)=>{
   const pose=action==='hit'?'hit':action==='mushroom'||(action==='attack'&&part==='back')?'throw':action==='recover'?'recover':action==='ultimate'?'finish':['run','dash','attack'].includes(action)?'dash':'idle';
   sprite.removeAllListeners('animationcomplete');sprite.play('buba-drawn-'+pose,true);
