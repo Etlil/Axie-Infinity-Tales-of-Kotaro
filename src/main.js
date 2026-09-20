@@ -30,10 +30,11 @@ export function createGame(parent, onState) {
     if (instance.input.keyboard) instance.input.keyboard.enabled = inputEnabled;
   };
   const applyPause = () => {
-    const scene = game?.scene?.getScene('CombatScene');
+    const key=session.state.scene==='intro'?'IntroScene':session.state.scene==='dialogue'?'DialogueScene':'CombatScene';
+    const scene = game?.scene?.getScene(key);
     if (!scene) return;
-    if (paused && scene.sys.isActive()) game.scene.pause('CombatScene');
-    else if (!paused && scene.sys.isPaused()) game.scene.resume('CombatScene');
+    if (paused && scene.sys.isActive()) game.scene.pause(key);
+    else if (!paused && scene.sys.isPaused()) game.scene.resume(key);
   };
   const config = {
     type: Phaser.AUTO,

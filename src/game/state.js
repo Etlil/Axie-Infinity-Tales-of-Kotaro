@@ -1,12 +1,13 @@
 import { characterCards, ultimates } from '../data/playerCards';
 import { bosses, dungeonRooms } from '../data/bosses';
-import { rankRewards, rankThresholds } from '../data/story';
+import { bubaDialogue,rankRewards, rankThresholds } from '../data/story';
 import {DUNGEONS,createDungeonRun,dungeonFor} from './dungeonLayout';
-import {nearbyPlace} from './townLayout';
+import {nearbyPlace,FOUNTAIN_CHECKPOINT} from './townLayout';
 export const SAVE_KEY = 'atia-adventure-v1';
 
 export function initialState() {
   return { scene: 'intro', phase: 'INTRO', loading: true, introStep: 0, dialogueIndex: 0, tutorialWon: false, prologueComplete: false,
+    prologueVersion:2,introStage:'pendant',tutorialDirections:[],signRead:false,playerName:'',nameConfirmed:false,introPosition:null,introCanInteract:false,
     activeCharacter: 'kotaro', unlockedCharacters: ['kotaro'], amulet: false, xp: 0, level: 1, coins: 0, wood: 0, essence: 0,
     claimedRewards: [], completedStages: [], unlockedStage: 0, selectedStage: 0, tentStage: 0, rescued: [], bonus: 0,
     playerHP: 100, playerMaxHP: 100, enemyHP: 0, enemy: null, roomIndex: 0, tutorial: false, turn: 1, dungeonRun:null,
@@ -15,7 +16,7 @@ export function initialState() {
     message: 'A new story waits beyond the gate.', panel: null, result: null, townPosition:null,townCheckpoint:null,
     activeSlot:null,saveSlots:[],menuPage:'home',saveRevision:0,saveStatus:'idle',saveKind:'auto',lastSavedAt:null,saveAvailable: true };
 }
-const profileKeys = ['introStep','dialogueIndex','tutorialWon','prologueComplete','activeCharacter','unlockedCharacters','amulet','xp','coins','wood','essence','claimedRewards','completedStages','unlockedStage','rescued','townCheckpoint'];
+const profileKeys = ['prologueVersion','introStage','tutorialDirections','signRead','playerName','nameConfirmed','introStep','dialogueIndex','tutorialWon','prologueComplete','activeCharacter','unlockedCharacters','amulet','xp','coins','wood','essence','claimedRewards','completedStages','unlockedStage','rescued','townCheckpoint'];
 const validIds = new Set(['kotaro','buba']);
 
 export function restoreProfile(storage) {
@@ -36,8 +37,21 @@ export function restoreProfile(storage) {
     // to Puffy without losing the blessing or letting both entries stack.
     clean.rescued = clean.amulet && Array.isArray(saved.rescued) && saved.rescued.some(x => x?.id === 'puffy' || x?.id === 'momo') ? [{ id:'puffy',name:'Puffy',rescueBonus:bosses.puffy.rescueBonus }] : [];
     clean.introStep = Number.isInteger(saved.introStep) ? Math.max(0,Math.min(3,saved.introStep)) : 0;
-    clean.dialogueIndex = Number.isInteger(saved.dialogueIndex) ? Math.max(0,Math.min(5,saved.dialogueIndex)) : 0;
-    clean.townCheckpoint=clean.prologueComplete&&saved.townCheckpoint?.x===14&&saved.townCheckpoint?.y===12?{x:14,y:12}:null;
+    clean.prologueVersion=2;
+    clean.playerName=typeof saved.playerName==='string'?saved.playerName.trim().slice(0,20):'';
+    clean.nameConfirmed=Boolean(clean.playerName)&&(saved.nameConfirmed===true||clean.prologueComplete);
+    if(clean.prologueComplete&&!clean.playerName){clean.playerName='Kotaro';clean.nameConfirmed=true;}
+    clean.tutorialDirections=Array.isArray(saved.tutorialDirections)?[...new Set(saved.tutorialDirections.filter(d=>['up','down','left','right'].includes(d)))]:[];
+    clean.signRead=saved.signRead===true&&clean.tutorialDirections.length===4;
+    const stages=['pendant','move','sign','village'];
+    clean.introStage=saved.prologueVersion===2&&stages.includes(saved.introStage)?saved.introStage:'pendant';
+    if(clean.introStage==='village'&&!clean.signRead)clean.introStage='move';
+    if(clean.introStage==='sign'&&clean.tutorialDirections.length<4)clean.introStage='move';
+    clean.dialogueIndex=saved.prologueVersion===2&&Number.isInteger(saved.dialogueIndex)?Math.max(0,Math.min(bubaDialogue.length-1,saved.dialogueIndex)):0;
+    const nameIndex=bubaDialogue.findIndex(line=>line.type==='name');
+    if(clean.dialogueIndex>nameIndex&&!clean.nameConfirmed)clean.dialogueIndex=nameIndex;
+    const checkpoint=saved.townCheckpoint;
+    clean.townCheckpoint=clean.prologueComplete&&((checkpoint?.x===14&&checkpoint?.y===12)||(checkpoint?.x===FOUNTAIN_CHECKPOINT.x&&checkpoint?.y===FOUNTAIN_CHECKPOINT.y))?{...FOUNTAIN_CHECKPOINT}:null;
     return clean;
   } catch { return {}; }
 }
@@ -102,7 +116,7 @@ export function createSession(onState, { storage = null, slotStore=null } = {}) 
     },
     saveAtFountain(){
       if(this.state.scene!=='village'||!this.state.prologueComplete||nearbyPlace(this.state.townPosition)?.id!=='well')return false;
-      this.state.townCheckpoint={x:14,y:12};
+      this.state.townCheckpoint={...FOUNTAIN_CHECKPOINT};
       const ok=this.saveNow('fountain');
       this.patch({message:ok?'Your adventure is saved at the fountain.':'Could not save to this browser. Keep this tab open and try again.'});return ok;
     },
@@ -125,6 +139,12 @@ export function createSession(onState, { storage = null, slotStore=null } = {}) 
     },
     finishTutorial() {
       if (!this.state.tutorialWon) this.patch({ tutorialWon:true, xp:this.state.xp + 60, coins:this.state.coins + 50, dialogueIndex:0 });
+    },
+    setPlayerName(value){
+      if(!this.state.tutorialWon||this.state.prologueComplete||typeof value!=='string')return false;
+      const name=[...value.trim()].filter(char=>char.charCodeAt(0)>=32&&char.charCodeAt(0)!==127).join('').slice(0,20);
+      if(!name)return false;
+      this.patch({playerName:name,nameConfirmed:true});return true;
     },
     startDungeon(level) {
       if(!this.state.prologueComplete||!Number.isInteger(level)||!DUNGEONS[level]||level>this.state.unlockedStage)return false;

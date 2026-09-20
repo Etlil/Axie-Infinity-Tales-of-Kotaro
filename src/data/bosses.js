@@ -1,8 +1,7 @@
 export const bosses = {
   buba: { id: 'buba', name: 'Buba', type: 'Beast', maxHP: 120, dodgePattern: 'platform_arena', cards: [
-    { id: 'sword', pattern: 'sweep', name: 'Sword Rush', damage: 12 },
-    { id: 'shield', pattern: 'shield', name: 'Shield Bash', damage: 16 },
-    { id: 'paintstorm', pattern: 'rain', name: 'Paintstorm', damage: 26, ultimate: true },
+    { id: 'sword', pattern: 'buba-dash', name: 'Crossing Sword Rush', damage: 12 },
+    { id: 'mushroom', pattern: 'buba-mushroom', name: 'Back Mushroom Boomerang', damage: 16 },
   ] },
   puffy: { id: 'puffy', name: 'Corrupted Puffy', type: 'Aqua', maxHP: 132, dodgePattern: 'platform_arena', rescueBonus: { stat: 'dodgeAccuracy', value: 0.05 }, cards: [
     { id: 'wave', pattern: 'wave', name: 'Nightmare Wave', damage: 24 },

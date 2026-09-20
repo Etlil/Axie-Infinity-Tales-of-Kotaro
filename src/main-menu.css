@@ -28,3 +28,114 @@
 @media (orientation:portrait) {
  .main-menu { grid-template-columns:1fr; align-content:center; gap:28px; padding:26px 22px 95px; }.menu-brand h1 { font-size:115px; }.menu-brand p { margin:10px 0; font-size:23px; }.menu-chapter { margin-top:10px; }.title-actions { width:100%; max-width:310px; gap:10px; }.menu-page-slots,.menu-page-credits { align-content:start; gap:18px; }.menu-page-slots .menu-brand h1,.menu-page-credits .menu-brand h1 { font-size:66px; margin:8px 0; }.menu-page-slots .menu-chapter,.menu-page-credits .menu-chapter { display:none; }.menu-page-slots .menu-brand p,.menu-page-credits .menu-brand p { font-size:18px; }.menu-sheet { padding:17px; }.menu-sheet h2 { font-size:26px; }.save-slot { padding:8px; gap:8px; min-height:65px; }.slot-copy strong { font-size:19px; }.slot-meta { font-size:8px; }.menu-footer { position:fixed; bottom:0; padding:12px 16px max(12px,env(safe-area-inset-bottom)); left:0; right:0; background:#142a30f5; }.menu-footer p { font-size:10px; }
 }
+
+/* The title screen shares the moonlit setting of the pendant prologue. */
+.scene-menu .world-fill {
+ background:#10212d;
+ filter:none; transform:none; opacity:1;
+}
+.scene-menu .world-shade { background:linear-gradient(0deg,#081522f2,transparent 36%,#09172a33); }
+.main-menu {
+ background:linear-gradient(0deg,#081522ed,transparent 45%),linear-gradient(90deg,#07132166,#0c1d3070),var(--menu-image) center 38%/cover;
+ grid-template-columns:minmax(0,1.15fr) minmax(260px,.85fr);
+ grid-template-rows:minmax(0,1fr) auto;
+ align-items:center; align-content:stretch; gap:24px 5vw;
+ padding:max(30px,env(safe-area-inset-top)) max(40px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(40px,env(safe-area-inset-left));
+ overflow:hidden;
+}
+.main-menu::before {
+ content:''; position:absolute; inset:14px; border:1px solid #c9dce120; border-radius:24px; pointer-events:none;
+}
+.main-menu .menu-brand { width:100%; max-width:680px; justify-self:center; align-self:center; }
+.menu-logo-panel {
+ position:relative; padding:18px 16px; border:2px solid #ffe6b4; border-radius:24px;
+ background:linear-gradient(145deg,#fff9e9,#efe2c6); box-shadow:0 6px 0 #493c36,0 16px 48px #02091488,inset 0 0 0 6px #b7995f30;
+ transform:rotate(-1.5deg);
+}
+.menu-logo-panel::after { content:''; position:absolute; inset:7px; border:1px solid #b2956655; border-radius:17px; pointer-events:none; }
+.menu-brand .brand-logo { max-width:none; }
+.menu-brand .brand-logo img { border:0; border-radius:0; box-shadow:none; mix-blend-mode:multiply; }
+.main-menu .menu-chapter { font-size:10px; letter-spacing:2px; color:#ffe7b4; padding-top:16px; margin-top:24px; }
+.main-menu .menu-tagline { font-family:var(--body-font, 'Nunito',sans-serif); font-size:13px; font-weight:700; letter-spacing:.3px; color:#cbdce5; margin:10px 0 0; }
+.main-menu .title-actions {
+ width:min(340px,100%); max-width:none; padding:24px; border:1px solid #abcbd45c; border-top:3px solid #ddbb79;
+ border-radius:24px; background:linear-gradient(150deg,#17303ded,#0d1c2af2); box-shadow:0 8px 0 #06121fcc,0 22px 50px #020a1555,inset 0 0 0 5px #adc2cc09;
+ gap:13px; align-self:center;
+}
+.menu-nav-caption { display:block; text-align:center; font-size:9px; font-weight:900; letter-spacing:2px; color:#b4ced8; margin:1px 0 7px; }
+.main-menu .title-actions .gold-button,.main-menu .title-actions .small-button,.main-menu .title-actions .text-button { min-height:52px; border-radius:12px; font:400 25px var(--display-font); }
+.main-menu .title-actions .menu-start { min-height:66px; font-size:31px; background:linear-gradient(#ffe6a4,#e9b95e); border:2px solid #fff1c3; box-shadow:0 5px 0 #906336,0 7px 15px #030c1655; }
+.main-menu .title-actions .small-button { background:linear-gradient(#395766,#233e50); color:#edf5e8; border:1px solid #8caeb27a; box-shadow:0 3px 0 #091824; }
+.main-menu .title-actions .small-button:hover { background:linear-gradient(#486c79,#304e61); }
+.main-menu .title-actions .text-button { font-size:19px; color:#cbdbe1; min-height:44px; padding:9px; text-decoration:none; }
+.main-menu .title-actions .text-button:hover { background:#abc9d414; color:#fff3cf; }
+.main-menu:not(.menu-page-home) .menu-brand { max-width:440px; }
+.main-menu .menu-sheet { min-width:0; min-height:0; max-height:100%; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:#b5b08a #132a35; background:linear-gradient(145deg,#1d3545f7,#122631fa); border-color:#bfba8c; }
+.main-menu .menu-sheet-heading { position:relative; }
+.main-menu .menu-footer { grid-column:1/-1; position:static; min-width:0; padding:12px 18px 0; margin:0 auto; max-width:820px; background:none; border-top:1px solid #c2d5d52a; color:#bdcfd7; }
+.main-menu .menu-footer p { font-size:11px; line-height:1.5; }
+.main-menu .menu-footer>span { flex:none; color:#ffe5a4; }
+.main-menu .save-slot { min-height:62px; }
+.main-menu .empty-slot { background:#263f4e; border-color:#6a8894; color:#d5e1e5; }
+.main-menu .empty-slot:hover:not(:disabled) { background:#355768; }
+.main-menu .empty-slot .slot-number,.main-menu .empty-slot .slot-meta { color:#abc1cc; }
+.main-menu .slot-meta { flex-shrink:0; }
+.main-menu .credits-sheet dd { overflow-wrap:anywhere; }
+@media (orientation:landscape) and (max-height:650px) {
+ .main-menu { padding:18px max(28px,env(safe-area-inset-right)) 12px max(28px,env(safe-area-inset-left)); gap:14px 30px; }
+ .main-menu .menu-brand { max-width:510px; }
+ .menu-logo-panel { padding:10px; border-radius:18px; }
+ .menu-logo-panel::after { inset:5px; border-radius:12px; }
+ .main-menu .menu-chapter { font-size:8px; letter-spacing:1.3px; padding-top:10px; margin-top:14px; }
+ .main-menu .menu-tagline { font-size:11px; margin-top:6px; }
+ .main-menu .title-actions { width:270px; padding:17px; gap:9px; border-radius:18px; }
+ .menu-nav-caption { font-size:8px; margin:0 0 3px; }
+ .main-menu .title-actions .small-button { min-height:44px; font-size:22px; }
+ .main-menu .title-actions .menu-start { min-height:52px; font-size:27px; }
+ .main-menu .title-actions .text-button { min-height:44px; font-size:17px; }
+ .main-menu .menu-footer { padding-top:8px; }
+ .main-menu .menu-footer p { font-size:9px; }
+ .main-menu:not(.menu-page-home) { grid-template-columns:minmax(130px,.65fr) minmax(310px,1.35fr); }
+ .main-menu .save-slot { min-height:46px; }
+ .main-menu .menu-sheet { max-height:100%; }
+}
+@media (orientation:landscape) and (max-height:400px) {
+ .main-menu { padding:12px max(20px,env(safe-area-inset-right)) 9px max(20px,env(safe-area-inset-left)); gap:8px 22px; }
+ .main-menu::before { inset:6px; border-radius:18px; }
+ .main-menu .title-actions { width:245px; padding:10px 14px; gap:6px; }
+ .menu-nav-caption { display:none; }
+ .main-menu .title-actions .menu-start { min-height:47px; font-size:25px; padding:6px 18px; }
+ .main-menu .title-actions .small-button { font-size:20px; padding:6px 12px; }
+ .main-menu .menu-chapter { margin-top:12px; padding-top:8px; font-size:7px; letter-spacing:.8px; }
+ .main-menu .menu-tagline { display:none; }
+ .main-menu .menu-footer { padding:5px 0 0; gap:8px; }
+ .main-menu .menu-footer p { font-size:8px; }
+ .main-menu .menu-footer>span { font-size:18px; }
+ .main-menu:not(.menu-page-home) { grid-template-columns:minmax(110px,.6fr) minmax(300px,1.4fr); }
+}
+@media (orientation:portrait) {
+ .main-menu { grid-template-columns:minmax(0,1fr); grid-template-rows:auto minmax(0,1fr) auto; gap:18px; padding:max(30px,env(safe-area-inset-top)) max(22px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(22px,env(safe-area-inset-left)); }
+ .main-menu .menu-brand { width:100%; max-width:440px; }
+ .menu-logo-panel { padding:12px; border-radius:19px; }
+ .main-menu .menu-chapter { margin-top:15px; padding-top:10px; font-size:8px; letter-spacing:1.2px; }
+ .main-menu .menu-tagline { font-size:12px; margin-top:6px; }
+ .main-menu .title-actions { width:100%; max-width:330px; padding:20px; gap:10px; }
+ .main-menu .title-actions .gold-button,.main-menu .title-actions .small-button { min-height:50px; }
+ .main-menu .title-actions .menu-start { min-height:60px; }
+ .main-menu:not(.menu-page-home) .menu-brand { width:175px; }
+ .main-menu:not(.menu-page-home) .menu-logo-panel { padding:4px; border-radius:12px; }
+ .main-menu:not(.menu-page-home) .menu-chapter,.main-menu:not(.menu-page-home) .menu-tagline { display:none; }
+ .main-menu .menu-sheet { align-self:stretch; padding:16px; }
+ .main-menu .save-slot { min-height:62px; }
+ .main-menu .menu-footer { padding:10px 0 0; gap:10px; width:100%; }
+ .main-menu .menu-footer p { font-size:9px; }
+}
+@media (orientation:portrait) and (max-height:700px) {
+ .main-menu { padding-top:18px; gap:12px; }
+ .main-menu .menu-brand { max-width:295px; }
+ .main-menu .menu-chapter { margin-top:10px; padding-top:7px; }
+ .main-menu .menu-tagline,.main-menu .menu-nav-caption { display:none; }
+ .main-menu .title-actions { padding:12px 18px; gap:7px; }
+ .main-menu .title-actions .gold-button,.main-menu .title-actions .small-button { min-height:46px; font-size:23px; }
+ .main-menu:not(.menu-page-home) .menu-brand { width:125px; }
+}

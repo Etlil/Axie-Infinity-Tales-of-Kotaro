@@ -62,7 +62,52 @@ test('Buba defeat checkpoints the dialogue and never grants a corruption rescue'
  expect(session.state).toMatchObject({tutorialWon:true,prologueComplete:false,amulet:false,xp:60});
  expect(session.state.rescued).toHaveLength(0);
  expect(combat.scene.start).toHaveBeenCalledWith('DialogueScene');
+  expect(combat.dodge.start).not.toHaveBeenCalled();
+});
+
+test('the Buba encounter opens with his crossing sword rush before a player choice',()=>{
+ const {combat,session}=encounter(bosses.buba,0,true);
+ combat.beginEncounter();expect(session.state.phase).toBe('BOSS_TELEGRAPH');
+ expect(session.state.enemyCard.pattern).toBe('buba-dash');
+ combat.playCard('horn-lance');expect(session.state.enemyHP).toBe(120);
+ jest.advanceTimersByTime(650);expect(combat.dodge.start).toHaveBeenCalledWith({pattern:'buba-dash',damage:12});
+ combat.resolveDodge({hits:0});jest.advanceTimersByTime(960);
+ expect(session.state.phase).toBe('PLAYER_TURN');expect(session.state.turn).toBe(2);
+ combat.playCard('horn-lance');jest.advanceTimersByTime(800);
+ expect(session.state.enemyCard.pattern).toBe('buba-mushroom');
+});
+
+test('Buba interrupts at half health, survives a strong attack, and checkpoints dialogue only once',()=>{
+ const {combat,session}=encounter(bosses.buba,0,true);
+ session.patch({enemyHP:65,charge:3});combat.playCard('eclipse');
+ jest.advanceTimersByTime(360);expect(session.state.enemyHP).toBe(60);
+ jest.advanceTimersByTime(440);expect(session.state.phase).toBe('ENCOUNTER_WON');
+ combat.winEncounter();jest.advanceTimersByTime(600);
+ expect(session.state.tutorialWon).toBe(true);expect(session.state.xp).toBe(60);
+ expect(combat.scene.start).toHaveBeenCalledTimes(1);
+ expect(combat.scene.start).toHaveBeenCalledWith('DialogueScene');
  expect(combat.dodge.start).not.toHaveBeenCalled();
+ expect(combat.tweens.add).not.toHaveBeenCalledWith(expect.objectContaining({alpha:.4,duration:400}));
+});
+
+test('Buba keeps fighting above half health while ordinary enemies still need to be defeated',()=>{
+ const first=encounter(bosses.buba,0,true);first.session.patch({enemyHP:81});
+ first.combat.playCard('horn-lance');jest.advanceTimersByTime(800);
+ expect(first.session.state.enemyHP).toBe(61);expect(first.session.state.phase).toBe('BOSS_TELEGRAPH');
+ const second=encounter();second.session.patch({enemyHP:70});second.combat.playCard('horn-lance');
+ jest.advanceTimersByTime(800);expect(second.session.state.enemyHP).toBe(50);
+ expect(second.session.state.phase).toBe('BOSS_TELEGRAPH');expect(second.combat.scene.start).not.toHaveBeenCalled();
+});
+
+test('Buba’s rendered fighter follows the dash collision body and faces the return direction',()=>{
+ const {combat}=encounter(bosses.buba,0,true);
+ combat.cameras.main.centerOn=jest.fn();combat.player.setFacing=jest.fn();combat.enemySprite.sprite={setFlipX:jest.fn()};
+ combat.onDodgeUpdate({player:{x:330,y:600,vx:0,vy:0,dash:0,facing:1,grounded:true,cooldown:0,invulnerable:0},
+  shots:[],warnings:[],opponent:{x:470,y:543,facing:1,charging:true},dodgeRemaining:2.5,hits:0});
+ expect(combat.enemySprite.setPosition).toHaveBeenCalledWith(470,543);
+ expect(combat.enemySprite.setScale).toHaveBeenCalledWith(-.82,.82);
+ expect(combat.enemySprite.playAction).toHaveBeenCalledWith('run');
+ expect(combat.player.setFacing).toHaveBeenCalledWith('right');
 });
 test('Puffy defeat waits for the amulet action before granting a rescue or XP',()=>{
  const {combat,session}=encounter();

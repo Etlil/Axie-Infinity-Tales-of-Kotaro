@@ -23,7 +23,7 @@ test('title menu preserves the legacy save, supports separate slots, and restore
   await expect(page.getByRole('dialog',{name:'Save fountain'})).toBeVisible();
   await page.getByRole('button',{name:'Save at fountain',exact:true}).click();
   await expect(page.getByText('Adventure saved. Your return point is now this fountain.')).toBeVisible();
-  expect(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).townCheckpoint,key)).toEqual({x:14,y:12});
+  expect(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).townCheckpoint,key)).toEqual({x:23,y:16});
   await page.screenshot({path:'test-results/save-fountain.png'});
   await page.getByRole('button',{name:'Close panel'}).click();
   await page.getByRole('button',{name:'Settings',exact:true}).click();
@@ -33,21 +33,21 @@ test('title menu preserves the legacy save, supports separate slots, and restore
   await expect(page.locator('[data-save-slot="1"]')).toContainText('Fountain checkpoint');
   await page.screenshot({path:'test-results/load-game-desktop.png'});
   await page.locator('[data-save-slot="2"]').click();
-  await expect(page.getByRole('button',{name:'Begin journey'})).toBeVisible();
-  await page.getByRole('button',{name:'Begin journey'}).click();
+  await expect(page.getByRole('button',{name:'Skip scene'})).toBeVisible();
+  await page.getByRole('button',{name:'Skip scene'}).click();
   await expect(page.locator('.save-indicator')).toContainText('Autosaved · Slot 2');
   await expect(page.locator('.save-indicator')).toBeHidden();
   expect(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).coins,key)).toBe(876);
   await page.reload();await enterAdventure(page,2);
-  await expect(page.getByRole('button',{name:'Approach the village'})).toBeVisible();
+  await expect(page.locator('main')).toHaveAttribute('data-phase','INTRO_MOVE');
   await page.getByRole('button',{name:'Settings',exact:true}).click();
   await page.getByRole('button',{name:'Reset save data'}).click();
   await expect(page.getByText(/Slot 2 only/)).toBeVisible();
   await page.getByRole('button',{name:'Delete save and restart'}).click();
-  await expect(page.getByRole('button',{name:'Begin journey'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Skip scene'})).toBeVisible();
   await page.reload();await enterAdventure(page,1);
-  await expect(page.locator('.town-bottom')).toHaveAttribute('data-tile-x','14');
-  await expect(page.locator('.town-bottom')).toHaveAttribute('data-tile-y','12');
+  await expect(page.locator('.town-bottom')).toHaveAttribute('data-tile-x','23');
+  await expect(page.locator('.town-bottom')).toHaveAttribute('data-tile-y','16');
   await expect(page.locator('.profile-block')).toContainText('Buba');
   expect(errors).toEqual([]);
 });
@@ -59,7 +59,8 @@ test('a failed autosave never announces safe quitting and can be retried',async(
     Storage.prototype.setItem=function(){throw new DOMException('Test quota','QuotaExceededError');};
   });
   await page.goto('/');await enterAdventure(page,3);
-  await page.getByRole('button',{name:'Begin journey'}).click();
+  await page.getByRole('button',{name:'Skip scene'}).click();
+  await expect(page.locator('main')).toHaveAttribute('data-phase','INTRO_MOVE');
   await expect(page.locator('.save-indicator')).toContainText('Save failed');
   await page.getByRole('button',{name:'Settings',exact:true}).click();
   await page.getByRole('button',{name:'Return to main menu'}).click();
@@ -69,7 +70,7 @@ test('a failed autosave never announces safe quitting and can be retried',async(
   await page.evaluate(()=>window.restoreStorage());
   await page.getByRole('button',{name:'Retry save'}).click();
   await expect(page.getByText(/You can safely close this browser tab/)).toBeVisible();
-  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('atia-adventure-v1-slot-3')).introStep)).toBe(1);
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('atia-adventure-v1-slot-3')).introStage)).toBe('move');
 });
 
 for(const viewport of [{width:844,height:390},{width:568,height:320},{width:390,height:844}])test(`title and five save slots support touch at ${viewport.width}x${viewport.height}`,async({browser})=>{
@@ -86,6 +87,6 @@ for(const viewport of [{width:844,height:390},{width:568,height:320},{width:390,
     const slot=page.locator('[data-save-slot="5"]');await slot.scrollIntoViewIfNeeded();
     const r=await slot.boundingBox();expect(r.height).toBeGreaterThanOrEqual(44);expect(r.y).toBeGreaterThanOrEqual(0);expect(r.y+r.height).toBeLessThanOrEqual(viewport.height);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
-    await slot.tap();await expect(page.getByRole('button',{name:'Begin journey'})).toBeVisible();
+    await slot.tap();await expect(page.getByRole('button',{name:'Skip scene'})).toBeVisible();
   }finally{await context.close();}
 });

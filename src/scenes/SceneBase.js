@@ -36,7 +36,7 @@ export default class SceneBase extends Phaser.Scene {
       } else if(action==='retry'){
         this.session.prepareEncounter(this.state.roomIndex,this.state.tutorial);this.scene.start('CombatScene');
       } else if(action==='retreat'){
-        if(this.state.tutorial){this.session.patch({introStep:3});this.scene.start('IntroScene');}
+        if(this.state.tutorial){this.session.patch({introStage:'village'});this.scene.start('IntroScene');}
         else {this.session.patch({dungeonRun:null});this.scene.start('VillageScene');}
       } else this.onCommand(action,payload);
     };

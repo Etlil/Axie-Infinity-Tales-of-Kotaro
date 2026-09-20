@@ -27,7 +27,7 @@ npm.cmd start
 
 On the Android phone, open Chrome and enter `http://YOUR-COMPUTER-IP:3000`. Find your computer’s Wi-Fi IPv4 address using `ipconfig`; **localhost on a phone refers to the phone**, so use the computer’s address. If Windows asks, allow Node on your private network.
 
-At the time of this build, this computer’s address was **http://192.168.1.25:3000**. Your router may assign a different address later.
+Use the current address reported by `ipconfig`; your router may assign a different address later.
 
 The game is designed **landscape first**, with a full-screen village, a compact edge HUD, touch cards, and a separate ultimate button. Portrait is also playable: use the four-way touch pad to walk around both Atia and the dungeons. Desktop keyboard controls remain available. Fullscreen is available in Settings and the guide. Open Settings with the gear on story and village screens, or through the battle pause menu. Browser progress is stored per device and site address; saves do not sync between your PC and phone.
 
@@ -35,10 +35,10 @@ For a public web release, run `npm run build` and serve the `build/` directory t
 
 ## The journey
 
-1. Choose **Start** on the title screen, then select one of five save slots. Empty slots begin a new adventure; occupied slots resume it. Follow the arrival story and fight Buba in Atia’s clearing.
-2. Listen to his account of the raid, accept his handmade amulet, and unlock Buba as a playable companion.
-3. Walk around Atia Town. Buildings and the save fountain have solid footprints; paths connect the tent, gate, spring, and abandoned homes. Approach a destination and press E or tap the interaction button. Buba’s tent contains Adventure Rank rewards, and the gate opens a winding level-selection map.
-4. Select Mosslight Grove, Amber Quarry, or Sunken Sanctuary. Each has three rooms, its own route and colors, and a different puzzle. Levels unlock sequentially; completed levels remain replayable.
+1. Choose **Start** on the title screen, then select one of five save slots. Empty slots begin a new adventure; occupied slots resume it. Watch the moon-pendant opening, then learn movement on the forest approach. Move in all four directions, read the ruined sign with F (or the right-hand interaction button), and head north to meet Buba at the well.
+2. Dodge Buba’s crossing sword dashes and returning mushroom. At half health he stops fighting. Hear his story, enter your name, agree to help, and receive the pendant he found in the well. Buba becomes a playable companion.
+3. Walk around Atia Town. Buildings and the save fountain have solid footprints; paths connect the tent, gate, spring, and abandoned homes. Approach a destination and press F (E also works) or tap the interaction button. Buba’s tent offers directions to Aqua Cave and Adventure Rank rewards, and the gate opens a winding level-selection map.
+4. Select Aqua Cave, Amber Quarry, or Sunken Sanctuary. Each has three rooms, its own route and colors, and a different puzzle. Levels unlock sequentially; completed levels remain replayable.
 5. Slimes appear one at a time and chase as you walk. Contact starts a turn-based battle; Continue journey resumes that dungeon. Solve its puzzle to open the last room. Only the final encounter completes a level and grants its clear rewards. Puffy guards the last room of Sunken Sanctuary: defeat him, then **Use the amulet** to bring him home.
 6. Return to the level map to choose another dungeon or replay a cleared one for more XP. At ranks 3 and 5, Buba improves his tent into a mended shelter and then a lodge.
 
@@ -51,7 +51,8 @@ For a public web release, run `npm run build` and serve the `build/` directory t
 | Jump | Tap Jump while moving | Space / W / Up |
 | Dash | Tap Dash | Shift |
 | Explore town / dungeon | Hold the four-way pad | WASD / arrow keys |
-| Interact in town | Nearby interaction button | E |
+| Interact with sign / town | Right-hand interaction button | F (E also works) |
+| Intro navigation | Drag the joystick in any direction | WASD / arrows |
 | Walk to a town destination | Tap its building or Buba’s tent / Puffy / Adventure | Tab to the destination button and press Enter |
 | Turn a nearby valve | Use valve button | E |
 | Reset an unsolved puzzle | Reset puzzle button | Tab to the button, then Enter |
@@ -59,7 +60,7 @@ For a public web release, run `npm run build` and serve the `build/` directory t
 | Pause battle | Pause button at the top right | Focus the pause button and press Enter |
 | Resume / retreat | Choose an action in the pause menu | Tab to the action and press Enter |
 
-The pause menu freezes the encounter, including dodge timers, animations, and queued attacks. Battles also pause when the browser tab becomes hidden; resume when you return. Panel headers stay visible while their contents scroll, including rank rewards on short landscape screens. Touch controls respect display safe areas.
+Settings also freezes the intro cutscene and camera pans. The pause menu freezes the encounter, including dodge timers, animations, and queued attacks. Battles also pause when the browser tab becomes hidden; resume when you return. Panel headers stay visible while their contents scroll, including rank rewards on short landscape screens. Touch controls respect display safe areas.
 
 Each companion has four body-part attacks, with matching attachment-point animations:
 
@@ -72,13 +73,13 @@ Each companion has four body-part attacks, with matching attachment-point animat
 
 The four cards sit side by side in landscape and form a compact two-by-two hand in portrait. The ultimate remains a separate charged ability.
 
-Each dungeon has connected chambers, narrow corridors, solid walls, and a following camera. Mosslight Grove asks you to step on SUN, LEAF, then MOON; a wrong rune resets the sequence. Amber Quarry asks you to push a block onto a pressure plate. Sunken Sanctuary has three valves that toggle different combinations of lamps; light all three. Clues and puzzle progress stay visible on phones. Reset puzzle restores an unfinished mechanism if you get stuck.
+Each dungeon has connected chambers, narrow corridors, solid walls, and a following camera. Aqua Cave asks you to step on SUN, LEAF, then MOON; a wrong rune resets the sequence. Amber Quarry asks you to push a block onto a pressure plate. Sunken Sanctuary has three valves that toggle different combinations of lamps; light all three. Clues and puzzle progress stay visible on phones. Reset puzzle restores an unfinished mechanism if you get stuck.
 
 Slimes move one tile for every two steps you take; only one is active at a time. The puzzle gate keeps the last enemy in its chamber until the puzzle and earlier encounters are cleared. Exploration freezes during battles and resumes with the same puzzle state and player position. Level map abandons the current expedition; Exit to Atia returns to the village. Reloads also return to Atia. Dungeon clears, XP, rescues, and rewards remain saved, while unfinished runs and puzzles restart.
 
-Town and dungeon scenery and overworld characters use simple replaceable placeholders. Atia uses flat tile footprints and block markers without illustrated town art. Its camera follows the character, and destination buttons find a walkable path to the building before opening its menu. Manual movement takes over from automatic walking; opening a menu stops movement. Town position survives visits to the level map during the current session. Use **Save fountain** in the town square to save the current slot and set your return point there; otherwise, loading returns you to the square. Puffy’s healing spring remains a separate destination.
+Atia uses the supplied official town illustration and Kotaro walking sprites. Road collisions, the well, tent, pond, and gate align to the painted map. Its camera follows the character, and destination buttons find a walkable path to the building before opening its menu. Manual movement takes over from automatic walking; opening a menu stops movement. Town position survives visits to the level map during the current session. Use **Save fountain** in the town square to save the current slot and set your return point there; otherwise, loading returns you to the southern town entrance. Puffy’s healing spring remains a separate destination.
 
-Dungeon scenery and overworld characters use simple replaceable shapes. Change `src/scenes/DungeonMapScene.js` for visuals and `src/game/dungeonLayout.js` for tiles/spawns. Combat uses the existing ability and dodge system with shape-based slimes and a stone-room backdrop.
+Dungeon scenery and enemies still use simple replaceable shapes; Kotaro uses the supplied walking sprites. Change `src/scenes/DungeonMapScene.js` for visuals and `src/game/dungeonLayout.js` for tiles/spawns. Combat uses the existing ability and dodge system with shape-based slimes and a stone-room backdrop.
 
 Each enemy attack has a 6.5-second dodge phase. Move your Axie, jump onto ledges, and dash through the actual projectiles. Guard reduces a hit and recovery abilities heal up to the character’s maximum HP. Three abilities charge an ultimate: Kotaro’s **Moonlit Eclipse** or Buba’s paintbrush **Paintstorm**.
 
@@ -130,3 +131,10 @@ Browser checks exercise the prologue, the level map, all three puzzles, contact-
 Read the [saved Axie references](docs/ASSET_REFERENCES.md) and [asset sources, licenses, and village generation prompt](docs/ASSET_PROVENANCE.md) before further art work. Imported Axie materials remain Sky Mavis IP and are limited to Axie Vibeathon / approved programs, as described by the included notices.
 
 This prototype includes one story chapter, two playable companions, three dungeon stages, five Adventure Ranks, and one rescuable guardian. Existing saves retain their previously unlocked stages. Audio, additional regions, wallet integration, multiplayer, cloud saves, and offline play are outside this slice.
+## New prologue and supplied art
+
+The opening now follows the moon pendant, four-direction navigation tutorial, ruined sign, Buba’s well encounter, name entry, and tent reveal. The mushroom uses a boomerang arc with a visible turnaround warning. To replay this opening, choose an empty save slot or reset only the chosen slot from Settings. Existing completed saves keep their progress.
+
+Kotaro’s three original transparent sprite sheets are preserved in `public/assets/kotaro/`. The loader builds small normalized atlases at runtime so the large original idle sheet does not exceed mobile GPU texture limits. Walking uses the supplied directional frames; combat uses the supplied idle and running cycles with procedural body-part attack effects.
+
+Town art and collision mapping are documented in [the current town layout](docs/TOWN_ART_LAYOUT.md). The pendant cutscene layers and enhanced approach map, their prompts, and source filenames are recorded in [prologue assets](docs/PROLOGUE_ASSETS.md).

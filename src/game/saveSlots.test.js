@@ -47,12 +47,12 @@ test('autosave runs for progress, never every movement or dodge frame',()=>{
 test('only the nearby town fountain can set a durable return point',()=>{
   const storage=memoryStorage({[PROFILE_KEY]:JSON.stringify(legacy)}),session=sessionFor(storage);session.selectSlot(1);
   expect(session.saveAtFountain()).toBe(false);
-  session.patch({townPosition:{x:14,y:12},scene:'combat'});expect(session.saveAtFountain()).toBe(false);
+  session.patch({townPosition:{x:23,y:16},scene:'combat'});expect(session.saveAtFountain()).toBe(false);
   session.patch({scene:'village'});expect(session.saveAtFountain()).toBe(true);
-  expect(session.state).toMatchObject({saveStatus:'saved',saveKind:'fountain',townCheckpoint:{x:14,y:12}});
+  expect(session.state).toMatchObject({saveStatus:'saved',saveKind:'fountain',townCheckpoint:{x:23,y:16}});
   session.patch({townPosition:{x:26,y:5}});
   const reloaded=sessionFor(storage);reloaded.selectSlot(1);
-  expect(reloaded.state).toMatchObject({scene:'village',townPosition:{x:14,y:12}});
+  expect(reloaded.state).toMatchObject({scene:'village',townPosition:{x:23,y:16}});
 });
 
 test('failed writes remain recoverable across slot switches and explicit retry persists them',()=>{

@@ -1,4 +1,4 @@
-const {enterAdventure}=require('./helpers');
+const {enterAdventure,reachBuba,finishBubaConversation}=require('./helpers');
 const { test, expect } = require('@playwright/test');
 const {contactFirstSlime}=require('./helpers');
 const SAVE_KEY = 'atia-adventure-v1';
@@ -45,23 +45,12 @@ test('complete prologue, Buba unlock, rank rewards and durable save', async ({pa
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/');await enterAdventure(page);
   await expect(page.locator('canvas')).toHaveCount(1);
-  await page.getByRole('button',{name:'Begin journey'}).click();
-  await page.getByRole('button',{name:'Reveal dialogue'}).click();
-  await page.getByRole('button',{name:'Approach the village'}).click();
-  await page.getByRole('button',{name:'Reveal dialogue'}).click();
-  await page.getByRole('button',{name:'Step into the clearing'}).click();
-  await page.getByRole('button',{name:'Reveal dialogue'}).click();
-  await page.getByRole('button',{name:'Defend yourself'}).click();
+  await reachBuba(page);
   await expect(page.locator('.enemy-health')).toContainText('Buba');
   await page.screenshot({path:'test-results/atia-buba-desktop.png'});
   await fight(page,{shot:'atia-dodge-desktop'});
-  await expect(page.getByRole('heading',{name:'You… you stopped.'})).toBeVisible();
   await page.screenshot({path:'test-results/atia-dialogue-desktop.png'});
-  for(let i=0;i<4;i++) { await page.getByRole('button',{name:'Reveal dialogue'}).click(); await page.getByRole('button',{name:'Continue',exact:true}).click(); }
-  await page.getByRole('button',{name:'Reveal dialogue'}).click();
-  await page.getByRole('button',{name:'Accept the amulet'}).click();
-  await page.getByRole('button',{name:'Reveal dialogue'}).click();
-  await page.getByRole('button',{name:'Restore Atia'}).click();
+  await finishBubaConversation(page,'Luna');
   await expect(page.locator('.scene-village')).toBeVisible();
   await expect(page.locator('.profile-block')).toContainText('Adventure Rank 2');
   await page.screenshot({path:'test-results/atia-village-desktop.png'});
@@ -91,7 +80,7 @@ test('Android touch controls, portrait and landscape, panel focus and save resto
   const touch = await context.newCDPSession(page);
   const up=await page.getByRole('button',{name:'Walk up',exact:true}).boundingBox();
   await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:up.x+up.width/2,y:up.y+up.height/2}]});
-  await expect(page.locator('.town-bottom')).toHaveAttribute('data-tile-y','12');
+  await expect(page.locator('.town-bottom')).toHaveAttribute('data-tile-y','16');
   await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   await page.getByRole('button',{name:'How to play'}).tap();
   await expect(page.getByRole('dialog',{name:'Traveler’s guide'})).toBeVisible();

@@ -1,4 +1,4 @@
-const {enterAdventure}=require('./helpers');
+const {enterAdventure,reachBuba}=require('./helpers');
 const { test, expect } = require('@playwright/test');
 const {contactFirstSlime}=require('./helpers');
 const SAVE_KEY = 'atia-adventure-v1';
@@ -6,7 +6,7 @@ const SAVE_KEY = 'atia-adventure-v1';
 test('reset confirmation preserves canceled saves and restarts paused combat durably', async ({ page }) => {
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto('/');await enterAdventure(page);
-  await expect(page.getByRole('button',{name:'Begin journey'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Skip scene'})).toBeVisible();
   // Seed only this isolated test page, once. Reloading after reset cannot reseed it.
   await page.evaluate(key=>{
     localStorage.setItem('settings-test-unrelated','preserved');
@@ -35,7 +35,7 @@ test('reset confirmation preserves canceled saves and restarts paused combat dur
   await page.waitForTimeout(1100);
   await expect(page.locator('.dodge-timer')).toHaveText(frozen);
   await page.getByRole('button',{name:'Delete save and restart'}).click();
-  await expect(page.getByRole('button',{name:'Begin journey'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Skip scene'})).toBeVisible();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('canvas')).toHaveCount(1);
   const fresh=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),SAVE_KEY);
@@ -45,21 +45,18 @@ test('reset confirmation preserves canceled saves and restarts paused combat dur
   expect(await page.evaluate(()=>localStorage.getItem('settings-test-unrelated'))).toBe('preserved');
   // The old encounter must not resume or overwrite the fresh checkpoint.
   await page.waitForTimeout(7500);
-  await expect(page.getByRole('button',{name:'Begin journey'})).toBeVisible();
+  await expect(page.locator('main')).toHaveAttribute('data-phase','INTRO_MOVE');
   await page.reload();await enterAdventure(page);
-  await expect(page.getByRole('button',{name:'Begin journey'})).toBeVisible();
-  await page.getByRole('button',{name:'Begin journey'}).click();
+  await expect(page.locator('main')).toHaveAttribute('data-phase','INTRO_MOVE');
   await page.getByRole('button',{name:'Settings',exact:true}).click();
   await page.getByRole('button',{name:'Reset save data'}).click();
   await page.getByRole('button',{name:'Delete save and restart'}).focus();
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('button',{name:'Begin journey'})).toBeVisible();
-  await page.getByRole('button',{name:'Begin journey'}).click();
-  for (const name of ['Approach the village','Step into the clearing','Defend yourself']) {
-    await page.getByRole('button',{name}).click();
-  }
+  await expect(page.getByRole('button',{name:'Skip scene'})).toBeVisible();
+  await reachBuba(page);
   await expect(page.locator('.enemy-health')).toContainText('Buba');
   await expect(page.locator('.health').first()).toContainText('Kotaro');
+  await expect(page.locator('.ability-card').first()).toBeEnabled();
   await page.locator('.ability-card').first().click();
   await expect(page.locator('.dodge-controls')).toBeVisible();
   expect(errors).toEqual([]);
@@ -86,7 +83,7 @@ for (const viewport of [{width:568,height:320},{width:390,height:844}]) {
       expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
       await page.screenshot({path:`test-results/reset-${viewport.width}x${viewport.height}.png`});
       await page.getByRole('button',{name:'Delete save and restart'}).tap();
-      await expect(page.getByRole('button',{name:'Begin journey'})).toBeVisible();
+      await expect(page.getByRole('button',{name:'Skip scene'})).toBeVisible();
     } finally {await context.close();}
   });
 }

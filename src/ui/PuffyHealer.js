@@ -1,7 +1,7 @@
 export default function PuffyHealer({ game, command }) {
   const available=game.scene==='village'&&game.prologueComplete&&game.rescued.some(resident=>resident.id==='puffy');
   const healthy=game.playerHP>=game.playerMaxHP;
-  const hero=game.activeCharacter==='buba'?'Buba':'Kotaro';
+  const hero=game.activeCharacter==='buba'?'Buba':game.playerName||'Kotaro';
   return <div className={'puffy-healer '+(healthy?'is-healthy':'')}>
     <div className="puffy-care-portrait"><img src="/assets/atia/puffy-avatar.png" alt="Puffy, Atia’s healer"/><span aria-hidden="true">♥</span></div>
     <div className="puffy-care-copy">

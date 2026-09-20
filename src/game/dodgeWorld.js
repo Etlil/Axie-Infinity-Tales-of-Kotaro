@@ -13,7 +13,18 @@ export function drawArena(g){
 export function drawHazards(g,view,enemyId){
   g.clear();
   for(const warning of view.warnings){
-    if(warning.kind==='rain')[-125,0,125].forEach(offset=>{
+    if(warning.kind==='buba-dash'){
+      const right=warning.direction>0,y=ARENA.floor-38;
+      g.fillStyle(0xffcf81,.12).fillRect(ARENA.left,y-35,ARENA.right-ARENA.left,70);
+      g.lineStyle(2,0xffdb97,.8).lineBetween(ARENA.left,y+32,ARENA.right,y+32);
+      for(let x=ARENA.left+60;x<ARENA.right;x+=150){
+        const point=x+(right?12:-12),tail=x+(right?-8:8);
+        g.fillStyle(0xffdf9b,.75).fillTriangle(point,y,tail,y-11,tail,y+11);
+      }
+    }else if(warning.kind==='mushroom-return'){
+      g.lineStyle(3,0xffe7a2,.85).strokeCircle(warning.target.x,warning.target.y,41);
+      g.fillStyle(0xffe7a2,.9).fillTriangle(220,530,201,520,201,540);
+    }else if(warning.kind==='rain')[-125,0,125].forEach(offset=>{
       const x=Math.max(ARENA.left,Math.min(ARENA.right,warning.target.x+offset));
       g.fillStyle(0xffcf81,.13).fillRect(x-24,245,48,355);
       g.lineStyle(3,0xffdc9a,.9).strokeEllipse(x,ARENA.floor-2,52,15);
@@ -29,7 +40,20 @@ export function drawHazards(g,view,enemyId){
     const {x,y,radius:r,kind}=shot;
     const color=kind==='rain'?(enemyId==='buba'?0xff96c8:0xc193f6):enemyId==='puffy'?0x83e9ff:kind.includes('thorn')?0xc2ea7c:0xfad18b;
     g.fillStyle(color,.13).fillCircle(x,y,r+12);
-    if(kind.includes('blade')){
+    if(kind==='buba-dash'){
+      const facing=Math.sign(shot.vx),tip=x+facing*38;
+      // Buba's actual fighter is positioned over this collision body by CombatScene.
+      g.lineStyle(7,0xffebac,.85).lineBetween(tip-facing*18,y+18,tip+facing*13,y-28);
+      g.lineStyle(2,0xffffff,.95).lineBetween(tip-facing*16,y+15,tip+facing*13,y-28);
+      for(let i=1;i<=3;i++)g.fillStyle(0xffd987,.25/i).fillEllipse(x-facing*i*26,ARENA.floor-6,30,12);
+    }else if(kind==='mushroom'){
+      g.fillStyle(0xffe8bd).fillRoundedRect(x-8,y-1,16,24,5);
+      g.lineStyle(3,0x744927).strokeRoundedRect(x-8,y-1,16,24,5);
+      g.fillStyle(0xb47a46).fillEllipse(x,y-9,54,34);
+      g.lineStyle(3,0x623e28).strokeEllipse(x,y-9,54,34);
+      g.fillStyle(0xf6dc9b).fillEllipse(x-13,y-12,12,7).fillEllipse(x+10,y-18,9,6).fillEllipse(x+15,y-4,8,5);
+      if(shot.stage==='return')g.lineStyle(2,0xffe4a2,.7).beginPath().arc(x,y,38,shot.age/180,shot.age/180+4).strokePath();
+    }else if(kind.includes('blade')){
       g.lineStyle(9,color).beginPath().arc(x,y,r,-2,2).strokePath();
       g.lineStyle(2,0xfff8df).beginPath().arc(x,y,r-6,-2,2).strokePath();
     }else if(kind.includes('thorn')){

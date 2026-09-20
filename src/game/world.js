@@ -33,6 +33,19 @@ export function fighter(scene,x,y,kind='kotaro',scale=1,facing='right') {
     return root;
   }
   if (kind === 'puffy') return puffyFighter(scene,x,y,scale,facing);
+  if(kind==='kotaro'&&scene.textures.exists('kotaro-idle-drawn')){
+    const root=scene.add.container(x,y).setScale(scale),shadow=scene.add.ellipse(0,76,95,18,0x16251e,.25);
+    const sprite=scene.add.sprite(0,78,'kotaro-idle-drawn',0).setOrigin(.5,1).setDisplaySize(179,179);
+    root.add([shadow,sprite]);root.sprite=sprite;root.kind=kind;
+    root.setFacing=direction=>{root.facing=direction;sprite.setFlipX(direction==='left');};root.setFacing(facing);
+    root.partPosition=part=>{const [px,py]=({horn:[34,-82],mouth:[34,-52],back:[-24,-9],tail:[-50,46]})[part];return root.getWorldTransformMatrix().transformPoint(root.facing==='left'?-px:px,py);};
+    root.playAction=(action='idle')=>{
+      sprite.play(action==='run'?'kotaro-drawn-run':'kotaro-drawn-idle',true);
+      if(['attack','ultimate'].includes(action))scene.tweens.add({targets:sprite,angle:root.facing==='left'?-12:12,duration:140,yoyo:true});
+      if(action==='hit')scene.tweens.add({targets:sprite,alpha:.35,duration:90,yoyo:true});
+    };
+    root.playAction();return root;
+  }
   if (!['kotaro','buba'].includes(kind)) {
     const mob = drawAxie(scene,x,y,{kind:'mob',scale:scale*1.65,idle:false});
     mob.setData('kind',kind);mob.playAction=()=>{};return mob;

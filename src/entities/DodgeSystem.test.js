@@ -69,3 +69,42 @@ test('shutdown cancels attacks and removes its listeners while preserving existi
   expect(scene.events.count('update')).toBe(0);expect(scene.input.keyboard.count('keydown-A')).toBe(0);
   expect(scene.input.keyboard.captures).toEqual([37]);expect(dodge.start()).toBe(false);
 });
+
+test('Buba crosses right to left and back, and contact does not destroy his moving body',()=>{
+  const {dodge,advance,onHit,onUpdate,onResolve}=setup();dodge.start({pattern:'buba-dash',damage:12});
+  advance(300);expect(dodge.plan[0].warned).toBe(true);expect(dodge.shots).toHaveLength(0);
+  advance(700);expect(dodge.shots[0]).toMatchObject({kind:'buba-dash',stage:'dash'});
+  expect(dodge.shots[0].vx).toBeLessThan(0);
+  advance(900);expect(onHit).toHaveBeenCalledTimes(1);expect(dodge.shots).toHaveLength(1);
+  expect(onUpdate.mock.calls.at(-1)[0].opponent).toMatchObject({facing:-1,charging:true});
+  advance(900);expect(dodge.shots).toHaveLength(0);
+  expect(onUpdate.mock.calls.at(-1)[0].opponent).toMatchObject({x:110,facing:1,charging:false});
+  advance(1000);expect(dodge.shots[0].vx).toBeGreaterThan(0);
+  advance(2400);expect(onHit).toHaveBeenCalledTimes(2);
+  expect(onUpdate.mock.calls.at(-1)[0].opponent).toMatchObject({x:1040,facing:-1,charging:false});
+  advance(400);expect(onResolve).toHaveBeenCalledTimes(1);
+});
+
+test('jumping clears Buba’s low sword rush',()=>{
+  const {dodge,advance,onHit}=setup();dodge.start({pattern:'buba-dash'});
+  advance(1500);dodge.setControl('jump',true);advance(750);
+  expect(onHit).not.toHaveBeenCalled();expect(dodge.shots).toHaveLength(0);
+});
+
+test('the mushroom pauses safely with a warning, arcs back, and is caught by Buba',()=>{
+  const {dodge,advance,onHit,onUpdate}=setup();dodge.start({pattern:'buba-mushroom'});
+  dodge.player.invulnerable=3000;advance(1200);
+  const mushroom=dodge.shots[0];expect(mushroom).toMatchObject({kind:'mushroom',stage:'outbound'});
+  expect(mushroom.vx).toBeLessThan(0);
+  advance(1450);expect(mushroom.stage).toBe('turn');
+  expect(onUpdate.mock.calls.at(-1)[0].warnings).toEqual([expect.objectContaining({kind:'mushroom-return'})]);
+  dodge.player.x=150;dodge.player.invulnerable=0;advance(100);expect(onHit).not.toHaveBeenCalled();
+  advance(1100);expect(mushroom.stage).toBe('return');expect(mushroom.vx).toBeGreaterThan(0);
+  expect(mushroom.y).toBeLessThan(500);advance(1300);expect(dodge.shots).toHaveLength(0);
+});
+
+test.each(['buba-dash','buba-mushroom'])('%s finishes its return before the phase ends even at the maximum rescue bonus',pattern=>{
+  const {dodge,advance,onResolve}=setup({bonus:1});dodge.start({pattern});dodge.player.invulnerable=10000;
+  advance(6400);expect(dodge.shots).toHaveLength(0);expect(dodge.active).toBe(true);
+  advance(150);expect(onResolve).toHaveBeenCalledTimes(1);
+});

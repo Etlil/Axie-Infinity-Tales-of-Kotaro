@@ -13,6 +13,9 @@ export function overlapsPlayer(p,shot){
   return (shot.x-x)**2+(shot.y-y)**2<shot.radius**2;
 }
 export function attackPlan(pattern='thorns'){
+  if(pattern==='buba-dash')return [{kind:'buba-dash',direction:-1,at:900},{kind:'buba-dash',direction:1,at:3700}]
+    .map(event=>({...event,warned:false,launched:false}));
+  if(pattern==='buba-mushroom')return [{kind:'mushroom',at:900,warned:false,launched:false}];
   const kinds={thorns:['thorn','high-thorn','thorn'],sweep:['blade','high-blade','blade'],
     shield:['shield','shield','shield'],wave:['wave','bubble','wave'],aimed:['orb','orb','orb'],
     rain:['rain','rain','rain'],tide:['wave','rain','wave']};
@@ -85,11 +88,17 @@ export default class DodgeSystem {
     }
     for(const shot of this.shots){
       if(shot.dead)continue;
-      shot.x+=shot.vx*dt;shot.y+=shot.vy*dt;shot.age+=ms;
+      shot.age+=ms;
+      if(shot.kind==='mushroom')this.moveMushroom(shot,dt);
+      else{shot.x+=shot.vx*dt;shot.y+=shot.vy*dt;}
       if(shot.kind==='shield'){shot.vy+=320*dt;if(shot.y+shot.radius>ARENA.floor){shot.y=ARENA.floor-shot.radius;shot.vy=-230;}}
-      if(shot.x<ARENA.left-120||shot.y>ARENA.floor+80||shot.age>5000)shot.dead=true;
-      if(!shot.dead&&p.invulnerable<=0&&overlapsPlayer(p,shot)){
-        shot.dead=true;p.invulnerable=760;this.hits++;this.totalDamage+=this.damage;
+      if(shot.kind==='buba-dash'&&shot.age>=shot.travelDuration)shot.dead=true;
+      if(shot.x<ARENA.left-120||shot.x>ARENA.right+150||shot.y>ARENA.floor+80||shot.age>6000)shot.dead=true;
+      const solidAttack=shot.kind==='buba-dash'||shot.kind==='mushroom';
+      const canHit=shot.stage!=='turn'&&(!solidAttack||shot.hitLeg!==shot.stage);
+      if(!shot.dead&&canHit&&p.invulnerable<=0&&overlapsPlayer(p,shot)){
+        if(solidAttack)shot.hitLeg=shot.stage;else shot.dead=true;
+        p.invulnerable=760;this.hits++;this.totalDamage+=this.damage;
         this.onHit({damage:this.damage,x:p.x,y:p.y-45});if(!this.active)return;
       }
     }
@@ -99,6 +108,15 @@ export default class DodgeSystem {
   launch(event){
     const speed=this.timing.speedMultiplier;
     const shot={kind:event.kind,x:1030,y:ARENA.floor-34,vx:-450*speed,vy:0,radius:24,age:0};
+    if(event.kind==='buba-dash'){
+      shot.x=event.direction<0?1040:110;shot.y=ARENA.floor-38;
+      shot.travelDuration=1250/speed;shot.vx=event.direction*930/(shot.travelDuration/1000);
+      shot.radius=36;shot.stage='dash';
+    }
+    if(event.kind==='mushroom'){
+      shot.x=1073;shot.y=517;shot.vx=0;shot.radius=25;shot.stage='outbound';
+      shot.legDuration=Math.min(2200,1700/speed);shot.turnDuration=Math.min(1000,this.timing.warningDuration);
+    }
     if(event.kind.startsWith('high-')||event.kind==='bubble')shot.y=ARENA.floor-155;
     if(event.kind.includes('blade')){shot.radius=30;shot.vx=-520*speed;}
     if(event.kind==='wave'){shot.radius=32;shot.vx=-425*speed;}
@@ -112,7 +130,27 @@ export default class DodgeSystem {
     else this.shots.push(shot);
     this.onLaunch(event.kind);
   }
-  emit(){this.onUpdate({player:{...this.player},shots:this.shots,warnings:this.plan.filter(e=>e.warned&&!e.launched),
+  moveMushroom(shot,dt){
+    const previous={x:shot.x,y:shot.y},leg=shot.legDuration;
+    if(shot.age<leg){
+      const progress=shot.age/leg;shot.stage='outbound';shot.x=1073-923*progress;shot.y=517+49*progress;
+    }else if(shot.age<leg+shot.turnDuration){shot.stage='turn';shot.x=150;shot.y=566;}
+    else{
+      const progress=Math.min(1,(shot.age-leg-shot.turnDuration)/leg);shot.stage='return';
+      shot.x=150+923*progress;shot.y=566-110*Math.sin(progress*Math.PI)-49*progress;
+      if(progress>=1)shot.dead=true;
+    }
+    shot.vx=(shot.x-previous.x)/dt;shot.vy=(shot.y-previous.y)/dt;
+  }
+  emit(){
+    const crossing=this.shots.find(shot=>shot.kind==='buba-dash');
+    const lastCrossing=[...this.plan].reverse().find(event=>event.kind==='buba-dash'&&event.launched);
+    const opponent=crossing?{x:crossing.x,y:ARENA.floor-57,facing:Math.sign(crossing.vx),charging:true}
+      :lastCrossing?{x:lastCrossing.direction<0?110:1040,y:ARENA.floor-57,facing:-lastCrossing.direction,charging:false}:null;
+    const warnings=this.plan.filter(e=>e.warned&&!e.launched);
+    this.shots.filter(shot=>shot.kind==='mushroom'&&shot.stage==='turn')
+      .forEach(shot=>warnings.push({kind:'mushroom-return',target:{x:shot.x,y:shot.y},direction:1}));
+    this.onUpdate({player:{...this.player},shots:this.shots,warnings,opponent,
     dodgeRemaining:Math.max(0,(this.timing.duration-this.elapsed)/1000),duration:this.timing.duration/1000,hits:this.hits});}
   resolve(){if(!this.active)return;const result={hits:this.hits,damage:this.totalDamage,player:{...this.player}};this.stop();this.onResolve(result);}
   stop(){this.active=false;this.clearControls();this.shots=[];this.scene.events.off('update',this.updateHandler);

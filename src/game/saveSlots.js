@@ -1,4 +1,5 @@
 // Slot 1 keeps the original key, so existing adventures need no destructive migration.
+import {FOUNTAIN_CHECKPOINT} from './townLayout';
 export const PROFILE_KEY='atia-adventure-v1';
 export const SLOT_COUNT=5;
 export const slotKey=id=>id===1?PROFILE_KEY:PROFILE_KEY+'-slot-'+id;
@@ -18,9 +19,9 @@ export function createSaveSlots(storage){
       try{
         const p=JSON.parse(raw);
         if(!p||p.version!==1)throw Error('Invalid save');
-        return {id,empty:false,hero:p.activeCharacter==='buba'?'Buba':'Kotaro',xp:Number.isFinite(p.xp)?Math.max(0,p.xp):0,
+        return {id,empty:false,hero:p.activeCharacter==='buba'?'Buba':typeof p.playerName==='string'&&p.playerName.trim()?p.playerName.trim().slice(0,20):'Kotaro',xp:Number.isFinite(p.xp)?Math.max(0,p.xp):0,
           chapter:p.prologueComplete?'Atia Town':p.tutorialWon?'Buba’s promise':'The arrival',savedAt:p.savedAt||null,
-          fountain:p.townCheckpoint?.x===14&&p.townCheckpoint?.y===12,sessionOnly:memory.has(id)};
+          fountain:(p.townCheckpoint?.x===14&&p.townCheckpoint?.y===12)||(p.townCheckpoint?.x===FOUNTAIN_CHECKPOINT.x&&p.townCheckpoint?.y===FOUNTAIN_CHECKPOINT.y),sessionOnly:memory.has(id)};
       }catch{return {id,empty:false,damaged:true};}
     });},
     select(id){

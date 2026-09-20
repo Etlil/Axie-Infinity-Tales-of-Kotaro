@@ -1,14 +1,14 @@
 // Original shape-based maps. Art can be replaced without changing collision or puzzles.
 export const TILE=48;
 export const DUNGEONS=[
-  {id:0,name:'Mosslight Grove',theme:'grove',description:'Follow the forest runes through an overgrown shrine.',puzzleName:'The waking stones',
+  {id:0,name:'Aqua Cave',theme:'grove',description:'Search the nearest coastal cave for a trace of Atia’s missing villagers.',puzzleName:'The waking stones',
     clue:'Walk over SUN → LEAF → MOON. A wrong stone resets the sequence.',
     rooms:[{x:2,y:3,w:9,h:11},{x:16,y:3,w:9,h:11},{x:30,y:6,w:9,h:9}],
     corridors:[{x:11,y:9,w:5,h:1},{x:25,y:10,w:5,h:1}],
-    names:['ROOT HOLLOW','THE WAKING STONES','MOSSHEART SHRINE'],start:{x:4,y:8},gate:{x:30,y:10},
+    names:['CAVE MOUTH','THE WAKING STONES','TIDAL SHRINE'],start:{x:4,y:8},gate:{x:30,y:10},
     spawns:[{x:8,y:8},{x:35,y:10}],encounters:[0,0],required:1,
     puzzle:{type:'runes',tiles:[{x:18,y:6,name:'SUN'},{x:21,y:6,name:'LEAF'},{x:21,y:11,name:'MOON'}]},
-    colors:{floor:0x3c5a48,alternate:0x42624e,wall:0x152e28,brick:0x264239,accent:0x9ee29a}},
+    colors:{floor:0x3c5966,alternate:0x426572,wall:0x152932,brick:0x26404d,accent:0x9adce2}},
   {id:1,name:'Amber Quarry',theme:'quarry',description:'Descend a winding mine and restore its ancient counterweight.',puzzleName:'The counterweight',
     clue:'Push the amber block onto the gold plate. Walk around it to change direction. Reset if it gets stuck.',
     rooms:[{x:2,y:3,w:10,h:10},{x:5,y:17,w:10,h:9},{x:21,y:17,w:11,h:9}],

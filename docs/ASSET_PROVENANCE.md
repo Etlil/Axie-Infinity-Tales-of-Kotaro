@@ -87,3 +87,7 @@ The dungeon-selection map in `src/ui/DungeonSelection.js` and `src/expedition-ma
 Atia Town now renders flat rectangular tiles, building footprints, and block character markers in `src/scenes/VillageScene.js`. These are original temporary placeholders, with collision and walking destinations in `src/game/townLayout.js`; no new illustrated town assets were added. The earlier village bitmap remains available for the existing prologue and is not used as the walkable town background.
 
 The level-selection artwork in `public/assets/map/` consists of four original editable SVGs: Mosslight Grove, Amber Quarry, Sunken Sanctuary, and a shared shoreline terrain. They use paths, gradients, and reusable groups, with no external artwork or embedded bitmaps. Only the selection screen uses this artwork; town and dungeon exploration retain their placeholder visuals. The asset folder includes an editing guide.
+
+## Current official town and prologue (September 2026)
+
+The user-supplied town painting and Kotaro sheets now replace the older town placeholders. The original village illustration remains the side-view battle backdrop. See [PROLOGUE_ASSETS.md](PROLOGUE_ASSETS.md) for the exact upload filenames, generated cutscene layers, enhanced approach path, built-in ImageGen prompts, and sprite frame mapping. See [TOWN_ART_LAYOUT.md](TOWN_ART_LAYOUT.md) for the current collision and interaction coordinates. Historical entries above describe previous versions.

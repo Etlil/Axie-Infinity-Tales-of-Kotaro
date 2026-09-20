@@ -1,7 +1,11 @@
 import Phaser from 'phaser';
+import {preloadKotaro,registerKotaro} from '../game/kotaroSprites';
 export default class BootScene extends Phaser.Scene {
   constructor(){super('BootScene');}
   preload(){
+    preloadKotaro(this);
+    this.load.image('atia-official','assets/town/atia-official.png');
+    for(const asset of ['stone-table','moon-pendant','kotaro-hand','approach-path'])this.load.image(asset,'assets/prologue/'+asset+'.png');
     this.load.image('atia-village','assets/atia/village.png');
     this.load.image('forest-arena','assets/atia/forest-arena.jpg');
     this.load.image('lagoon-arena','assets/atia/lagoon-arena.jpg');
@@ -18,6 +22,8 @@ export default class BootScene extends Phaser.Scene {
       document.fonts.load('20px "Changa One"'),
       document.fonts.load('700 14px Nunito'),
     ]);
+    if(!this.sys.isActive())return;
+    try{await registerKotaro(this);}catch(error){console.error('Could not prepare Kotaro sprites',error);this.game.session.patch({assetError:true});return;}
     if(!this.sys.isActive())return;
     for(const id of ['kotaro','buba','puffy'])['idle','attack','ultimate','hit','run','greeting'].forEach((action,row)=>{
       this.anims.create({key:id+'-'+action,frames:this.anims.generateFrameNumbers(id+'-sheet',{start:row*12,end:row*12+(id==='puffy'?11:action==='hit'?2:action==='greeting'?3:11)}),

@@ -16,9 +16,9 @@ beforeEach(()=>{
 });
 test('first launch introduces Atia and unmount releases the engine',()=>{
  const view=render(<App/>);
- expect(screen.getByRole('heading',{name:'Axie Infinity: Tales of Kotaro'})).toBeInTheDocument();
- fireEvent.click(screen.getByRole('button',{name:'Begin journey'}));
- expect(command).toHaveBeenCalledWith('nextIntro',undefined);
+ expect(screen.getByRole('heading',{name:'A light in the silence'})).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'Skip scene'}));
+ expect(command).toHaveBeenCalledWith('skipCinematic',undefined);
  view.unmount();expect(destroy).toHaveBeenCalledTimes(1);
 });
 
@@ -165,7 +165,7 @@ test('reset from paused combat closes every menu only after successful deletion'
  });
  fireEvent.click(screen.getByRole('button',{name:'Delete save and restart'}));
  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
- expect(screen.getByRole('button',{name:'Begin journey'})).toBeInTheDocument();
+ expect(screen.getByRole('button',{name:'Skip scene'})).toBeInTheDocument();
  expect(command).toHaveBeenLastCalledWith('setInputEnabled',true);
 });
 

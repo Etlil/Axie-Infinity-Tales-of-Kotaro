@@ -19,14 +19,18 @@ export default class CombatScene extends SceneBase {
     this.hazardGraphics=this.add.graphics().setDepth(12);
     this.dodge=new DodgeSystem(this,{bonus:this.state.bonus,onUpdate:view=>this.onDodgeUpdate(view),
       onHit:hit=>this.takeHit(hit),onResolve:result=>this.resolveDodge(result),
-      onLaunch:()=>this.enemySprite.playAction(this.enemyCard?.ultimate?'ultimate':'attack')});
+      onLaunch:kind=>this.enemySprite.playAction(kind==='buba-dash'?'run':this.enemyCard?.ultimate?'ultimate':'attack')});
     this.state.cards.forEach((card,i)=>this.bindKey('keydown-'+['ONE','TWO','THREE','FOUR'][i],()=>this.playCard(card.id)));
     this.bindKey('keydown-FIVE',()=>this.playCard(this.state.ultimate.id));
     this.bindKey('keydown-X',()=>this.playCard(this.state.cards[this.state.selectedAttack||0].id));
     ['A','LEFT'].forEach(key=>this.bindKey('keydown-'+key,()=>this.selectAttack((this.state.selectedAttack+3)%4)));
     ['D','RIGHT'].forEach(key=>this.bindKey('keydown-'+key,()=>this.selectAttack((this.state.selectedAttack+1)%4)));
     this.events.once('shutdown',()=>{this.dodge.destroy();this.time.paused=false;});
-    this.beginPlayerTurn();
+    this.beginEncounter();
+  }
+  beginEncounter(){
+    if(this.state.tutorial&&this.enemy.id==='buba')this.telegraph(true);
+    else this.beginPlayerTurn();
   }
   freezeWorld(frozen){
     this.time.paused=frozen;
@@ -38,7 +42,8 @@ export default class CombatScene extends SceneBase {
   beginPlayerTurn(){
     this.dodge.stop();this.arenaGraphics.clear();this.hazardGraphics.clear();
     this.tweens.killTweensOf(this.player);this.tweens.killTweensOf(this.enemySprite);
-    this.player.setPosition(320,460).setScale(1.35).setAngle(0).setAlpha(1);this.player.playAction('idle');this.player.sprite?.setFlipX(true);
+    this.player.setPosition(320,460).setScale(1.35).setAngle(0).setAlpha(1);this.player.playAction('idle');
+    if(this.player.setFacing)this.player.setFacing('right');else this.player.sprite?.setFlipX(true);
     this.enemySprite.setPosition(890,445).setScale(1.35*(['buba','puffy'].includes(this.enemy.id)?1:1.65)).setAngle(0);this.enemySprite.playAction('idle');
     this.session.patch({phase:'PLAYER_FOCUS',dodgeActive:false,enemyCard:null,guard:0,selectedAttack:0,message:'Take a breath. Your move.'});
     this.freezeWorld(true);this.time.paused=false;
@@ -73,7 +78,8 @@ export default class CombatScene extends SceneBase {
     this.tweens.add({ targets: this.player, ...pose, duration: 190, yoyo: true, hold: 120, ease: 'Sine.easeOut' });
     if (!ultimate || card.part === 'tail') this.time.delayedCall(120, () => bodyPartAttack(this, this.player, card, { x: 850, y: 420 }));
     this.time.delayedCall(360, () => {
-      this.session.patch({ enemyHP: Math.max(0, this.state.enemyHP - card.damage) });
+      const minimum=this.state.tutorial&&this.enemy.id==='buba'?Math.min(this.state.enemyHP,this.enemy.maxHP/2):0;
+      this.session.patch({ enemyHP: Math.max(minimum, this.state.enemyHP - card.damage) });
       if (ultimate && card.part === 'back') slash(this, 850, 420, 0xe2c8ff, true);
       if (card.guard) {
         const ring = this.add.ellipse(320, 455, 175, 205).setStrokeStyle(5, 0xbddcff, .8).setDepth(12);
@@ -84,17 +90,23 @@ export default class CombatScene extends SceneBase {
       this.enemySprite.playAction('hit');
       this.tweens.add({ targets: this.enemySprite, alpha: .45, duration: 90, yoyo: true, repeat: 1 });
     });
-    this.time.delayedCall(800, () => this.state.enemyHP <= 0 ? this.winEncounter() : this.telegraph());
+    this.time.delayedCall(800, () => {
+      const threshold=this.state.tutorial&&this.enemy.id==='buba'?this.enemy.maxHP/2:0;
+      if(this.state.enemyHP<=threshold)this.winEncounter();else this.telegraph();
+    });
   }
-  telegraph(){
-    this.enemyCard=this.enemy.cards[(this.state.turn-1)%this.enemy.cards.length];
-    this.session.patch({phase:'BOSS_TELEGRAPH',enemyCard:this.enemyCard,message:this.enemy.name+' readies '+this.enemyCard.name+'. Get ready to move!'});
+  telegraph(opening=false){
+    this.enemyCard=this.enemy.cards[opening?0:(this.state.turn-1)%this.enemy.cards.length];
+    const message=this.enemyCard.pattern==='buba-dash'?'Buba lunges from the right, then returns from the left. Jump or dash through his sword!'
+      :this.enemyCard.pattern==='buba-mushroom'?'Buba throws his back mushroom. Watch for its glowing return arc!'
+        :this.enemy.name+' readies '+this.enemyCard.name+'. Get ready to move!';
+    this.session.patch({phase:'BOSS_TELEGRAPH',enemyCard:this.enemyCard,message});
     this.cameras.main.pan(600,400,350,'Sine.easeInOut');this.cameras.main.zoomTo(1,350);
     this.tweens.add({targets:this.enemySprite,angle:-6,duration:120,yoyo:true,repeat:1});
     this.time.delayedCall(650,()=>this.startDodge());
   }
   startDodge(){
-    this.lastPublishedDodge='';this.lastAction='';
+    this.lastPublishedDodge='';this.lastAction='';this.lastEnemyAction='';
     this.tweens.killTweensOf(this.player);this.tweens.killTweensOf(this.enemySprite);
     this.player.setScale(.75).setAngle(0);this.enemySprite.setPosition(1040,540).setScale(.82*(['buba','puffy'].includes(this.enemy.id)?1:1.65)).setAngle(0);
     drawArena(this.arenaGraphics);
@@ -107,7 +119,14 @@ export default class CombatScene extends SceneBase {
     this.player.setAlpha(p.invulnerable>210?(Math.floor(p.invulnerable/90)%2?.45:1):1);
     const action=Math.abs(p.vx)>30?'run':'idle';
     if(this.lastAction!==action){this.player.playAction(action);this.lastAction=action;}
-    this.player.sprite?.setFlipX(p.facing===1);
+    if(this.player.setFacing)this.player.setFacing(p.facing===1?'right':'left');else this.player.sprite?.setFlipX(p.facing===1);
+    if(view.opponent&&this.enemy.id==='buba'){
+      const opponent=view.opponent;
+      this.enemySprite.setPosition(opponent.x,opponent.y).setScale(opponent.facing>0?-.82:.82,.82);
+      this.enemySprite.sprite?.setFlipX(false);
+      const action=opponent.charging?'run':'idle';
+      if(this.lastEnemyAction!==action){this.enemySprite.playAction(action);this.lastEnemyAction=action;}
+    }
     drawHazards(this.hazardGraphics,view,this.enemy.id);
     const portrait=window.innerHeight>window.innerWidth;
     this.cameras.main.centerOn(portrait?p.x:600,portrait?440:400);
@@ -137,8 +156,11 @@ export default class CombatScene extends SceneBase {
     this.time.delayedCall(500,()=>{this.session.patch({turn:this.state.turn+1});this.beginPlayerTurn();});
   }
   winEncounter() {
+    if(this.state.phase==='ENCOUNTER_WON')return;
+    this.dodge.stop();
     this.session.patch({ phase: 'ENCOUNTER_WON', message: this.state.tutorial ? 'Buba lowers his sword…' : 'The nightmare falters.' });
-    this.tweens.add({ targets: this.enemySprite, alpha: .4, duration: 400 });
+    this.enemySprite.playAction('idle');
+    if(!this.state.tutorial)this.tweens.add({ targets: this.enemySprite, alpha: .4, duration: 400 });
     this.time.delayedCall(600, () => {
       if (this.state.tutorial) { this.session.finishTutorial(); this.scene.start('DialogueScene'); }
       else {

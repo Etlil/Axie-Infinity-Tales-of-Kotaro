@@ -1,4 +1,6 @@
 import SceneBase,{label} from './SceneBase';
+import {overworldKotaro} from '../game/kotaroSprites';
+import {fighter} from '../game/world';
 import {TILE,dungeonFor,isFloor,gateOpen,nextStep,moveExplorer,sameTile,freshPuzzle,turnValve} from '../game/dungeonLayout';
 
 export default class DungeonMapScene extends SceneBase{
@@ -39,7 +41,9 @@ export default class DungeonMapScene extends SceneBase{
     this.puzzleArt=this.add.container(0,0);
     this.drawPuzzle();
     this.hero=this.add.container((this.run.x+.5)*TILE,(this.run.y+.5)*TILE).setDepth(3);
-    this.hero.add([this.add.ellipse(0,15,32,12,0x000000,.3),this.add.circle(0,0,17,this.state.activeCharacter==='buba'?0xffc34d:0xf1f4fc).setStrokeStyle(3,0x81aaca),this.add.triangle(0,-21,-7,6,0,-6,7,6,0x92d6e9)]);
+    this.hero.add(this.add.ellipse(0,0,32,12,0x000000,.3));
+    this.actor=this.state.activeCharacter==='buba'?fighter(this,0,-28,'buba',.38):overworldKotaro(this,0,0,76);
+    this.hero.add(this.actor);this.facing='down';
     this.enemyPos=d.spawns[this.run.defeated]?{...d.spawns[this.run.defeated]}:null;
     this.isBoss=d.encounters[this.run.defeated]===2;
     if(this.enemyPos){
@@ -78,12 +82,15 @@ export default class DungeonMapScene extends SceneBase{
     const k=this.keys,h=this.held;
     const dir=h.up||k.W.isDown||k.UP.isDown?'up':h.down||k.S.isDown||k.DOWN.isDown?'down':h.left||k.A.isDown||k.LEFT.isDown?'left':h.right||k.D.isDown||k.RIGHT.isDown?'right':null;
     if(dir){this.nextMove=time+180;this.move(dir);}
+    else {this.actor.walk?.(this.facing,false);this.actor.playAction?.('idle');}
   }
   move(direction){
     if(!this.run||this.busy||this.state.panel||!this.game.input.enabled)return;
     const delta={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[direction];if(!delta)return;
     const before=this.run,next=moveExplorer(before,...delta);
     if(next===before)return;
+    this.facing=direction;this.actor.walk?.(direction,true);this.actor.playAction?.('run');
+    if(!this.actor.walk)this.actor.sprite?.setFlipX(direction==='right');
     const solved=!before.puzzle.solved&&next.puzzle.solved;
     this.session.patch({dungeonRun:next,...(solved?{message:'Puzzle solved! The seal opens once the nearby slimes are cleared.'}:{})});
     this.steps++;this.drawPuzzle();
