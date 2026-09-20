@@ -2,6 +2,7 @@ import SceneBase,{label,floatingText} from './SceneBase';
 import {TOWN_TILE as TILE,TOWN_START,BUILDINGS,TOWN_PLACES,townWalkable,nearbyPlace,townPath,townPixel} from '../game/townLayout';
 import {addTownArtwork} from '../game/townArt';
 import {overworldKotaro} from '../game/kotaroSprites';
+import {overworldBuba} from '../game/bubaSprites';
 import {fighter} from '../game/world';
 
 export default class VillageScene extends SceneBase{
@@ -26,7 +27,7 @@ export default class VillageScene extends SceneBase{
     });
     if(this.state.activeCharacter!=='buba'){
       const at=townPixel(TOWN_PLACES.find(p=>p.id==='tent'));
-      fighter(this,at.x+32,at.y-40,'buba',.38,'left').setDepth(2);
+      overworldBuba(this,at.x+32,at.y,76).setDepth(2);
     }
     if(this.state.rescued.some(r=>r.id==='puffy')){
       const at=townPixel(TOWN_PLACES.find(p=>p.id==='spring'));
@@ -35,7 +36,7 @@ export default class VillageScene extends SceneBase{
     const at=townPixel(this.pos);
     this.hero=this.add.container(at.x,at.y).setDepth(3);
     this.hero.add(this.add.ellipse(0,0,35,11,0x233525,.28));
-    this.body=this.state.activeCharacter==='buba'?fighter(this,0,-29,'buba',.38):overworldKotaro(this,0,0,76);
+    this.body=this.state.activeCharacter==='buba'?overworldBuba(this,0,0,76):overworldKotaro(this,0,0,76);
     this.hero.add(this.body);
     this.body.walk?.(this.facing,false);
     this.cameras.main.startFollow(this.hero,true,.18,.18);

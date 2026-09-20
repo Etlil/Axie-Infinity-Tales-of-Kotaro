@@ -101,12 +101,13 @@ test('Buba keeps fighting above half health while ordinary enemies still need to
 
 test('Buba’s rendered fighter follows the dash collision body and faces the return direction',()=>{
  const {combat}=encounter(bosses.buba,0,true);
- combat.cameras.main.centerOn=jest.fn();combat.player.setFacing=jest.fn();combat.enemySprite.sprite={setFlipX:jest.fn()};
+ combat.cameras.main.centerOn=jest.fn();combat.player.setFacing=jest.fn();combat.enemySprite.setFacing=jest.fn();combat.enemySprite.sprite={setFlipX:jest.fn()};
  combat.onDodgeUpdate({player:{x:330,y:600,vx:0,vy:0,dash:0,facing:1,grounded:true,cooldown:0,invulnerable:0},
   shots:[],warnings:[],opponent:{x:470,y:543,facing:1,charging:true},dodgeRemaining:2.5,hits:0});
  expect(combat.enemySprite.setPosition).toHaveBeenCalledWith(470,543);
- expect(combat.enemySprite.setScale).toHaveBeenCalledWith(-.82,.82);
- expect(combat.enemySprite.playAction).toHaveBeenCalledWith('run');
+ expect(combat.enemySprite.setScale).toHaveBeenCalledWith(.82);
+ expect(combat.enemySprite.playAction).toHaveBeenCalledWith('dash');
+ expect(combat.enemySprite.setFacing).toHaveBeenCalledWith('right');
  expect(combat.player.setFacing).toHaveBeenCalledWith('right');
 });
 test('Puffy defeat waits for the amulet action before granting a rescue or XP',()=>{

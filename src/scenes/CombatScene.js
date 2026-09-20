@@ -3,6 +3,7 @@ import { backdrop, fighter, slash } from '../game/world';
 import { bodyPartAttack } from '../game/bodyPartAttacks';
 import { drawArena, drawHazards } from '../game/dodgeWorld';
 import DodgeSystem from '../entities/DodgeSystem';
+import {BubaProjectiles} from '../game/bubaSprites';
 
 export default class CombatScene extends SceneBase {
   constructor(){super('CombatScene');}
@@ -17,15 +18,16 @@ export default class CombatScene extends SceneBase {
     this.enemySprite.setCorrupted?.(this.enemy.id==='puffy');
     this.arenaGraphics=this.add.graphics().setDepth(4);
     this.hazardGraphics=this.add.graphics().setDepth(12);
+    this.bubaProjectiles=new BubaProjectiles(this);
     this.dodge=new DodgeSystem(this,{bonus:this.state.bonus,onUpdate:view=>this.onDodgeUpdate(view),
       onHit:hit=>this.takeHit(hit),onResolve:result=>this.resolveDodge(result),
-      onLaunch:kind=>this.enemySprite.playAction(kind==='buba-dash'?'run':this.enemyCard?.ultimate?'ultimate':'attack')});
+      onLaunch:kind=>this.enemySprite.playAction(kind==='buba-dash'?'dash':kind==='mushroom'?'mushroom':this.enemyCard?.ultimate?'ultimate':'attack')});
     this.state.cards.forEach((card,i)=>this.bindKey('keydown-'+['ONE','TWO','THREE','FOUR'][i],()=>this.playCard(card.id)));
     this.bindKey('keydown-FIVE',()=>this.playCard(this.state.ultimate.id));
     this.bindKey('keydown-X',()=>this.playCard(this.state.cards[this.state.selectedAttack||0].id));
     ['A','LEFT'].forEach(key=>this.bindKey('keydown-'+key,()=>this.selectAttack((this.state.selectedAttack+3)%4)));
     ['D','RIGHT'].forEach(key=>this.bindKey('keydown-'+key,()=>this.selectAttack((this.state.selectedAttack+1)%4)));
-    this.events.once('shutdown',()=>{this.dodge.destroy();this.time.paused=false;});
+    this.events.once('shutdown',()=>{this.bubaProjectiles.clear();this.dodge.destroy();this.time.paused=false;});
     this.beginEncounter();
   }
   beginEncounter(){
@@ -41,10 +43,12 @@ export default class CombatScene extends SceneBase {
   }
   beginPlayerTurn(){
     this.dodge.stop();this.arenaGraphics.clear();this.hazardGraphics.clear();
+    this.bubaProjectiles?.clear();this.mushroomInFlight=false;
     this.tweens.killTweensOf(this.player);this.tweens.killTweensOf(this.enemySprite);
     this.player.setPosition(320,460).setScale(1.35).setAngle(0).setAlpha(1);this.player.playAction('idle');
     if(this.player.setFacing)this.player.setFacing('right');else this.player.sprite?.setFlipX(true);
     this.enemySprite.setPosition(890,445).setScale(1.35*(['buba','puffy'].includes(this.enemy.id)?1:1.65)).setAngle(0);this.enemySprite.playAction('idle');
+    this.enemySprite.setFacing?.('left');
     this.session.patch({phase:'PLAYER_FOCUS',dodgeActive:false,enemyCard:null,guard:0,selectedAttack:0,message:'Take a breath. Your move.'});
     this.freezeWorld(true);this.time.paused=false;
     const duration=this.reducedMotion?0:460;
@@ -117,17 +121,21 @@ export default class CombatScene extends SceneBase {
     const p=view.player;
     this.player.setPosition(p.x,p.y-57).setScale(.75).setAngle(p.dash>0?p.facing*8:p.grounded?0:Math.max(-12,Math.min(12,p.vy/50)));
     this.player.setAlpha(p.invulnerable>210?(Math.floor(p.invulnerable/90)%2?.45:1):1);
-    const action=Math.abs(p.vx)>30?'run':'idle';
+    const action=this.player.kind==='buba'&&p.invulnerable>400?'hit':Math.abs(p.vx)>30?'run':'idle';
     if(this.lastAction!==action){this.player.playAction(action);this.lastAction=action;}
     if(this.player.setFacing)this.player.setFacing(p.facing===1?'right':'left');else this.player.sprite?.setFlipX(p.facing===1);
     if(view.opponent&&this.enemy.id==='buba'){
       const opponent=view.opponent;
-      this.enemySprite.setPosition(opponent.x,opponent.y).setScale(opponent.facing>0?-.82:.82,.82);
-      this.enemySprite.sprite?.setFlipX(false);
-      const action=opponent.charging?'run':'idle';
+      this.enemySprite.setPosition(opponent.x,opponent.y).setScale(.82);
+      this.enemySprite.setFacing?.(opponent.facing>0?'right':'left');
+      const action=opponent.charging?'dash':'idle';
       if(this.lastEnemyAction!==action){this.enemySprite.playAction(action);this.lastEnemyAction=action;}
     }
     drawHazards(this.hazardGraphics,view,this.enemy.id);
+    this.bubaProjectiles?.update(view.shots);
+    const mushroomInFlight=view.shots.some(shot=>shot.kind==='mushroom');
+    if(this.mushroomInFlight&&!mushroomInFlight)this.enemySprite.playAction('recover');
+    this.mushroomInFlight=mushroomInFlight;
     const portrait=window.innerHeight>window.innerWidth;
     this.cameras.main.centerOn(portrait?p.x:600,portrait?440:400);
     const tenth=Math.ceil(view.dodgeRemaining*10)/10;
@@ -151,6 +159,7 @@ export default class CombatScene extends SceneBase {
   }
   resolveDodge(result){
     this.hazardGraphics.clear();
+    this.bubaProjectiles?.clear();
     this.session.patch({phase:'RESOLVE_DODGE',dodges:this.state.dodges+(result.hits?0:1),dodgeActive:false,
       warningActive:false,dodgeRemaining:0,message:result.hits?'You held on. Find your opening.':'Untouched. Your opening!'});
     this.time.delayedCall(500,()=>{this.session.patch({turn:this.state.turn+1});this.beginPlayerTurn();});

@@ -1,6 +1,7 @@
 import SceneBase,{label} from './SceneBase';
 import {fighter} from '../game/world';
 import {overworldKotaro} from '../game/kotaroSprites';
+import {overworldBuba} from '../game/bubaSprites';
 import {addTownArtwork} from '../game/townArt';
 import {TOWN_START,BUBA_MEETING,townPixel,townWalkable,TOWN_TILE} from '../game/townLayout';
 
@@ -58,7 +59,7 @@ export default class IntroScene extends SceneBase{
   village(){
     this.area='town';addTownArtwork(this);const start=townPixel(TOWN_START),meeting=townPixel(BUBA_MEETING),cam=this.cameras.main;
     this.hero=overworldKotaro(this,start.x,start.y,88).setDepth(3);
-    this.buba=fighter(this,meeting.x,meeting.y-30,'buba',.55,'left').setDepth(2);
+    this.buba=overworldBuba(this,meeting.x,meeting.y+12,88).setDepth(2);
     cam.setZoom(1.2);cam.centerOn(start.x,start.y);cam.fadeIn(600,0,0,0);this.busy=true;
     this.session.patch({phase:'INTRO_REVEAL',message:'Someone is waiting by the well.'});
     cam.pan(meeting.x,meeting.y,1500,'Sine.easeInOut');
@@ -110,7 +111,7 @@ export default class IntroScene extends SceneBase{
     if(this.busy)return;this.busy=true;this.held={};this.hero.walk('up',false);
     this.session.patch({phase:'INTRO_AMBUSH',message:'!!!'});
     const alert=label(this,this.buba.x,this.buba.y-80,'!!!',44,'#fff2bb',{stroke:'#542d28',strokeThickness:6}).setOrigin(.5);
-    this.time.delayedCall(1000,()=>{alert.destroy();this.buba.playAction('attack');this.tweens.add({targets:this.buba,x:this.hero.x+25,y:this.hero.y-20,duration:300,ease:'Cubic.easeIn',onComplete:()=>{
+    this.time.delayedCall(1000,()=>{alert.destroy();const {x,y}=this.buba;this.buba.destroy();this.buba=fighter(this,x,y-40,'buba',.55,'left').setDepth(2);this.buba.playAction('dash');this.tweens.add({targets:this.buba,x:this.hero.x+25,y:this.hero.y-20,duration:300,ease:'Cubic.easeIn',onComplete:()=>{
       this.cameras.main.flash(160,255,238,203);this.cameras.main.shake(160,.006);
       this.time.delayedCall(220,()=>{this.session.prepareEncounter(0,true);this.scene.start('CombatScene');});
     }});});

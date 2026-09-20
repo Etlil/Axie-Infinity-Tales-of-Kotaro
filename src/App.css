@@ -10,7 +10,7 @@
 .profile-block{display:flex;gap:12px;align-items:center;background:none;text-align:left;padding:0;min-width:258px}
 .profile-avatar{width:62px;height:62px;border:2px solid #ddbd80;background:radial-gradient(#a3a47a,#243e32);border-radius:50%;position:relative;box-shadow:0 0 0 4px #17362c99}
 .portrait{display:block;width:100%;height:100%;background-image:var(--kotaro-image);background-size:1200% 600%;background-position:0 0;background-repeat:no-repeat}
-.portrait.buba{background-image:var(--buba-image)}
+.portrait.buba{background-image:var(--buba-image);background-size:contain;background-position:center}
 .profile-avatar .portrait{transform:scale(1.55);position:relative;top:-3px}
 .profile-avatar>b{position:absolute;bottom:-9px;left:18px;background:#e5c383;color:#273b2a;min-width:23px;border-radius:7px;font-size:12px;text-align:center;padding:3px}
 .profile-copy{width:180px}.profile-copy>strong{display:flex;align-items:center;gap:10px;font-size:17px;margin-bottom:10px}.profile-copy>strong>small{font-size:7px;letter-spacing:1px;color:var(--muted)}

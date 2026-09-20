@@ -1,6 +1,6 @@
 import SceneBase,{label} from './SceneBase';
 import {overworldKotaro} from '../game/kotaroSprites';
-import {fighter} from '../game/world';
+import {overworldBuba} from '../game/bubaSprites';
 import {TILE,dungeonFor,isFloor,gateOpen,nextStep,moveExplorer,sameTile,freshPuzzle,turnValve} from '../game/dungeonLayout';
 
 export default class DungeonMapScene extends SceneBase{
@@ -42,7 +42,7 @@ export default class DungeonMapScene extends SceneBase{
     this.drawPuzzle();
     this.hero=this.add.container((this.run.x+.5)*TILE,(this.run.y+.5)*TILE).setDepth(3);
     this.hero.add(this.add.ellipse(0,0,32,12,0x000000,.3));
-    this.actor=this.state.activeCharacter==='buba'?fighter(this,0,-28,'buba',.38):overworldKotaro(this,0,0,76);
+    this.actor=this.state.activeCharacter==='buba'?overworldBuba(this,0,0,76):overworldKotaro(this,0,0,76);
     this.hero.add(this.actor);this.facing='down';
     this.enemyPos=d.spawns[this.run.defeated]?{...d.spawns[this.run.defeated]}:null;
     this.isBoss=d.encounters[this.run.defeated]===2;

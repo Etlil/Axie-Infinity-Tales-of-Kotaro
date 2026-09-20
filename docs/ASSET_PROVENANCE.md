@@ -91,3 +91,6 @@ The level-selection artwork in `public/assets/map/` consists of four original ed
 ## Current official town and prologue (September 2026)
 
 The user-supplied town painting and Kotaro sheets now replace the older town placeholders. The original village illustration remains the side-view battle backdrop. See [PROLOGUE_ASSETS.md](PROLOGUE_ASSETS.md) for the exact upload filenames, generated cutscene layers, enhanced approach path, built-in ImageGen prompts, and sprite frame mapping. See [TOWN_ART_LAYOUT.md](TOWN_ART_LAYOUT.md) for the current collision and interaction coordinates. Historical entries above describe previous versions.
+# Buba replacement — September 20, 2026
+
+The previous Buba sheet and avatar are retired. Current user-supplied Buba sprites, transparent extraction prompts, frame mapping, and saved asset paths are documented in [BUBA_ASSETS.md](BUBA_ASSETS.md). The historical provenance below describes earlier versions.

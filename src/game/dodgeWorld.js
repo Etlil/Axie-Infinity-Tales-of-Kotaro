@@ -47,11 +47,7 @@ export function drawHazards(g,view,enemyId){
       g.lineStyle(2,0xffffff,.95).lineBetween(tip-facing*16,y+15,tip+facing*13,y-28);
       for(let i=1;i<=3;i++)g.fillStyle(0xffd987,.25/i).fillEllipse(x-facing*i*26,ARENA.floor-6,30,12);
     }else if(kind==='mushroom'){
-      g.fillStyle(0xffe8bd).fillRoundedRect(x-8,y-1,16,24,5);
-      g.lineStyle(3,0x744927).strokeRoundedRect(x-8,y-1,16,24,5);
-      g.fillStyle(0xb47a46).fillEllipse(x,y-9,54,34);
-      g.lineStyle(3,0x623e28).strokeEllipse(x,y-9,54,34);
-      g.fillStyle(0xf6dc9b).fillEllipse(x-13,y-12,12,7).fillEllipse(x+10,y-18,9,6).fillEllipse(x+15,y-4,8,5);
+      // The supplied spinning mushroom sprite follows this collision body.
       if(shot.stage==='return')g.lineStyle(2,0xffe4a2,.7).beginPath().arc(x,y,38,shot.age/180,shot.age/180+4).strokePath();
     }else if(kind.includes('blade')){
       g.lineStyle(9,color).beginPath().arc(x,y,r,-2,2).strokePath();

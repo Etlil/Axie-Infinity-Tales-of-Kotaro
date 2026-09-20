@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { renderWorld as legacyWorld, drawAxie } from './art';
+import {bubaFighter} from './bubaSprites';
 
 export function backdrop(scene, kind = 'village', { image = true } = {}) {
   if (!image) {
@@ -21,6 +22,7 @@ export function backdrop(scene, kind = 'village', { image = true } = {}) {
   }
 }
 export function fighter(scene,x,y,kind='kotaro',scale=1,facing='right') {
+  if(kind==='buba')return bubaFighter(scene,x,y,scale,facing);
   if(kind==='slime'){
     const root=scene.add.container(x,y).setScale(scale*1.65),body=scene.add.graphics();
     body.fillStyle(0x15332b,.3).fillEllipse(0,37,94,18);
@@ -46,7 +48,7 @@ export function fighter(scene,x,y,kind='kotaro',scale=1,facing='right') {
     };
     root.playAction();return root;
   }
-  if (!['kotaro','buba'].includes(kind)) {
+  if (kind!=='kotaro') {
     const mob = drawAxie(scene,x,y,{kind:'mob',scale:scale*1.65,idle:false});
     mob.setData('kind',kind);mob.playAction=()=>{};return mob;
   }
@@ -60,21 +62,12 @@ export function fighter(scene,x,y,kind='kotaro',scale=1,facing='right') {
   weapon.fillStyle(0xf1c261).fillRoundedRect(-16,1,32,9,3);
   weapon.fillStyle(0xe8f0e9).fillTriangle(-7,1,7,1,0,-65);
   weapon.lineStyle(2,0x557380).lineBetween(0,-61,0,-1);
-  weapon.setPosition(kind==='buba'?-48:57,-35).setAngle(kind==='buba'?-35:35);
+  weapon.setPosition(57,-35).setAngle(35);
   root.add(weapon);
-  if(kind==='buba'){
-    const shield=scene.add.graphics();
-    shield.fillStyle(0x69482c).fillEllipse(48,10,57,67);
-    shield.lineStyle(5,0xb58c51).strokeEllipse(48,10,57,67);
-    shield.lineStyle(2,0x97693d).lineBetween(33,-10,33,31).lineBetween(47,-18,47,40).lineBetween(61,-9,61,31);
-    shield.fillStyle(0xdac7a0).fillCircle(48,10,8);root.add(shield);root.shield=shield;
-    root.moveBelow(weapon,sprite);root.moveBelow(shield,sprite);
-  } else weapon.setVisible(false);
+  weapon.setVisible(false);
   root.setScale(scale);root.sprite=sprite;root.weapon=weapon;root.kind=kind;
   // Local attachment points follow the fighter's position, scale, and rotation.
-  const points = kind === 'buba'
-    ? { horn: [5,-64], mouth: [48,16], back: [-40,-28], tail: [-79,29] }
-    : { horn: [22,-76], mouth: [48,19], back: [-43,-32], tail: [-72,35] };
+  const points = { horn: [22,-76], mouth: [48,19], back: [-43,-32], tail: [-72,35] };
   root.partPosition = part => {
     const [px,py] = points[part];
     return root.getWorldTransformMatrix().transformPoint(facing === 'right' ? px : -px, py);
@@ -86,7 +79,6 @@ export function fighter(scene,x,y,kind='kotaro',scale=1,facing='right') {
     if(!scene.anims.exists(key))return;
     sprite.removeAllListeners('animationcomplete');
     sprite.play(key,true);
-    if(kind==='buba'&&action==='idle'){root.moveBelow(weapon,sprite);root.moveBelow(root.shield,sprite);}
     if(action!=='idle'&&action!=='run')sprite.once('animationcomplete',()=>{if(sprite.active)sprite.play(kind+'-idle');});
     if((action==='attack'||action==='ultimate') && !bodyMotion){
       root.bringToTop(weapon);

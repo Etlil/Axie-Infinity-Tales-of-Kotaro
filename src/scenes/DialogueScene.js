@@ -1,5 +1,5 @@
 import SceneBase from './SceneBase';
-import {fighter} from '../game/world';
+import {overworldBuba} from '../game/bubaSprites';
 import {overworldKotaro} from '../game/kotaroSprites';
 import {addTownArtwork} from '../game/townArt';
 import {BUBA_MEETING,townPixel} from '../game/townLayout';
@@ -8,7 +8,7 @@ export default class DialogueScene extends SceneBase{
   constructor(){super('DialogueScene');}
   create(){
     this.ending=false;addTownArtwork(this);this.bindScene('dialogue','DIALOGUE','A stranger becomes a friend.');
-    const p=townPixel(BUBA_MEETING);overworldKotaro(this,p.x-100,p.y+85,96).walk('up',false);fighter(this,p.x,p.y-35,'buba',.65,'left');
+    const p=townPixel(BUBA_MEETING);overworldKotaro(this,p.x-100,p.y+85,96).walk('up',false);overworldBuba(this,p.x,p.y+12,96).walk('left',false);
     const cam=this.cameras.main;cam.setZoom(1.25);cam.centerOn(p.x-20,p.y+20);cam.fadeIn(450);
     this.present();
   }
