@@ -7,7 +7,7 @@ export function drawArena(g,platforms=false){
     g.lineStyle(2,0xe7e4af,.8).lineBetween(x+5,y,x+width-5,y);
     for(let i=12;i<width-12;i+=28)g.lineStyle(2,0x496a65).lineBetween(x+i,y+8,x+i+8,y+14);
   };
-  ledge(ARENA.left-30,ARENA.floor,ARENA.right-ARENA.left+75);
+  // The painted ground supplies the floor visually; physics still uses ARENA.floor.
   if(platforms)ARENA.platforms.forEach(p=>ledge(p.x,p.y,p.width));
 }
 export function drawHazards(g,view,enemyId){

@@ -94,3 +94,6 @@ The user-supplied town painting and Kotaro sheets now replace the older town pla
 # Buba replacement — September 20, 2026
 
 The previous Buba sheet and avatar are retired. Current user-supplied Buba sprites, transparent extraction prompts, frame mapping, and saved asset paths are documented in [BUBA_ASSETS.md](BUBA_ASSETS.md). The historical provenance below describes earlier versions.
+# Buba battle background
+
+`public/assets/atia/buba-arena.png` is the user-supplied `codex-clipboard-0923ecb0-d649-433c-a8e0-70e72ddabe6e.png`, copied unchanged for the Buba–Kotaro battle. The visible floor platform is removed; floor collisions remain, and only Puffy retains raised platforms.
