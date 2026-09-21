@@ -20,8 +20,10 @@ export const TOWN_PLACES=[
 ];
 // Walkable polygons follow the painted roads and square. All coordinates are
 // in tiles of the original 3072×2048 artwork (64 source pixels per tile).
-const ROADS=[{x:20,y:16,w:5,h:16},{x:18,y:10,w:10,h:7},{x:9,y:12,w:39,h:3},
- {x:10,y:11,w:3,h:3},{x:36,y:0,w:4,h:15},{x:33,y:14,w:3,h:4}];
+// Stop at the gate threshold (row 7) and before the eastern rocks (column 43).
+// Shared by manual movement and tap-to-walk so neither can cross the borders.
+const ROADS=[{x:20,y:16,w:5,h:16},{x:18,y:10,w:10,h:7},{x:9,y:12,w:34,h:3},
+ {x:10,y:11,w:3,h:3},{x:36,y:7,w:4,h:8},{x:33,y:14,w:3,h:4}];
 export function townWalkable(x,y){
  if(x<1||x>=47||y<1||y>=31)return false;
  if(!ROADS.some(r=>x>=r.x&&x<r.x+r.w&&y>=r.y&&y<r.y+r.h))return false;
