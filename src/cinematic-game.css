@@ -22,6 +22,8 @@
 .scene-combat .ability-cards.two-attacks{width:min(480px,100%);margin-inline:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
 @media(prefers-reduced-motion:reduce){.cinematic-matte::after{display:none;}}
 .is-choosing .world-stage { filter:saturate(.65) contrast(1.04); }
+.ability-card .ability-symbol.shield-stat{display:grid;place-items:center;background:#276b61;color:#fff;border-radius:0;clip-path:polygon(50% 0,96% 20%,90% 72%,50% 100%,10% 72%,4% 20%);box-shadow:inset 0 0 0 4px #173f3c;}
+.ability-symbol.shield-stat b{font:900 clamp(18px,2.2vw,27px)/1 var(--body-font);padding-bottom:3px;text-shadow:0 2px 0 #143c37;}
 .scene-combat .world-fill { transform:scale(1); transform-origin:50% 54%; transition:transform 350ms ease-in-out; }
 .scene-combat.is-choosing .world-fill { transform:scale(1.18); transition-duration:460ms; }
 .scene-combat[data-phase="PLAYER_ATTACK_ANIM"] .world-fill { transform:scale(1.22); transition-duration:180ms; }

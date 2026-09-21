@@ -74,7 +74,7 @@ function AbilityCard({ card, index, disabled, selected, command }) {
   return <button className={'ability-card card-' + card.kind + (selected ? ' selected-attack' : '')} data-part={card.part}
     disabled={disabled} onFocus={() => command('selectAttack', index)} onClick={() => command('playCard', card.id)} aria-keyshortcuts={String(index + 1)}>
     <span className="ability-part">{card.guard?'DEFEND':'ATTACK'}<kbd>{index + 1}</kbd></span>
-    <span className="ability-top"><span className="ability-symbol"><Icon name={card.guard?'shield':'sword'}/></span><span>{card.damage}<small>DMG</small></span></span>
+    <span className="ability-top"><span className={'ability-symbol'+(card.guard?' shield-stat':'')} aria-label={card.guard?card.guard+' shield':undefined}>{card.guard?<b>{card.guard}</b>:<Icon name="sword"/>}</span><span>{card.damage}<small>DMG</small></span></span>
     <strong>{card.name}</strong><small className="ability-description">{card.description}</small>
     <span className="ability-label">{card.guard ? card.guard + ' SHIELD' : card.heal ? 'HEAL ' + card.heal : card.label}</span>
   </button>;
