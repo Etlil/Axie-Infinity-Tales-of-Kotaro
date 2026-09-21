@@ -15,7 +15,7 @@ export default class VictoryScene extends SceneBase{
   }
   onCommand(action){
     if(action==='purify'&&this.state.result?.kind==='purify'&&this.state.amulet){
-      this.session.rescue(bosses.puffy);const rewards=this.session.completeStage(2);
+      this.session.rescue(bosses.puffy);const rewards=this.session.completeStage(0);
       this.session.patch({result:{kind:'rescued',...rewards},message:'The amulet shines. Puffy is coming home.'});this.scene.restart();
     }
   }

@@ -3,7 +3,7 @@ import {DUNGEONS} from '../game/dungeonLayout';
 export default class LevelSelectScene extends SceneBase {
   constructor(){super('LevelSelectScene');}
   create(){
-    this.bindScene('map','LEVEL_SELECT','Choose a dungeon beyond Atia.',{dungeonRun:null});
+    this.bindScene('map','LEVEL_SELECT','Choose a dungeon beyond Atia.',{dungeonRun:null,selectedStage:0});
     this.bindKey('keydown-ENTER',()=>this.onCommand('enterDungeon'));
   }
   onCommand(action,payload){

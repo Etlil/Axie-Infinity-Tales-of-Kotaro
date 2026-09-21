@@ -1,7 +1,7 @@
 import SceneBase,{label} from './SceneBase';
 import {overworldKotaro} from '../game/kotaroSprites';
 import {overworldBuba} from '../game/bubaSprites';
-import {TILE,dungeonFor,isFloor,gateOpen,nextStep,moveExplorer,sameTile,freshPuzzle,turnValve} from '../game/dungeonLayout';
+import {TILE,dungeonFor,isFloor,nextStep,moveExplorer,sameTile,createDungeonRun} from '../game/dungeonLayout';
 
 export default class DungeonMapScene extends SceneBase{
   constructor(){super('DungeonMapScene');}
@@ -36,8 +36,6 @@ export default class DungeonMapScene extends SceneBase{
     });
     this.add.rectangle((d.start.x+.5)*TILE,(d.start.y+.5)*TILE,36,36,0x75b890,.6).setStrokeStyle(2,0xc7ffe3);
     label(this,(d.start.x+.5)*TILE,(d.start.y+1.3)*TILE,'ENTRANCE',11,'#c7ffe3').setOrigin(.5);
-    this.gate=this.add.rectangle((d.gate.x+.5)*TILE,(d.gate.y+.5)*TILE,16,TILE,0xd4b06d);
-    this.gateLabel=label(this,(d.gate.x+.5)*TILE,(d.gate.y-.2)*TILE,'SEALED',11,'#ffe5ad').setOrigin(.5);
     this.puzzleArt=this.add.container(0,0);
     this.drawPuzzle();
     this.hero=this.add.container((this.run.x+.5)*TILE,(this.run.y+.5)*TILE).setDepth(3);
@@ -60,21 +58,17 @@ export default class DungeonMapScene extends SceneBase{
     this.events.once('shutdown',()=>{this.events.off('update',this.tick,this);this.input.keyboard.off('blur',clear);});
   }
   drawPuzzle(){
-    const p=this.dungeon.puzzle,state=this.run.puzzle;
+    const d=this.dungeon,state=this.run.puzzle;
     this.puzzleArt.removeAll(true);
-    const add=object=>this.puzzleArt.add(object);
-    if(p.type==='crate'){
-      add(this.add.rectangle((p.plate.x+.5)*TILE,(p.plate.y+.5)*TILE,38,38,0xc3a148,.7).setStrokeStyle(3,0xffe8a4));
-      add(label(this,(p.plate.x+.5)*TILE,(p.plate.y+1.2)*TILE,'PLATE',10).setOrigin(.5));
-      add(this.add.rectangle((state.crate.x+.5)*TILE,(state.crate.y+.5)*TILE,32,32,0xca9146).setStrokeStyle(4,0x583c2c));
-    }else p.tiles.forEach((tile,i)=>{
-      const lit=p.type==='runes'?state.progress>i:!!(state.lamps&(1<<i));
-      add(this.add.rectangle((tile.x+.5)*TILE,(tile.y+.5)*TILE,38,38,lit?0xd9c980:0x293e4f).setStrokeStyle(3,lit?0xfff2bc:0x8bb4bd));
-      add(label(this,(tile.x+.5)*TILE,(tile.y+.5)*TILE,tile.name,12,lit?'#3e4027':'#def3ef').setOrigin(.5));
-      if(p.type==='valves')add(label(this,(tile.x+.5)*TILE,(tile.y+1.2)*TILE,['1+2','2+3','2'][i],10).setOrigin(.5));
-    });
-    const open=gateOpen(this.run);this.gate.setVisible(!open);this.gateLabel.setText(open?'OPEN':'SEALED');
+    const mark=(p,text,color)=>{
+      this.puzzleArt.add(this.add.rectangle((p.x+.5)*TILE,(p.y+.5)*TILE,38,38,color,.85).setStrokeStyle(2,0xe8f5ef));
+      this.puzzleArt.add(label(this,(p.x+.5)*TILE,(p.y+.5)*TILE,text,18).setOrigin(.5));
+    };
+    d.keys.forEach((p,i)=>{if(!state.collected.includes(i))mark(p,'K',0xc39a36);});
+    d.locks.forEach((p,i)=>{if(!state.unlocked.includes(i))mark(p,'L',0x975447);});
+    if(d.exit)mark(d.exit,'↓',0x287fb3);
   }
+
   tick(time){
     if(!this.run)return;
     if(this.state.panel||!this.game.input.enabled){this.held={};Object.values(this.keys).forEach(key=>key.reset());return;}
@@ -91,10 +85,16 @@ export default class DungeonMapScene extends SceneBase{
     if(next===before)return;
     this.facing=direction;this.actor.walk?.(direction,true);this.actor.playAction?.('run');
     if(!this.actor.walk)this.actor.sprite?.setFlipX(direction==='right');
-    const solved=!before.puzzle.solved&&next.puzzle.solved;
-    this.session.patch({dungeonRun:next,...(solved?{message:'Puzzle solved! The seal opens once the nearby slimes are cleared.'}:{})});
+    const picked=next.puzzle.collected.length>before.puzzle.collected.length;
+    const opened=next.puzzle.unlocked.length>before.puzzle.unlocked.length;
+    this.session.patch({dungeonRun:next,...(picked?{message:'Key found! Walk into a lock to use it.'}:opened?{message:'Lock opened. The way is clear.'}:{})});
     this.steps++;this.drawPuzzle();
     this.tweens.add({targets:this.hero,x:(next.x+.5)*TILE,y:(next.y+.5)*TILE,duration:140});
+    if(this.dungeon.exit&&sameTile(next,this.dungeon.exit)){
+      this.busy=true;this.held={};this.cameras.main.fadeOut(220);
+      this.time.delayedCall(220,()=>{this.session.patch({dungeonRun:createDungeonRun(0,next.floor+1),message:'You descend deeper into Aqua Cave.'});this.scene.restart();});
+      return;
+    }
     if(this.contact())return;
     // Preserve the chase: one slime step for every two player steps, through corridors.
     if(this.enemyPos&&!this.isBoss&&this.steps%2===0){
@@ -105,14 +105,9 @@ export default class DungeonMapScene extends SceneBase{
   }
   interact(){
     if(!this.run||this.busy||this.state.panel||!this.game.input.enabled)return;
-    const p=this.dungeon.puzzle;
-    if(p.type!=='valves')return;
-    const index=p.tiles.findIndex(t=>Math.abs(t.x-this.run.x)+Math.abs(t.y-this.run.y)<=1);
-    if(index<0)return;
-    const puzzle=turnValve(this.run,index);
-    this.session.patch({dungeonRun:{...this.run,puzzle},message:puzzle.solved?'All tidal lamps are lit. The engine awakens!':'Valve '+p.tiles[index].name+' turned. Light all three lamps.'});
-    this.drawPuzzle();
+    this.session.patch({message:this.dungeon.clue});
   }
+
   contact(){
     if(!this.enemyPos||!sameTile(this.run,this.enemyPos))return false;
     this.busy=true;this.held={};
@@ -125,12 +120,5 @@ export default class DungeonMapScene extends SceneBase{
     if(action==='dungeonInput'&&['up','down','left','right'].includes(payload?.direction))this.held[payload.direction]=Boolean(payload.pressed);
     if(action==='dungeonStep')this.move(payload);
     if(action==='interactPuzzle')this.interact();
-    if(action==='resetPuzzle'&&!this.busy&&!this.state.panel&&!this.run.puzzle.solved){
-      const puzzle=freshPuzzle(this.run.level);
-      // Resetting a block must never place it underneath the player or a slime.
-      const pos=puzzle.crate&&sameTile(this.run,puzzle.crate)?this.dungeon.start:{x:this.run.x,y:this.run.y};
-      this.session.patch({dungeonRun:{...this.run,...pos,puzzle},message:'Puzzle reset. '+this.dungeon.clue});
-      this.tweens.killTweensOf(this.hero);this.hero.setPosition((pos.x+.5)*TILE,(pos.y+.5)*TILE);this.drawPuzzle();
-    }
   }
 }

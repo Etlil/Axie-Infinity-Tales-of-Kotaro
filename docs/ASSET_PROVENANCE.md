@@ -97,3 +97,12 @@ The previous Buba sheet and avatar are retired. Current user-supplied Buba sprit
 # Buba battle background
 
 `public/assets/atia/buba-arena.png` is the user-supplied `codex-clipboard-0923ecb0-d649-433c-a8e0-70e72ddabe6e.png`, copied unchanged for the Buba–Kotaro battle. The visible floor platform is removed; floor collisions remain, and only Puffy retains raised platforms.
+
+## Aqua Cave floor layouts
+
+The three-floor tile layout in `src/game/dungeonLayout.js` follows the user's marked sketches supplied on 2026-09-21:
+- Floor 1: `C:/Users/admin/AppData/Local/Temp/codex-clipboard-67611888-2623-4bd1-8b06-4e98a33362ba.png`
+- Floor 2: `C:/Users/admin/AppData/Local/Temp/codex-clipboard-d9401f0f-f5b4-4ef5-ba72-89633395aa17.png`
+- Floor 3: `C:/Users/admin/AppData/Local/Temp/codex-clipboard-f231482a-f2c3-41f9-954a-fbb32d71abda.png`
+
+E is the entry, K is a collectible key, L is a lock, X is the next-floor staircase, and B is Puffy. Floor three uses both drawn locks and both branch keys. Artwork/text printed underneath the user's markings is reference material, not game dialogue or instructions. Rendering remains simple tile shapes; no sketch raster is shipped as game art.

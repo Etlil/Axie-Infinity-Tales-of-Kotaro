@@ -7,7 +7,7 @@ export const SAVE_KEY = 'atia-adventure-v1';
 
 export function initialState() {
   return { scene: 'intro', phase: 'INTRO', loading: true, introStep: 0, dialogueIndex: 0, tutorialWon: false, prologueComplete: false,
-    prologueVersion:2,introStage:'pendant',tutorialDirections:[],signRead:false,playerName:'',nameConfirmed:false,introPosition:null,introCanInteract:false,
+    dungeonVersion:2,prologueVersion:2,introStage:'pendant',tutorialDirections:[],signRead:false,playerName:'',nameConfirmed:false,introPosition:null,introCanInteract:false,
     activeCharacter: 'kotaro', unlockedCharacters: ['kotaro'], amulet: false, xp: 0, level: 1, coins: 0, wood: 0, essence: 0,
     claimedRewards: [], completedStages: [], unlockedStage: 0, selectedStage: 0, tentStage: 0, rescued: [], bonus: 0,
     playerHP: 100, playerMaxHP: 100, enemyHP: 0, enemy: null, roomIndex: 0, tutorial: false, turn: 1, dungeonRun:null,
@@ -16,7 +16,7 @@ export function initialState() {
     message: 'A new story waits beyond the gate.', panel: null, result: null, townPosition:null,townCheckpoint:null,
     activeSlot:null,saveSlots:[],menuPage:'home',saveRevision:0,saveStatus:'idle',saveKind:'auto',lastSavedAt:null,saveAvailable: true };
 }
-const profileKeys = ['prologueVersion','introStage','tutorialDirections','signRead','playerName','nameConfirmed','introStep','dialogueIndex','tutorialWon','prologueComplete','activeCharacter','unlockedCharacters','amulet','xp','coins','wood','essence','claimedRewards','completedStages','unlockedStage','rescued','townCheckpoint'];
+const profileKeys = ['dungeonVersion','prologueVersion','introStage','tutorialDirections','signRead','playerName','nameConfirmed','introStep','dialogueIndex','tutorialWon','prologueComplete','activeCharacter','unlockedCharacters','amulet','xp','coins','wood','essence','claimedRewards','completedStages','unlockedStage','rescued','townCheckpoint'];
 const validIds = new Set(['kotaro','buba']);
 
 export function restoreProfile(storage) {
@@ -31,8 +31,9 @@ export function restoreProfile(storage) {
     clean.unlockedCharacters = clean.prologueComplete ? ['kotaro','buba'] : ['kotaro'];
     clean.activeCharacter = clean.unlockedCharacters.includes(saved.activeCharacter) ? saved.activeCharacter : 'kotaro';
     clean.claimedRewards = Array.isArray(saved.claimedRewards) ? [...new Set(saved.claimedRewards.filter(x => Number.isInteger(x) && x >= 1 && x <= 5))] : [];
-    clean.completedStages = Array.isArray(saved.completedStages) ? [...new Set(saved.completedStages.filter(x => Number.isInteger(x) && x >= 0 && x <= 2))] : [];
-    clean.unlockedStage = Math.min(2, clean.completedStages.length ? Math.max(...clean.completedStages) + 1 : 0);
+    clean.dungeonVersion=2;
+    clean.completedStages=Array.isArray(saved.completedStages)&&saved.completedStages.includes(saved.dungeonVersion===2?0:2)?[0]:[];
+    clean.unlockedStage=0;
     // The first prototype called the aquatic guardian Momo. Migrate its rescue
     // to Puffy without losing the blessing or letting both entries stack.
     clean.rescued = clean.amulet && Array.isArray(saved.rescued) && saved.rescued.some(x => x?.id === 'puffy' || x?.id === 'momo') ? [{ id:'puffy',name:'Puffy',rescueBonus:bosses.puffy.rescueBonus }] : [];
@@ -157,18 +158,18 @@ export function createSession(onState, { storage = null, slotStore=null } = {}) 
       if(run.defeated>=d.encounters.length)return this.state.result;
       const next={...run,defeated:run.defeated+1};
       this.patch({dungeonRun:next});
-      if(next.defeated<d.encounters.length)return {kind:'encounter'};
+      if(run.floor<2||next.defeated<d.encounters.length)return {kind:'encounter'};
       if(this.state.enemy.id==='puffy'&&!this.state.rescued.some(x=>x.id==='puffy'))return {kind:'purify'};
       return {kind:'cleared',...this.completeStage(run.level)};
     },
     finishPrologue() { if(!this.state.tutorialWon)return false; this.patch({ prologueComplete:true, amulet:true, unlockedCharacters:['kotaro','buba'], panel:null, playerHP:this.state.playerMaxHP }); return true; },
     completeStage(index) {
-      if (!Number.isInteger(index) || index < 0 || index > 2 || !this.state.prologueComplete) return null;
+      if (!Number.isInteger(index) || index < 0 || index >= DUNGEONS.length || !this.state.prologueComplete) return null;
       const first = !this.state.completedStages.includes(index);
-      const xp = first ? dungeonRooms[index].xp : 20;
+      const xp = first ? dungeonRooms[2].xp : 20;
       this.patch({ xp:this.state.xp + xp, coins:this.state.coins + (first ? 40 : 15), essence:this.state.essence + 10,
         completedStages: first ? [...this.state.completedStages,index] : this.state.completedStages,
-        unlockedStage:Math.min(2,Math.max(this.state.unlockedStage,index + 1)) });
+        unlockedStage:0 });
       return { xp, coins:first ? 40 : 15, first };
     },
     rescue(boss = bosses.puffy) {
