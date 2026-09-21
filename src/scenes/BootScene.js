@@ -1,9 +1,11 @@
 import Phaser from 'phaser';
+import {preloadCaveEnemies,registerCaveEnemies} from '../game/caveEnemies';
 import {preloadKotaro,registerKotaro} from '../game/kotaroSprites';
 import {preloadBuba,registerBuba} from '../game/bubaSprites';
 export default class BootScene extends Phaser.Scene {
   constructor(){super('BootScene');}
   preload(){
+    preloadCaveEnemies(this);
     preloadKotaro(this);
     preloadBuba(this);
     this.load.image('atia-official','assets/town/atia-official.png');
@@ -25,7 +27,7 @@ export default class BootScene extends Phaser.Scene {
       document.fonts.load('700 14px Nunito'),
     ]);
     if(!this.sys.isActive())return;
-    try{await registerKotaro(this);await registerBuba(this);}catch(error){console.error('Could not prepare character sprites',error);this.game.session.patch({assetError:true});return;}
+    try{await registerKotaro(this);await registerBuba(this);await registerCaveEnemies(this);}catch(error){console.error('Could not prepare character sprites',error);this.game.session.patch({assetError:true});return;}
     if(!this.sys.isActive())return;
     for(const id of ['kotaro','puffy'])['idle','attack','ultimate','hit','run','greeting'].forEach((action,row)=>{
       this.anims.create({key:id+'-'+action,frames:this.anims.generateFrameNumbers(id+'-sheet',{start:row*12,end:row*12+(id==='puffy'?11:action==='hit'?2:action==='greeting'?3:11)}),

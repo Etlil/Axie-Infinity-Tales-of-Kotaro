@@ -13,6 +13,8 @@ export function overlapsPlayer(p,shot){
   return (shot.x-x)**2+(shot.y-y)**2<shot.radius**2;
 }
 export function attackPlan(pattern='thorns'){
+  const cavePlans={'puff-spin':[['puff-spin',1400]],'puff-slam':[['puff-slam',1500],['puff-slam',4000]],'frog-bubble':[['frog-bubble',1300],['frog-bubble',3300]],'frog-tongue':[['frog-tongue',1500]]};
+  if(cavePlans[pattern])return cavePlans[pattern].map(([kind,at])=>({kind,at,warningDuration:1100,warned:false,launched:false}));
   if(pattern==='buba-dash')return [{kind:'buba-dash',direction:-1,at:900},{kind:'buba-dash',direction:1,at:3700}]
     .map(event=>({...event,warned:false,launched:false}));
   if(pattern==='buba-mushroom')return [{kind:'mushroom',at:900,warned:false,launched:false}];
@@ -47,7 +49,7 @@ export default class DodgeSystem {
     this.platforms=platforms?ARENA.platforms:[];
     this.tutorialPending=tutorialJump;this.tutorialWaiting=false;
     this.player={x:330,y:ARENA.floor,vx:0,vy:0,facing:1,grounded:true,dash:0,cooldown:0,invulnerable:0};
-    this.shots=[];this.plan=attackPlan(pattern);this.jumpBuffer=0;this.coyote=100;this.active=true;
+    this.pattern=pattern;this.shots=[];this.plan=attackPlan(pattern);this.jumpBuffer=0;this.coyote=100;this.active=true;
     const owned=this.keyboard?.getCaptures?.()||[];
     this.captures=KEYS.map(([,code])=>code).filter(code=>!owned.includes(code));
     this.keyboard?.addCapture?.(this.captures);
@@ -89,13 +91,14 @@ export default class DodgeSystem {
       if(p.x+18>surface.x&&p.x-18<surface.x+surface.width&&oldY<=surface.y+1&&p.y>=surface.y){p.y=surface.y;p.vy=0;p.grounded=true;break;}
     }
     for(const event of this.plan){
-      if(!event.warned&&this.elapsed>=event.at-this.timing.warningDuration){event.warned=true;event.target={x:p.x,y:p.y-35};}
+      if(!event.warned&&this.elapsed>=event.at-(event.warningDuration||this.timing.warningDuration)){event.warned=true;event.target={x:p.x,y:p.y-35};}
       if(!event.launched&&this.elapsed>=event.at){event.launched=true;this.launch(event);}
     }
     for(const shot of this.shots){
       if(shot.dead)continue;
       shot.age+=ms;
-      if(shot.kind==='mushroom')this.moveMushroom(shot,dt);
+      if(shot.kind.startsWith('puff-')||shot.kind==='frog-tongue')this.moveCaveAttack(shot,dt,ms);
+      else if(shot.kind==='mushroom')this.moveMushroom(shot,dt);
       else{shot.x+=shot.vx*dt;shot.y+=shot.vy*dt;}
       if(shot.kind==='shield'){shot.vy+=320*dt;if(shot.y+shot.radius>ARENA.floor){shot.y=ARENA.floor-shot.radius;shot.vy=-230;}}
       if(this.tutorialPending&&shot.kind==='buba-dash'&&shot.vx<0&&shot.x<=p.x+210){
@@ -106,9 +109,10 @@ export default class DodgeSystem {
       if(shot.kind==='buba-dash'&&shot.age>=shot.travelDuration)shot.dead=true;
       if(shot.x<ARENA.left-120||shot.x>ARENA.right+150||shot.y>ARENA.floor+80||shot.age>6000)shot.dead=true;
       const solidAttack=shot.kind==='buba-dash'||shot.kind==='mushroom';
-      const canHit=shot.stage!=='turn'&&(!solidAttack||shot.hitLeg!==shot.stage);
+      const canHit=!['turn','caught','followup','spent','rising'].includes(shot.stage)&&(!solidAttack||shot.hitLeg!==shot.stage);
       if(!shot.dead&&!shot.tutorialSafe&&canHit&&p.invulnerable<=0&&overlapsPlayer(p,shot)){
-        if(solidAttack)shot.hitLeg=shot.stage;else shot.dead=true;
+        if(shot.kind==='frog-tongue'){shot.stage='caught';shot.caughtAt=shot.age;shot.caughtX=p.x;shot.caughtY=p.y-35;shot.vx=0;shot.vy=0;}
+        else if(solidAttack)shot.hitLeg=shot.stage;else shot.dead=true;
         p.invulnerable=760;this.hits++;this.totalDamage+=this.damage;
         this.onHit({damage:this.damage,x:p.x,y:p.y-45});if(!this.active)return;
       }
@@ -119,6 +123,19 @@ export default class DodgeSystem {
   launch(event){
     const speed=this.timing.speedMultiplier;
     const shot={kind:event.kind,x:1030,y:ARENA.floor-34,vx:-450*speed,vy:0,radius:24,age:0};
+    if(event.kind==='puff-spin'){
+      shot.x=990;shot.y=460;shot.vx=0;shot.vy=0;shot.radius=35;
+    }
+    if(event.kind==='puff-slam'){
+      shot.x=event.target.x;shot.y=240;shot.vx=0;shot.vy=0;shot.radius=55;shot.stage='rising';
+    }
+    if(event.kind==='frog-bubble'||event.kind==='frog-tongue'){
+      shot.x=1000;shot.y=545;shot.originX=1000;shot.originY=545;shot.radius=event.kind==='frog-tongue'?18:24;
+      const angle=Math.atan2(event.target.y-shot.y,event.target.x-shot.x);
+      const velocity=event.kind==='frog-tongue'?850:340;
+      shot.vx=Math.cos(angle)*velocity*speed;shot.vy=Math.sin(angle)*velocity*speed;
+      shot.distance=Math.hypot(event.target.x-shot.x,event.target.y-shot.y);shot.stage='extend';
+    }
     if(event.kind==='buba-dash'){
       shot.x=event.direction<0?1040:110;shot.y=ARENA.floor-38;
       shot.travelDuration=1250/speed;shot.vx=event.direction*930/(shot.travelDuration/1000);
@@ -141,6 +158,32 @@ export default class DodgeSystem {
     else this.shots.push(shot);
     this.onLaunch(event.kind);
   }
+  moveCaveAttack(shot,dt,ms){
+    const p=this.player;
+    if(shot.kind==='puff-spin'){
+      // Brief homing, then commit to the current course so it can be outmaneuvered.
+      if(shot.age<1100){const angle=Math.atan2(p.y-35-shot.y,p.x-shot.x);shot.vx=Math.cos(angle)*290;shot.vy=Math.sin(angle)*290;}
+      shot.x+=shot.vx*dt;shot.y+=shot.vy*dt;
+      if(shot.age>2400)shot.dead=true;
+    }else if(shot.kind==='puff-slam'){
+      shot.y=240+326*Math.min(1,shot.age/280);
+      shot.stage=shot.age<280?'rising':'impact';
+      if(shot.age>520)shot.dead=true;
+    }else if(shot.stage==='caught'||shot.stage==='followup'){
+      shot.x=shot.caughtX;shot.y=shot.caughtY;
+      const elapsed=shot.age-shot.caughtAt;
+      if(elapsed>300)shot.stage='followup';
+      if(elapsed>550&&!shot.followupHit){
+        shot.followupHit=true;const damage=Math.max(1,Math.round(this.damage*.75));
+        this.hits++;this.totalDamage+=damage;p.invulnerable=760;
+        this.onHit({damage,x:p.x,y:p.y-45});
+      }
+      if(elapsed>800)shot.dead=true;
+    }else{
+      shot.x+=shot.vx*dt;shot.y+=shot.vy*dt;
+      if(Math.hypot(shot.x-shot.originX,shot.y-shot.originY)>shot.distance+90||shot.age>1400)shot.dead=true;
+    }
+  }
   moveMushroom(shot,dt){
     const previous={x:shot.x,y:shot.y},leg=shot.legDuration;
     if(shot.age<leg){
@@ -156,9 +199,22 @@ export default class DodgeSystem {
   emit(){
     const crossing=this.shots.find(shot=>shot.kind==='buba-dash');
     const lastCrossing=[...this.plan].reverse().find(event=>event.kind==='buba-dash'&&event.launched);
-    const opponent=crossing?{x:crossing.x,y:ARENA.floor-57,facing:Math.sign(crossing.vx),charging:true}
+    let opponent=crossing?{x:crossing.x,y:ARENA.floor-57,facing:Math.sign(crossing.vx),charging:true}
       :lastCrossing?{x:lastCrossing.direction<0?110:1040,y:ARENA.floor-57,facing:-lastCrossing.direction,charging:false}:null;
     const warnings=this.plan.filter(e=>e.warned&&!e.launched);
+    if(this.pattern?.startsWith('puff-')||this.pattern?.startsWith('frog-')){
+      const shot=this.shots.find(s=>s.kind===this.pattern);
+      opponent={x:1040,y:540,facing:-1,action:'idle'};
+      if(this.pattern==='puff-spin'&&(shot||warnings.length))opponent.action='spin';
+      if(shot&&shot.kind.startsWith('puff-')){opponent.x=shot.x;opponent.y=shot.y;opponent.action=shot.kind==='puff-spin'?'spin':'slam';}
+      if(this.pattern==='puff-slam'&&warnings.length){opponent.x=warnings[0].target.x;opponent.y=240;opponent.action='slam';}
+      if(this.pattern.startsWith('frog-')&&(warnings.length||shot))opponent.action='open';
+      if(shot?.stage==='caught')opponent.action='caught';
+      if(shot?.stage==='followup'){
+        opponent.action='dash';const t=Math.min(1,(shot.age-shot.caughtAt-300)/250);
+        opponent.x=1040+(shot.caughtX-1040)*t;
+      }
+    }
     this.shots.filter(shot=>shot.kind==='mushroom'&&shot.stage==='turn')
       .forEach(shot=>warnings.push({kind:'mushroom-return',target:{x:shot.x,y:shot.y},direction:1}));
     this.onUpdate({player:{...this.player},shots:this.shots,warnings,opponent,

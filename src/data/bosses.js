@@ -10,8 +10,12 @@ export const bosses = {
   ] },
 };
 export const dungeonRooms = [
-  { id: 'slime-moss', name: 'Moss Slime', type: 'Plant', maxHP: 60, location: 'Mossy Hall', xp: 30, cards: [{ id: 'thorns', pattern: 'thorns', name: 'Thorn Rush', damage: 14 }], dodgePattern: 'platform_arena' },
-  { id: 'slime-dusk', name: 'Dusk Slime', type: 'Dusk', maxHP: 84, location: 'Sunken Passage', xp: 45, cards: [{ id: 'mist', pattern: 'aimed', name: 'Violet Mist', damage: 18 }, { id: 'shroud', pattern: 'rain', name: 'Shadowfall', damage: 22 }], dodgePattern: 'platform_arena' },
+  {id:'puff',name:'Floating Puff',type:'Aqua',maxHP:60,location:'Aqua Cave',xp:30,dodgePattern:'platform_arena',cards:[
+    {id:'spin',pattern:'puff-spin',name:'Spin Pursue',damage:14},
+    {id:'slam',pattern:'puff-slam',name:'Ground Slam x2',damage:14}]},
+  {id:'frog',name:'Frog',type:'Aqua',maxHP:84,location:'Aqua Cave',xp:45,dodgePattern:'platform_arena',cards:[
+    {id:'bubble',pattern:'frog-bubble',name:'Bubble Shot',damage:16},
+    {id:'tongue',pattern:'frog-tongue',name:'Tongue Dash',damage:14}]},
   { ...bosses.puffy, location: 'Puffy’s Chamber', xp: 90 },
 ];
 export const routeNodes = [

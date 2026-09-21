@@ -2,6 +2,7 @@ import SceneBase, { floatingText } from './SceneBase';
 import { backdrop, fighter, slash } from '../game/world';
 import { drawArena, drawHazards } from '../game/dodgeWorld';
 import DodgeSystem from '../entities/DodgeSystem';
+import {TongueVisual} from '../game/caveEnemies';
 import {BubaProjectiles} from '../game/bubaSprites';
 
 export default class CombatScene extends SceneBase {
@@ -17,15 +18,15 @@ export default class CombatScene extends SceneBase {
     backdrop(this,this.state.tutorial?'village':this.enemy.id==='puffy'?'lagoon':'battle',{image:false});
     this.bindScene('combat','PLAYER_FOCUS','Take a breath. Choose your next move.',{enemyCard:null,selectedAttack:0});
     this.player=fighter(this,320,460,this.state.activeCharacter,1.35).setDepth(8);
-    this.enemySprite=fighter(this,890,445,this.enemy.id==='buba'?'buba':this.enemy.id==='puffy'?'puffy':this.enemy.id.startsWith('slime')?'slime':'mob',1.35,'left');
+    this.enemySprite=fighter(this,890,445,this.enemy.id,1.35,'left');
     this.enemySprite.setCorrupted?.(this.enemy.id==='puffy');
     this.arenaGraphics=this.add.graphics().setDepth(4);
     this.hazardGraphics=this.add.graphics().setDepth(12);
-    this.bubaProjectiles=new BubaProjectiles(this);
+    this.bubaProjectiles=new BubaProjectiles(this);this.tongueVisual=new TongueVisual(this);
     this.dodge=new DodgeSystem(this,{bonus:this.state.bonus,onUpdate:view=>this.onDodgeUpdate(view),
       onTutorial:waiting=>{this.freezeWorld(waiting);this.session.patch({jumpTutorial:waiting});},
       onHit:hit=>this.takeHit(hit),onResolve:result=>this.resolveDodge(result),
-      onLaunch:kind=>this.enemySprite.playAction(kind==='buba-dash'?'dash':kind==='mushroom'?'mushroom':this.enemyCard?.ultimate?'ultimate':'attack')});
+      onLaunch:kind=>!['puff','frog'].includes(this.enemy.id)&&this.enemySprite.playAction(kind==='buba-dash'?'dash':kind==='mushroom'?'mushroom':this.enemyCard?.ultimate?'ultimate':'attack')});
     this.state.cards.forEach((card,i)=>this.bindKey('keydown-'+['ONE','TWO','THREE','FOUR'][i],()=>this.playCard(card.id)));
     this.bindKey('keydown-X',()=>this.playCard(this.state.cards[this.state.selectedAttack||0].id));
     ['A','LEFT'].forEach(key=>this.bindKey('keydown-'+key,()=>this.selectAttack((this.state.selectedAttack+this.state.cards.length-1)%this.state.cards.length)));
@@ -56,11 +57,11 @@ export default class CombatScene extends SceneBase {
   }
   beginPlayerTurn(){
     this.dodge.stop();this.arenaGraphics.clear();this.hazardGraphics.clear();
-    this.bubaProjectiles?.clear();this.mushroomInFlight=false;
+    this.bubaProjectiles?.clear();this.tongueVisual?.clear();this.mushroomInFlight=false;
     this.tweens.killTweensOf(this.player);this.tweens.killTweensOf(this.enemySprite);
     this.player.setPosition(320,460).setScale(1.35).setAngle(0).setAlpha(1);this.player.playAction('stance');
     if(this.player.setFacing)this.player.setFacing('right');else this.player.sprite?.setFlipX(true);
-    this.enemySprite.setPosition(890,445).setScale(1.35*(['buba','puffy'].includes(this.enemy.id)?1:1.65)).setAngle(0);this.enemySprite.playAction('idle');
+    this.enemySprite.setPosition(890,445).setScale(1.35).setAngle(0);this.enemySprite.playAction('idle');
     this.enemySprite.setFacing?.('left');
     this.session.patch({phase:'PLAYER_FOCUS',dodgeActive:false,enemyCard:null,guard:0,selectedAttack:0,message:'Take a breath. Your move.'});
     this.freezeWorld(false);
@@ -125,7 +126,8 @@ export default class CombatScene extends SceneBase {
     const message=this.enemyCard.pattern==='buba-dash'?'Buba lunges from the right, then returns from the left. Jump or dash through his sword!'
       :this.enemyCard.pattern==='buba-mushroom'?'Buba throws his back mushroom. Watch for its glowing return arc!'
         :this.enemy.name+' readies '+this.enemyCard.name+'. Get ready to move!';
-    this.session.patch({phase:'BOSS_TELEGRAPH',enemyCard:this.enemyCard,message});
+    const hints={'puff-spin':'Puff spins up, then pursues briefly. Move away or jump past it!','puff-slam':'Two slams! Leave each glowing circle before Puff drops.','frog-bubble':'Frog opens its mouth. Jump or dash past the bubbles!','frog-tongue':'Dodge the tongue! If it catches you, Frog follows with a dash.'};
+    this.session.patch({phase:'BOSS_TELEGRAPH',enemyCard:this.enemyCard,message:hints[this.enemyCard.pattern]||message});
     this.cameraMove(600,400,1,420,'Sine.easeInOut');
     this.tweens.add({targets:this.enemySprite,angle:-6,duration:120,yoyo:true,repeat:1});
     this.time.delayedCall(650,()=>this.startDodge());
@@ -133,7 +135,7 @@ export default class CombatScene extends SceneBase {
   startDodge(){
     this.lastPublishedDodge='';this.lastAction='';this.lastEnemyAction='';
     this.tweens.killTweensOf(this.player);this.tweens.killTweensOf(this.enemySprite);
-    this.player.setScale(.75).setAngle(0);this.enemySprite.setPosition(1040,540).setScale(.82*(['buba','puffy'].includes(this.enemy.id)?1:1.65)).setAngle(0);
+    this.player.setScale(.75).setAngle(0);this.enemySprite.setPosition(1040,540).setScale(.82).setAngle(0);
     drawArena(this.arenaGraphics,this.enemy.id==='puffy');
     this.session.patch({phase:'DODGE_PHASE',dodgeActive:true,dodgeDuration:6.5,jumpTutorial:false,message:'Move freely. Jump over low attacks; dash through danger.'});
     const tutorialJump=this.state.tutorial&&this.enemy.id==='buba'&&!this.jumpLessonShown;
@@ -147,15 +149,16 @@ export default class CombatScene extends SceneBase {
     const action=this.player.kind==='buba'&&p.invulnerable>400?'hit':!p.grounded?'jump':Math.abs(p.vx)>30?'run':'idle';
     if(this.lastAction!==action){this.player.playAction(action);this.lastAction=action;}
     if(this.player.setFacing)this.player.setFacing(p.facing===1?'right':'left');else this.player.sprite?.setFlipX(p.facing===1);
-    if(view.opponent&&this.enemy.id==='buba'){
+    if(view.opponent&&['buba','puff','frog'].includes(this.enemy.id)){
       const opponent=view.opponent;
       this.enemySprite.setPosition(opponent.x,opponent.y).setScale(.82);
       this.enemySprite.setFacing?.(opponent.facing>0?'right':'left');
-      const action=opponent.charging?'dash':'idle';
+      const action=opponent.action||(opponent.charging?'dash':'idle');
       if(this.lastEnemyAction!==action){this.enemySprite.playAction(action);this.lastEnemyAction=action;}
     }
     drawHazards(this.hazardGraphics,view,this.enemy.id);
     this.bubaProjectiles?.update(view.shots);
+    this.tongueVisual.update(view.shots);
     const mushroomInFlight=view.shots.some(shot=>shot.kind==='mushroom');
     if(this.mushroomInFlight&&!mushroomInFlight)this.enemySprite.playAction('recover');
     this.mushroomInFlight=mushroomInFlight;
@@ -182,7 +185,7 @@ export default class CombatScene extends SceneBase {
   }
   resolveDodge(result){
     this.hazardGraphics.clear();
-    this.bubaProjectiles?.clear();
+    this.bubaProjectiles?.clear();this.tongueVisual?.clear();
     this.session.patch({phase:'RESOLVE_DODGE',dodges:this.state.dodges+(result.hits?0:1),dodgeActive:false,
       warningActive:false,dodgeRemaining:0,message:result.hits?'You held on. Find your opening.':'Untouched. Your opening!'});
     this.time.delayedCall(500,()=>{this.session.patch({turn:this.state.turn+1});this.beginPlayerTurn();});

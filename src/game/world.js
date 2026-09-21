@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import {caveEnemy} from './caveEnemies';
 import { renderWorld as legacyWorld, drawAxie } from './art';
 import {bubaFighter} from './bubaSprites';
 
@@ -23,17 +24,7 @@ export function backdrop(scene, kind = 'village', { image = true } = {}) {
 }
 export function fighter(scene,x,y,kind='kotaro',scale=1,facing='right') {
   if(kind==='buba')return bubaFighter(scene,x,y,scale,facing);
-  if(kind==='slime'){
-    const root=scene.add.container(x,y).setScale(scale*1.65),body=scene.add.graphics();
-    body.fillStyle(0x15332b,.3).fillEllipse(0,37,94,18);
-    body.fillStyle(0x7fc58f).fillEllipse(0,0,92,66);
-    body.lineStyle(3,0x335e49).strokeEllipse(0,0,92,66);
-    body.fillStyle(0xb9eaa9,.7).fillEllipse(-17,-15,22,10);
-    body.fillStyle(0x173c38).fillCircle(-15,-1,5).fillCircle(15,-1,5);
-    root.add(body);root.kind=kind;
-    root.playAction=action=>{if(action!=='idle')scene.tweens.add({targets:body,scaleY:.72,duration:150,yoyo:true});};
-    return root;
-  }
+  if(kind==='puff'||kind==='frog')return caveEnemy(scene,x,y,kind,scale,facing);
   if (kind === 'puffy') return puffyFighter(scene,x,y,scale,facing);
   if(kind==='kotaro'&&scene.textures.exists('kotaro-idle-drawn')){
     const root=scene.add.container(x,y).setScale(scale),shadow=scene.add.ellipse(0,76,95,18,0x16251e,.25);

@@ -1,4 +1,6 @@
 import SceneBase,{label} from './SceneBase';
+import {fighter} from '../game/world';
+import {dungeonRooms} from '../data/bosses';
 import {overworldKotaro} from '../game/kotaroSprites';
 import {overworldBuba} from '../game/bubaSprites';
 import {TILE,dungeonFor,isFloor,nextStep,moveExplorer,sameTile,createDungeonRun} from '../game/dungeonLayout';
@@ -46,8 +48,10 @@ export default class DungeonMapScene extends SceneBase{
     this.isBoss=d.encounters[this.run.defeated]===2;
     if(this.enemyPos){
       this.foe=this.add.container((this.enemyPos.x+.5)*TILE,(this.enemyPos.y+.5)*TILE).setDepth(2);
-      this.foe.add([this.add.ellipse(0,14,40,13,0x000000,.35),this.add.ellipse(0,0,this.isBoss?48:36,this.isBoss?44:29,this.isBoss?0x53c7df:d.theme==='quarry'?0xe0ad60:0x83cb86).setStrokeStyle(3,this.isBoss?0xb689e6:0x39764d),this.add.circle(-7,-3,3,0x152b33),this.add.circle(7,-3,3,0x152b33)]);
-      this.foe.add(label(this,0,-40,this.isBoss?'PUFFY':'SLIME '+(this.run.defeated+1),12,this.isBoss?'#d9b6ff':'#baedb4').setOrigin(.5));
+      const enemy=dungeonRooms[d.encounters[this.run.defeated]];
+      this.foeActor=fighter(this,0,-22,enemy.id,.55);this.foe.add(this.foeActor);
+      if(enemy.id==='puff')this.tweens.add({targets:this.foeActor,y:-28,duration:800,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
+      this.foe.add(label(this,0,-70,enemy.name,12,'#bdeef3').setOrigin(.5));
     }
     this.cameras.main.startFollow(this.hero,true,.22,.22);
     this.cameras.main.centerOn(this.hero.x,this.hero.y);
@@ -96,9 +100,12 @@ export default class DungeonMapScene extends SceneBase{
       return;
     }
     if(this.contact())return;
-    // Preserve the chase: one slime step for every two player steps, through corridors.
+    // Preserve the chase: one enemy step for every two player steps, through corridors.
     if(this.enemyPos&&!this.isBoss&&this.steps%2===0){
+      const previous=this.enemyPos;
       this.enemyPos=nextStep(this.enemyPos,next,this.run);
+      const dx=this.enemyPos.x-previous.x,dy=this.enemyPos.y-previous.y;
+      if(dx||dy)this.foeActor.walk?.(dx<0?'left':dx>0?'right':dy<0?'up':'down');
       this.tweens.add({targets:this.foe,x:(this.enemyPos.x+.5)*TILE,y:(this.enemyPos.y+.5)*TILE,duration:140});
       this.contact();
     }
@@ -111,7 +118,7 @@ export default class DungeonMapScene extends SceneBase{
   contact(){
     if(!this.enemyPos||!sameTile(this.run,this.enemyPos))return false;
     this.busy=true;this.held={};
-    this.session.patch({phase:'ENCOUNTER_CONTACT',message:this.isBoss?'Puffy blocks your path!':'A slime approaches!'});
+    this.session.patch({phase:'ENCOUNTER_CONTACT',message:this.isBoss?'Puffy blocks your path!':dungeonRooms[this.dungeon.encounters[this.run.defeated]].name+' approaches!'});
     this.cameras.main.flash(240,160,210,210);
     this.time.delayedCall(260,()=>{if(this.session.prepareEncounter(this.dungeon.encounters[this.run.defeated],false))this.scene.start('CombatScene');else this.scene.restart();});
     return true;

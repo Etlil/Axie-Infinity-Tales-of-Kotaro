@@ -5,7 +5,7 @@ const colors={floor:0x345b6a,alternate:0x3c6574,wall:0x132631,brick:0x223e4b,acc
 export const AQUA_FLOORS=[
  {rooms:[{x:5,y:8,w:10,h:10},{x:17,y:11,w:6,h:4},{x:25,y:8,w:10,h:10},{x:4,y:20,w:10,h:6},{x:27,y:20,w:10,h:6},{x:27,y:1,w:10,h:5}],
   corridors:[{x:15,y:13,w:10,h:1},{x:20,y:15,w:1,h:3},{x:8,y:18,w:1,h:2},{x:32,y:18,w:1,h:2},{x:31,y:6,w:1,h:2}],
-  start:{x:20,y:17},keys:[{x:8,y:23}],locks:[{x:31,y:6}],exit:{x:32,y:2},spawns:[{x:10,y:12},{x:31,y:23}],encounters:[0,0],
+  start:{x:20,y:17},keys:[{x:8,y:23}],locks:[{x:31,y:6}],exit:{x:32,y:2},spawns:[{x:10,y:12},{x:31,y:23}],encounters:[0,1],
   names:['WEST GROTTO','CAVE MOUTH','EAST GROTTO','KEY ALCOVE','STILL POOL','LOWER STAIRS']},
  {rooms:[{x:20,y:13,w:8,h:10},{x:10,y:13,w:7,h:11},{x:33,y:13,w:8,h:11},{x:13,y:3,w:7,h:7},{x:33,y:3,w:8,h:7},{x:1,y:3,w:9,h:7}],
   corridors:[{x:24,y:23,w:1,h:3},{x:17,y:18,w:16,h:1},{x:15,y:10,w:1,h:3},{x:36,y:10,w:1,h:3},{x:10,y:6,w:3,h:1}],

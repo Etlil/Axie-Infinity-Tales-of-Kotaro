@@ -13,7 +13,16 @@ export function drawArena(g,platforms=false){
 export function drawHazards(g,view,enemyId){
   g.clear();
   for(const warning of view.warnings){
-    if(warning.kind==='buba-dash'){
+    if(warning.kind==='puff-slam'){
+      g.fillStyle(0xffbd72,.22).fillRect(warning.target.x-65,240,130,360);
+      g.lineStyle(4,0xffd89e,.9).strokeEllipse(warning.target.x,ARENA.floor-4,130,24);
+    }else if(warning.kind==='frog-tongue'||warning.kind==='frog-bubble'){
+      g.lineStyle(4,warning.kind==='frog-tongue'?0xff8e91:0x8be9ff,.65).lineBetween(1000,545,warning.target.x,warning.target.y);
+      g.lineStyle(3,0xffe9a8,.9).strokeCircle(warning.target.x,warning.target.y,35);
+    }else if(warning.kind==='puff-spin'){
+      g.lineStyle(4,0xb9faff,.8).strokeCircle(990,460,55);
+      g.lineStyle(2,0xb9faff,.5).lineBetween(990,460,warning.target.x,warning.target.y);
+    }else if(warning.kind==='buba-dash'){
       const right=warning.direction>0,y=ARENA.floor-38;
       g.fillStyle(0xffcf81,.12).fillRect(ARENA.left,y-35,ARENA.right-ARENA.left,70);
       g.lineStyle(2,0xffdb97,.8).lineBetween(ARENA.left,y+32,ARENA.right,y+32);
@@ -38,7 +47,11 @@ export function drawHazards(g,view,enemyId){
   }
   for(const shot of view.shots){
     const {x,y,radius:r,kind}=shot;
-    const color=kind==='rain'?(enemyId==='buba'?0xff96c8:0xc193f6):enemyId==='puffy'?0x83e9ff:kind.includes('thorn')?0xc2ea7c:0xfad18b;
+    if(kind==='frog-tongue'||kind==='puff-spin'||kind==='puff-slam'){
+      if(kind==='puff-slam'&&shot.stage==='impact')g.lineStyle(6,0xa9f2ff,.8).strokeEllipse(x,ARENA.floor-3,130,26);
+      continue;
+    }
+    const color=kind==='frog-bubble'?0x8be9ff:kind==='rain'?(enemyId==='buba'?0xff96c8:0xc193f6):enemyId==='puffy'?0x83e9ff:kind.includes('thorn')?0xc2ea7c:0xfad18b;
     g.fillStyle(color,.13).fillCircle(x,y,r+12);
     if(kind==='buba-dash'){
       const facing=Math.sign(shot.vx),tip=x+facing*38;

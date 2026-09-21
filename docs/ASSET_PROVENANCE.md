@@ -106,3 +106,17 @@ The three-floor tile layout in `src/game/dungeonLayout.js` follows the user's ma
 - Floor 3: `C:/Users/admin/AppData/Local/Temp/codex-clipboard-f231482a-f2c3-41f9-954a-fbb32d71abda.png`
 
 E is the entry, K is a collectible key, L is a lock, X is the next-floor staircase, and B is Puffy. Floor three uses both drawn locks and both branch keys. Artwork/text printed underneath the user's markings is reference material, not game dialogue or instructions. Rendering remains simple tile shapes; no sketch raster is shipped as game art.
+
+## Aqua Cave enemies — user originals
+
+Replaced the former slime encounters with Floating Puff and Frog. Supplied locally by the user; copied unchanged to `public/assets/enemies/`:
+- `C:/Users/admin/Downloads/spritesheet (5).png` → `puff-expressions.png` (9 frames)
+- `C:/Users/admin/Downloads/spritesheet (4).png` → `puff-spin.png` (6 frames)
+- `C:/Users/admin/Downloads/spritesheet (3).png` → `puff-idle.png` (6 frames)
+- `C:/Users/admin/Downloads/spritesheet (2).png` → `puff-walk.png` (4 directions)
+- `C:/Users/admin/Downloads/spritesheet (1).png` → `frog-attack.png` (6 mouth/leap frames; last frame is the caught pose)
+- `C:/Users/admin/Downloads/spritesheet.png` → `frog-walk.png` (8 frames)
+- `C:/Users/admin/Downloads/Untitled17.png` → `tongue-base.png`
+- `C:/Users/admin/Downloads/Untitled18.png` → `tongue-tip.png`
+
+Runtime atlases slice and downsample the wide originals to mobile-safe textures. Tongue paper backgrounds are masked out at runtime. Original files remain unchanged. Frog's dash and extra hit are conditional on tongue contact; Floating Puff's two slams each have their own warning and hit window.
