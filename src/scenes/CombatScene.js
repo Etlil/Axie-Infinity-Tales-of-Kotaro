@@ -78,7 +78,10 @@ export default class CombatScene extends SceneBase {
     const card = this.state.cards.find(entry => entry.id === id);
     if (!card) return;
     this.freezeWorld(false);
-    this.cameraMove(775,435,1.4,150,'Cubic.easeIn');
+    // Keep the selection framing fixed: attacks change magnification, not position.
+    const camera=this.cameras.main;
+    const attackFocus={x:camera.scrollX+camera.width/2,y:camera.scrollY+camera.height/2};
+    this.cameraMove(attackFocus.x,attackFocus.y,1.4,150,'Cubic.easeIn');
     this.session.patch({ phase: 'PLAYER_ATTACK_ANIM', message: card.name + '! ' + card.damage + ' damage.',
       guard: card.guard || 0, charge: 0,
       playerHP: Math.min(this.state.playerMaxHP, this.state.playerHP + (card.heal || 0)) });
@@ -96,9 +99,8 @@ export default class CombatScene extends SceneBase {
         const impact=this.add.circle(830,445,20,0xffe7a3,.65).setDepth(12);
         this.tweens.add({targets:impact,scale:2.3,alpha:0,duration:220,onComplete:()=>impact.destroy()});
       }
-      if(!this.reducedMotion)this.cameras.main.shake(90,.003);
-      this.cameraMove(805,435,1.48,65);
-      this.time.delayedCall(110,()=>this.cameraMove(740,425,1.3,360,'Sine.easeOut'));
+      this.cameraMove(attackFocus.x,attackFocus.y,1.48,65);
+      this.time.delayedCall(110,()=>this.cameraMove(attackFocus.x,attackFocus.y,1.3,360,'Sine.easeOut'));
       this.time.delayedCall(180,()=>this.tweens.add({targets:this.player,x:320,duration:200,ease:'Sine.easeOut'}));
     }});
     this.time.delayedCall(360, () => {
