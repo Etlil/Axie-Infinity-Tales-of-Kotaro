@@ -118,3 +118,14 @@
 .jump-lesson{position:fixed;left:50%;bottom:calc(var(--safe-bottom,0px) + 125px);transform:translateX(-50%);display:grid;gap:5px;width:min(360px,85vw);padding:10px 14px;border:2px solid #ffd889;border-radius:12px;background:#24332ef2;color:#fff3d1;text-align:center;box-shadow:0 4px 20px #0006;}
 .jump-lesson b{font-size:17px;color:#ffdb86;}.jump-lesson span{font-size:13px;line-height:1.35;}.jump-lesson small{font-size:11px;line-height:1.3;}
 @media(max-height:450px){.jump-lesson{padding:6px 8px;gap:2px;}.jump-lesson b{font-size:14px;}.jump-lesson span{font-size:11px;}.jump-lesson small{font-size:9px;}}
+
+/* Combat scenery and actors share one full-screen Phaser camera. Keep the
+   canvas size stable across turn changes instead of zooming a separate DOM image. */
+.game-app.scene-combat .world-viewport .world-stage {
+  width:max(100vw,150dvh);
+  height:max(66.667vw,100dvh);
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+}
+.game-app.scene-combat .world-fill { background:#192731; }

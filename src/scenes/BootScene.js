@@ -10,6 +10,7 @@ export default class BootScene extends Phaser.Scene {
     for(const asset of ['stone-table','moon-pendant','kotaro-hand','approach-path'])this.load.image(asset,'assets/prologue/'+asset+'.png');
     this.load.image('atia-village','assets/atia/village.png');
     this.load.image('forest-arena','assets/atia/forest-arena.jpg');
+    this.load.image('buba-arena','assets/atia/buba-arena.png');
     this.load.image('lagoon-arena','assets/atia/lagoon-arena.jpg');
     for(const id of ['kotaro','puffy'])this.load.spritesheet(id+'-sheet','assets/atia/'+id+'-sheet.png',{frameWidth:256,frameHeight:256});
     this.load.image('puffy-avatar','assets/atia/puffy-avatar.png');

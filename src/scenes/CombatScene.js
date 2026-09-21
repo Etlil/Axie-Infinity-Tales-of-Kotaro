@@ -10,6 +10,10 @@ export default class CombatScene extends SceneBase {
     this.enemy=this.state.enemy;this.time.paused=false;this.tweens.resumeAll();
     this.reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     this.lastPublishedDodge='';this.lastAction='';this.jumpLessonShown=false;
+    const arenaKey=this.enemy.id==='buba'||this.state.tutorial?'buba-arena':this.state.roomIndex===2?'lagoon-arena':'forest-arena';
+    const arena=this.add.image(600,400,arenaKey).setDepth(-100);
+    const cover=Math.max(1200/arena.width,800/arena.height);
+    arena.setScale(cover);
     backdrop(this,this.state.tutorial?'village':this.enemy.id==='puffy'?'lagoon':'battle',{image:false});
     this.bindScene('combat','PLAYER_FOCUS','Take a breath. Choose your next move.',{enemyCard:null,selectedAttack:0});
     this.player=fighter(this,320,460,this.state.activeCharacter,1.35).setDepth(8);
@@ -26,7 +30,7 @@ export default class CombatScene extends SceneBase {
     this.bindKey('keydown-X',()=>this.playCard(this.state.cards[this.state.selectedAttack||0].id));
     ['A','LEFT'].forEach(key=>this.bindKey('keydown-'+key,()=>this.selectAttack((this.state.selectedAttack+this.state.cards.length-1)%this.state.cards.length)));
     ['D','RIGHT'].forEach(key=>this.bindKey('keydown-'+key,()=>this.selectAttack((this.state.selectedAttack+1)%this.state.cards.length)));
-    this.events.once('shutdown',()=>{this.cameraTween?.stop();this.game.canvas.closest('.game-app')?.querySelector('.world-fill')?.style.removeProperty('transform');this.bubaProjectiles.clear();this.dodge.destroy();this.time.paused=false;});
+    this.events.once('shutdown',()=>{this.cameraTween?.stop();this.bubaProjectiles.clear();this.dodge.destroy();this.time.paused=false;});
     this.beginEncounter();
   }
   beginEncounter(){
@@ -37,16 +41,8 @@ export default class CombatScene extends SceneBase {
     const camera=this.cameras.main;
     this.cameraTween?.stop();
     const pose={x:camera.scrollX+camera.width/2,y:camera.scrollY+camera.height/2,zoom:camera.zoom};
-    const background=this.game.canvas.closest('.game-app')?.querySelector('.world-fill');
     const apply=()=>{
       camera.setZoom(pose.zoom).centerOn(pose.x,pose.y);
-      // The full-screen artwork follows the same tween as the actors, without React updates.
-      if(background){
-        const spare=(pose.zoom-1)*50;
-        const tx=Math.max(-spare,Math.min(spare,(600-pose.x)/1200*100*pose.zoom));
-        const ty=Math.max(-spare,Math.min(spare,(400-pose.y)/800*100*pose.zoom));
-        background.style.transform=`translate(${tx}%,${ty}%) scale(${pose.zoom})`;
-      }
     };
     if(this.reducedMotion){Object.assign(pose,{x,y,zoom:1});apply();return;}
     this.cameraTween=this.tweens.add({targets:pose,x,y,zoom,duration,ease,onUpdate:apply,onComplete:apply});
