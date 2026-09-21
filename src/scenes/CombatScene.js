@@ -26,12 +26,30 @@ export default class CombatScene extends SceneBase {
     this.bindKey('keydown-X',()=>this.playCard(this.state.cards[this.state.selectedAttack||0].id));
     ['A','LEFT'].forEach(key=>this.bindKey('keydown-'+key,()=>this.selectAttack((this.state.selectedAttack+this.state.cards.length-1)%this.state.cards.length)));
     ['D','RIGHT'].forEach(key=>this.bindKey('keydown-'+key,()=>this.selectAttack((this.state.selectedAttack+1)%this.state.cards.length)));
-    this.events.once('shutdown',()=>{this.bubaProjectiles.clear();this.dodge.destroy();this.time.paused=false;});
+    this.events.once('shutdown',()=>{this.cameraTween?.stop();this.game.canvas.closest('.game-app')?.querySelector('.world-fill')?.style.removeProperty('transform');this.bubaProjectiles.clear();this.dodge.destroy();this.time.paused=false;});
     this.beginEncounter();
   }
   beginEncounter(){
     if(this.state.tutorial&&this.enemy.id==='buba')this.telegraph(true);
     else this.beginPlayerTurn();
+  }
+  cameraMove(x,y,zoom,duration,ease='Cubic.easeOut'){
+    const camera=this.cameras.main;
+    this.cameraTween?.stop();
+    const pose={x:camera.scrollX+camera.width/2,y:camera.scrollY+camera.height/2,zoom:camera.zoom};
+    const background=this.game.canvas.closest('.game-app')?.querySelector('.world-fill');
+    const apply=()=>{
+      camera.setZoom(pose.zoom).centerOn(pose.x,pose.y);
+      // The full-screen artwork follows the same tween as the actors, without React updates.
+      if(background){
+        const spare=(pose.zoom-1)*50;
+        const tx=Math.max(-spare,Math.min(spare,(600-pose.x)/1200*100*pose.zoom));
+        const ty=Math.max(-spare,Math.min(spare,(400-pose.y)/800*100*pose.zoom));
+        background.style.transform=`translate(${tx}%,${ty}%) scale(${pose.zoom})`;
+      }
+    };
+    if(this.reducedMotion){Object.assign(pose,{x,y,zoom:1});apply();return;}
+    this.cameraTween=this.tweens.add({targets:pose,x,y,zoom,duration,ease,onUpdate:apply,onComplete:apply});
   }
   freezeWorld(frozen){
     this.time.paused=frozen;
@@ -51,8 +69,8 @@ export default class CombatScene extends SceneBase {
     this.session.patch({phase:'PLAYER_FOCUS',dodgeActive:false,enemyCard:null,guard:0,selectedAttack:0,message:'Take a breath. Your move.'});
     this.freezeWorld(false);
     const duration=this.reducedMotion?0:620;
-    this.cameras.main.pan(485,435,duration,'Cubic.easeOut',true);
-    this.cameras.main.zoomTo(this.reducedMotion?1:1.28,duration,'Cubic.easeOut',true);
+    this.cameraMove(510,420,1.32,240);
+    if(!this.reducedMotion)this.time.delayedCall(240,()=>this.cameraMove(525,420,1.25,380,'Sine.easeOut'));
     if(!this.reducedMotion)[this.player,this.enemySprite].forEach((actor,i)=>this.tweens.add({targets:actor,y:actor.y-7,duration:1050+i*130,yoyo:true,repeat:-1,ease:'Sine.easeInOut'}));
     this.time.delayedCall(duration,()=>{
       this.session.patch({phase:'PLAYER_TURN',message:'Time is held. Choose a move, then press X or tap its card.'});
@@ -64,8 +82,7 @@ export default class CombatScene extends SceneBase {
     const card = this.state.cards.find(entry => entry.id === id);
     if (!card) return;
     this.freezeWorld(false);
-    this.cameras.main.pan(750,440,this.reducedMotion?0:150,'Cubic.easeOut',true);
-    this.cameras.main.zoomTo(this.reducedMotion ? 1 : 1.38,this.reducedMotion?0:150,'Cubic.easeOut',true);
+    this.cameraMove(775,435,1.4,150,'Cubic.easeIn');
     this.session.patch({ phase: 'PLAYER_ATTACK_ANIM', message: card.name + '! ' + card.damage + ' damage.',
       guard: card.guard || 0, charge: 0,
       playerHP: Math.min(this.state.playerMaxHP, this.state.playerHP + (card.heal || 0)) });
@@ -84,6 +101,8 @@ export default class CombatScene extends SceneBase {
         this.tweens.add({targets:impact,scale:2.3,alpha:0,duration:220,onComplete:()=>impact.destroy()});
       }
       if(!this.reducedMotion)this.cameras.main.shake(90,.003);
+      this.cameraMove(805,435,1.48,65);
+      this.time.delayedCall(110,()=>this.cameraMove(740,425,1.3,360,'Sine.easeOut'));
       this.time.delayedCall(180,()=>this.tweens.add({targets:this.player,x:320,duration:200,ease:'Sine.easeOut'}));
     }});
     this.time.delayedCall(360, () => {
@@ -109,7 +128,7 @@ export default class CombatScene extends SceneBase {
       :this.enemyCard.pattern==='buba-mushroom'?'Buba throws his back mushroom. Watch for its glowing return arc!'
         :this.enemy.name+' readies '+this.enemyCard.name+'. Get ready to move!';
     this.session.patch({phase:'BOSS_TELEGRAPH',enemyCard:this.enemyCard,message});
-    this.cameras.main.pan(600,400,this.reducedMotion?0:420,'Sine.easeInOut',true);this.cameras.main.zoomTo(1,this.reducedMotion?0:420,'Sine.easeInOut',true);
+    this.cameraMove(600,400,1,420,'Sine.easeInOut');
     this.tweens.add({targets:this.enemySprite,angle:-6,duration:120,yoyo:true,repeat:1});
     this.time.delayedCall(650,()=>this.startDodge());
   }
