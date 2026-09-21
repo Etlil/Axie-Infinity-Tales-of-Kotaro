@@ -17,16 +17,16 @@
 @keyframes dialogue-arrow { to { transform:translateY(3px); } }
 .story-scene:has(.dialogue-box) .story-footer { display:none; }
 .cinematic-matte { position:absolute; z-index:1; inset:0; pointer-events:none; background:radial-gradient(ellipse at 50% 48%,transparent 22%,#08081170 60%,#030309ed 100%); border-top:12px solid #090910; border-bottom:12px solid #090910; animation:cinematic-in .45s ease-out; }
-.cinematic-matte::after{content:"";position:absolute;inset:0;background:#000;animation:turn-blackout .45s ease-out forwards;}
-@keyframes turn-blackout{0%,15%{opacity:.9}100%{opacity:0}}
+.cinematic-matte::after{content:"";position:absolute;inset:0;background:#000;animation:turn-blackout .62s ease-out forwards;}
+@keyframes turn-blackout{0%,12%{opacity:.9}55%,100%{opacity:0}}
 .scene-combat .ability-cards.two-attacks{width:min(480px,100%);margin-inline:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
 @media(prefers-reduced-motion:reduce){.cinematic-matte::after{display:none;}}
 .is-choosing .world-stage { filter:saturate(.65) contrast(1.04); }
 .ability-card .ability-symbol.shield-stat{display:grid;place-items:center;background:#276b61;color:#fff;border-radius:0;clip-path:polygon(50% 0,96% 20%,90% 72%,50% 100%,10% 72%,4% 20%);box-shadow:inset 0 0 0 4px #173f3c;}
 .ability-symbol.shield-stat b{font:900 clamp(18px,2.2vw,27px)/1 var(--body-font);padding-bottom:3px;text-shadow:0 2px 0 #143c37;}
-.scene-combat .world-fill { transform:scale(1); transform-origin:50% 54%; transition:transform 350ms ease-in-out; }
-.scene-combat.is-choosing .world-fill { transform:scale(1.18); transition-duration:460ms; }
-.scene-combat[data-phase="PLAYER_ATTACK_ANIM"] .world-fill { transform:scale(1.22); transition-duration:180ms; }
+.scene-combat .world-fill { transform:translate(0,0) scale(1); transform-origin:50% 54%; transition:transform 420ms ease-in-out; }
+.scene-combat.is-choosing .world-fill { transform:translate(5%,1%) scale(1.28); transition:transform 620ms cubic-bezier(.22,1,.36,1); }
+.scene-combat[data-phase="PLAYER_ATTACK_ANIM"] .world-fill { transform:translate(-7%,1.5%) scale(1.38); transition:transform 150ms cubic-bezier(.22,1,.36,1); }
 @media(prefers-reduced-motion:reduce){.scene-combat .world-fill,.scene-combat.is-choosing .world-fill,.scene-combat[data-phase="PLAYER_ATTACK_ANIM"] .world-fill{transform:none;transition:none;}}
 .scene-combat .battle-controls,.scene-combat .encounter-heading { z-index:3; }
 .turn-prompt { position:absolute; z-index:5; top:155px; left:calc(50% - 355px); display:flex; flex-direction:column; gap:5px; color:#fff1d7; text-shadow:0 3px #281f30; transform:rotate(-3deg); pointer-events:none; }

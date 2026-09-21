@@ -50,9 +50,9 @@ export default class CombatScene extends SceneBase {
     this.enemySprite.setFacing?.('left');
     this.session.patch({phase:'PLAYER_FOCUS',dodgeActive:false,enemyCard:null,guard:0,selectedAttack:0,message:'Take a breath. Your move.'});
     this.freezeWorld(false);
-    const duration=this.reducedMotion?0:460;
-    this.cameras.main.pan(520,430,duration,'Sine.easeInOut');
-    this.cameras.main.zoomTo(this.reducedMotion?1:1.18,duration,'Sine.easeInOut');
+    const duration=this.reducedMotion?0:620;
+    this.cameras.main.pan(485,435,duration,'Cubic.easeOut',true);
+    this.cameras.main.zoomTo(this.reducedMotion?1:1.28,duration,'Cubic.easeOut',true);
     if(!this.reducedMotion)[this.player,this.enemySprite].forEach((actor,i)=>this.tweens.add({targets:actor,y:actor.y-7,duration:1050+i*130,yoyo:true,repeat:-1,ease:'Sine.easeInOut'}));
     this.time.delayedCall(duration,()=>{
       this.session.patch({phase:'PLAYER_TURN',message:'Time is held. Choose a move, then press X or tap its card.'});
@@ -64,8 +64,8 @@ export default class CombatScene extends SceneBase {
     const card = this.state.cards.find(entry => entry.id === id);
     if (!card) return;
     this.freezeWorld(false);
-    this.cameras.main.pan(590,430,180,'Sine.easeOut');
-    this.cameras.main.zoomTo(this.reducedMotion ? 1 : 1.22,180);
+    this.cameras.main.pan(750,440,this.reducedMotion?0:150,'Cubic.easeOut',true);
+    this.cameras.main.zoomTo(this.reducedMotion ? 1 : 1.38,this.reducedMotion?0:150,'Cubic.easeOut',true);
     this.session.patch({ phase: 'PLAYER_ATTACK_ANIM', message: card.name + '! ' + card.damage + ' damage.',
       guard: card.guard || 0, charge: 0,
       playerHP: Math.min(this.state.playerMaxHP, this.state.playerHP + (card.heal || 0)) });
@@ -109,7 +109,7 @@ export default class CombatScene extends SceneBase {
       :this.enemyCard.pattern==='buba-mushroom'?'Buba throws his back mushroom. Watch for its glowing return arc!'
         :this.enemy.name+' readies '+this.enemyCard.name+'. Get ready to move!';
     this.session.patch({phase:'BOSS_TELEGRAPH',enemyCard:this.enemyCard,message});
-    this.cameras.main.pan(600,400,350,'Sine.easeInOut');this.cameras.main.zoomTo(1,350);
+    this.cameras.main.pan(600,400,this.reducedMotion?0:420,'Sine.easeInOut',true);this.cameras.main.zoomTo(1,this.reducedMotion?0:420,'Sine.easeInOut',true);
     this.tweens.add({targets:this.enemySprite,angle:-6,duration:120,yoyo:true,repeat:1});
     this.time.delayedCall(650,()=>this.startDodge());
   }
