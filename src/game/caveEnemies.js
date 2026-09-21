@@ -35,9 +35,13 @@ export function caveEnemy(scene,x,y,kind,scale=1,facing='left'){
    :action==='caught'?'caught':action==='dash'?'leap':action==='attack'||action==='open'?'open':'idle';
   sprite.play(kind+'-'+name,true);
  };
- root.walk=direction=>{
+ root.walk=(direction,moving=true)=>{
   sprite.setFlipX(false);
-  if(kind==='frog')sprite.play('frog-walk-'+direction,true);
+  if(kind==='frog'){
+   sprite.anims.stop();
+   const first={right:0,down:2,left:4,up:6}[direction]??0;
+   sprite.setTexture('frog-walk',first+(moving?1:0));
+  }
   else {sprite.anims.stop();sprite.setTexture('puff-walk',{down:0,right:1,up:2,left:3}[direction]??0);}
  };
  root.playAction('idle');return root;

@@ -105,8 +105,12 @@ export default class DungeonMapScene extends SceneBase{
       const previous=this.enemyPos;
       this.enemyPos=nextStep(this.enemyPos,next,this.run);
       const dx=this.enemyPos.x-previous.x,dy=this.enemyPos.y-previous.y;
-      if(dx||dy)this.foeActor.walk?.(dx<0?'left':dx>0?'right':dy<0?'up':'down');
-      this.tweens.add({targets:this.foe,x:(this.enemyPos.x+.5)*TILE,y:(this.enemyPos.y+.5)*TILE,duration:140});
+      if(dx||dy){
+        const direction=dx<0?'left':dx>0?'right':dy<0?'up':'down';
+        this.foeActor.walk?.(direction,true);
+        this.tweens.add({targets:this.foe,x:(this.enemyPos.x+.5)*TILE,y:(this.enemyPos.y+.5)*TILE,duration:140,
+          onComplete:()=>this.foeActor.walk?.(direction,false)});
+      }
       this.contact();
     }
   }
