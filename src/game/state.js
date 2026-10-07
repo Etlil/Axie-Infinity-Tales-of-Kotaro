@@ -12,6 +12,7 @@ export function initialState() {
     claimedRewards: [], completedStages: [], unlockedStage: 0, selectedStage: 0, tentStage: 0, rescued: [], bonus: 0,
     playerHP: 100, playerMaxHP: 100, enemyHP: 0, enemy: null, roomIndex: 0, tutorial: false, turn: 1, dungeonRun:null,
     selectedAttack: 0, dodgeX: 330, dodgeY: 600, grounded: true, dashReady: true, dashCooldown: 0, dodgeDuration: 6.5, dodgeRemaining: 0, warningRemaining: 0, warningActive: false, dodgeActive: false,
+    jumpTutorial:false, jumpLocked:false, attackTutorial:false,
     guard: 0, charge: 0, dodges: 0, hits: 0, lastDamage: 0, cards: characterCards.kotaro, ultimate: ultimates.kotaro,
     message: 'A new story waits beyond the gate.', panel: null, result: null, townPosition:null,townCheckpoint:null,
     activeSlot:null,saveSlots:[],menuPage:'home',saveRevision:0,saveStatus:'idle',saveKind:'auto',lastSavedAt:null,saveAvailable: true };
@@ -51,6 +52,8 @@ export function restoreProfile(storage) {
     clean.dialogueIndex=saved.prologueVersion===2&&Number.isInteger(saved.dialogueIndex)?Math.max(0,Math.min(bubaDialogue.length-1,saved.dialogueIndex)):0;
     const nameIndex=bubaDialogue.findIndex(line=>line.type==='name');
     if(clean.dialogueIndex>nameIndex&&!clean.nameConfirmed)clean.dialogueIndex=nameIndex;
+    const pendantIndex=bubaDialogue.findIndex(line=>line.type==='pendant');
+    if(!clean.prologueComplete&&clean.tutorialWon&&pendantIndex>=0&&clean.dialogueIndex>pendantIndex)clean.amulet=saved.amulet===true;
     const checkpoint=saved.townCheckpoint;
     clean.townCheckpoint=clean.prologueComplete&&((checkpoint?.x===14&&checkpoint?.y===12)||(checkpoint?.x===FOUNTAIN_CHECKPOINT.x&&checkpoint?.y===FOUNTAIN_CHECKPOINT.y))?{...FOUNTAIN_CHECKPOINT}:null;
     return clean;
@@ -60,6 +63,7 @@ export function derive(state) {
   const level = rankThresholds.reduce((rank, threshold, i) => state.xp >= threshold ? i + 1 : rank, 1);
   const active = validIds.has(state.activeCharacter) ? state.activeCharacter : 'kotaro';
   return { ...state, level, tentStage: level >= 5 ? 2 : level >= 3 ? 1 : 0,
+    bubaInventory:state.amulet?['sun-pendant']:[],
     playerMaxHP: active === 'buba' ? 110 : 100, cards: characterCards[active], ultimate: ultimates[active],
     bonus: state.rescued.some(x => x.id === 'puffy') ? .05 : 0,
     rankXP: state.xp - rankThresholds[level - 1], nextRankXP: level < 5 ? rankThresholds[level] - rankThresholds[level - 1] : 0,
@@ -135,11 +139,15 @@ export function createSession(onState, { storage = null, slotStore=null } = {}) 
       const allowed=run?run.level<=this.state.unlockedStage&&dungeonFor(run).encounters[run.defeated]===index:index<=this.state.unlockedStage;
       if (!enemy || (!tutorial && (!this.state.prologueComplete || !allowed))) return false;
       this.patch({ tutorial, roomIndex:index, enemy, enemyHP:enemy.maxHP, playerHP:this.state.playerMaxHP, guard:0, charge:0,
-        turn:1, selectedAttack:0, dodgeX:330, dodgeY:600, grounded:true, dashReady:true, dashCooldown:0, dodgeActive:false, warningActive:false, dodges:0, hits:0, lastDamage:0, result:null, panel:null });
+        turn:1, selectedAttack:0, jumpTutorial:false, jumpLocked:false, attackTutorial:false, dodgeX:330, dodgeY:600, grounded:true, dashReady:true, dashCooldown:0, dodgeActive:false, warningActive:false, dodges:0, hits:0, lastDamage:0, result:null, panel:null });
       return true;
     },
     finishTutorial() {
       if (!this.state.tutorialWon) this.patch({ tutorialWon:true, xp:this.state.xp + 60, coins:this.state.coins + 50, dialogueIndex:0 });
+    },
+    acceptPendant(){
+      if(this.state.scene!=='dialogue'||!this.state.tutorialWon||this.state.prologueComplete||bubaDialogue[this.state.dialogueIndex]?.type!=='pendant')return false;
+      this.patch({amulet:true,dialogueIndex:this.state.dialogueIndex+1,message:'Sun pendant added to Buba’s inventory.'});return true;
     },
     setPlayerName(value){
       if(!this.state.tutorialWon||this.state.prologueComplete||typeof value!=='string')return false;

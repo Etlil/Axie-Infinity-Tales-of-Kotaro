@@ -4,7 +4,7 @@ export const bubaDialogue = [
   {speaker:'Buba',text:'Six months ago, this village was peaceful. There were so many of us here.'},
   {speaker:'Buba',text:'I went away on an adventure for a whole week. When I came back… it was too late. The village had been ravaged to ashes.'},
   {speaker:'Buba',text:'I checked every house, every pond, every nest. All of my friends were gone. I didn’t know what to do.'},
-  {speaker:'Buba',text:'Days later, I found a pendant at the bottom of this well. There was a note on a torn piece of cloth. It said, “Help Us.”'},
+  {speaker:'Buba',text:'Days later, I found a sun-shaped pendant at the bottom of this well. There was a note on a torn piece of cloth. It said, “Help Us.”'},
   {speaker:'Buba',text:'I haven’t had the courage to go on another adventure since my friends were taken. I really miss them.'},
   {speaker:'Buba',text:'By the way, I’m Buba. May I know your name?',type:'name'},
   {speaker:'Buba',text:'Nice to meet you, {name}. You’re a skilled fighter.'},
@@ -12,7 +12,7 @@ export const bubaDialogue = [
   {speaker:'mc',text:'…'},
   {speaker:'Buba',text:'I know this is a lot to ask of a stranger, but… would you help me? My friends are out there somewhere, possibly in danger. I can’t find them on my own. I’m honestly losing hope.'},
   {speaker:'mc',text:'Will you help Buba find his friends?',type:'choice',choices:['Sure.','Okay.']},
-  {speaker:'Buba',text:'Thank you so much… This means a lot to me. Here, take this pendant. Maybe it’s a clue to what happened.'},
+  {speaker:'Buba',text:'Thank you so much… This means a lot to me. Here, take this sun pendant. Maybe it’s a clue to what happened.',type:'pendant'},
   {speaker:'Buba',text:'If you need anything, or want to ask me something, you can find me at that tent.',type:'tent'},
   {speaker:'mc',text:'A promise to bring them home.',type:'choice',choices:['Okay.','Sure.']},
 ];

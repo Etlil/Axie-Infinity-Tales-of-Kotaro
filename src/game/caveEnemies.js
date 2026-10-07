@@ -19,7 +19,11 @@ export async function registerCaveEnemies(scene){
  }
  const anim=(key,texture,frames,rate=8,repeat=-1)=>scene.anims.create({key,frames:frames.map(frame=>({key:texture,frame})),frameRate:rate,repeat});
  anim('puff-idle','puff-idle',[0,1,2,3,4,5]);anim('puff-spin','puff-spin',[0,1,2,3,4,5],16);
- anim('puff-hit','puff-expressions',[6,7,8],9,0);anim('puff-slam','puff-expressions',[3,4,5],10);
+ anim('puff-hit','puff-expressions',[6,7,8],9,0);
+ // Wind-up, pointed falling pose, then the flattened ground impact.
+ anim('puff-slam-ready','puff-expressions',[0,1,2],6,0);
+ anim('puff-slam-fall','puff-expressions',[6,7,8],12,0);
+ anim('puff-slam-impact','puff-expressions',[3,4,5],15,0);
  for(const [direction,frames] of Object.entries({right:[0,1],down:[2,3],left:[4,5],up:[6,7]}))anim('frog-walk-'+direction,'frog-walk',frames,7);
  anim('frog-idle','frog-attack',[0,1],4);anim('frog-open','frog-attack',[0,1,2,3,4],9,0);
  anim('frog-caught','frog-attack',[5],1,0);anim('frog-leap','frog-attack',[5],1,0);
@@ -31,7 +35,7 @@ export function caveEnemy(scene,x,y,kind,scale=1,facing='left'){
  root.add([shadow,sprite]);root.sprite=sprite;
  root.setFacing=direction=>{root.facing=direction;sprite.setFlipX(kind==='frog'&&direction==='left');};root.setFacing(facing);
  root.playAction=action=>{
-  const name=kind==='puff'?(action==='spin'||action==='dash'?'spin':action==='hit'?'hit':action==='slam'?'slam':'idle')
+  const name=kind==='puff'?(action==='spin'||action==='dash'?'spin':action==='hit'?'hit':['slam-ready','slam-fall','slam-impact'].includes(action)?action:'idle')
    :action==='caught'?'caught':action==='dash'?'leap':action==='attack'||action==='open'?'open':'idle';
   sprite.play(kind+'-'+name,true);
  };

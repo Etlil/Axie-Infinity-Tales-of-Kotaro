@@ -129,3 +129,14 @@
   transform:translate(-50%,-50%);
 }
 .game-app.scene-combat .world-fill { background:#192731; }
+.movement-button:disabled { opacity:.45; cursor:not-allowed; transform:none; }
+.attack-lesson { width:min(480px,100%); margin:auto; padding:16px; display:grid; gap:10px; border:2px solid #ffd889; border-radius:14px; background:#24332ef5; color:#fff3d1; box-shadow:0 5px 24px #0006; }
+.attack-lesson h2 { margin:0; font:400 23px/1.1 var(--display-font); color:#ffdb86; }
+.attack-lesson p { margin:0; font-size:12px; line-height:1.45; }
+.attack-lesson-cards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.attack-lesson-cards > div { display:grid; gap:4px; padding:9px; border:1px solid #ffdb8655; border-radius:8px; background:#15251e99; }
+.attack-lesson-cards strong { color:#ffdb86; }
+.attack-lesson-cards span { font-size:12px; font-weight:900; }
+.attack-lesson-cards small { font-size:11px; line-height:1.35; }
+.attack-lesson .gold-button { width:100%; min-height:40px; }
+@media(max-height:500px) { .attack-lesson { padding:9px; gap:6px; } .attack-lesson h2 { font-size:18px; } .attack-lesson p { font-size:11px; } .attack-lesson-cards > div { padding:6px; } }

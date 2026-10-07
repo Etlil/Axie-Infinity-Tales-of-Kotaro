@@ -1,15 +1,20 @@
 import Phaser from 'phaser';
+import {PROP_NAMES} from '../game/townArt';
 import {preloadCaveEnemies,registerCaveEnemies} from '../game/caveEnemies';
 import {preloadKotaro,registerKotaro} from '../game/kotaroSprites';
 import {preloadBuba,registerBuba} from '../game/bubaSprites';
 export default class BootScene extends Phaser.Scene {
   constructor(){super('BootScene');}
   preload(){
+    for(const name of PROP_NAMES)this.load.image('town-'+name,'assets/town/props-v3/'+name+'.png');
     preloadCaveEnemies(this);
     preloadKotaro(this);
     preloadBuba(this);
     this.load.image('atia-official','assets/town/atia-official.png');
-    for(const asset of ['stone-table','moon-pendant','kotaro-hand','approach-path'])this.load.image(asset,'assets/prologue/'+asset+'.png');
+    this.load.image('intro-room','assets/prologue/stone-room.png');
+    this.load.image('moon-pendant','assets/prologue/moon-amulet.png');
+    this.load.image('intro-girl-pickup','assets/prologue/girl-pickup-sheet.png');
+    this.load.image('intro-ruined-sign','assets/prologue/ruined-sign.png');
     this.load.image('atia-village','assets/atia/village.png');
     this.load.image('forest-arena','assets/atia/forest-arena.jpg');
     this.load.image('buba-arena','assets/atia/buba-arena.png');

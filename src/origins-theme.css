@@ -244,6 +244,7 @@ h1, h2, h3, .location-title strong, .title-subtitle, .chapter-ribbon,
 .hero-card > .portrait { max-width: 100%; margin-left: auto; margin-right: auto; }
 .amulet-art { border-radius: 50%; background: radial-gradient(#fae894, #f8e19a33 70%); color: #bf852b; filter: drop-shadow(0 3px #d6ae6a); }
 .amulet-art svg { fill: #fff4b3; }
+.amulet-art img { width:100%; height:100%; object-fit:contain; }
 blockquote { color: #8d6832; }
 cite { font-family: var(--body-font); color: #a28055; font-weight: 900; }
 .journal-note { background: #e8dab2; border: 2px solid #c6af7a; border-radius: 13px; color: #6f7441; }

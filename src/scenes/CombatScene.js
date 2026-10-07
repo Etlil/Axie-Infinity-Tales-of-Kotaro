@@ -1,7 +1,7 @@
 import SceneBase, { floatingText } from './SceneBase';
 import { backdrop, fighter, slash } from '../game/world';
 import { drawArena, drawHazards } from '../game/dodgeWorld';
-import DodgeSystem from '../entities/DodgeSystem';
+import DodgeSystem, {ARENA} from '../entities/DodgeSystem';
 import {TongueVisual} from '../game/caveEnemies';
 import {BubaProjectiles} from '../game/bubaSprites';
 
@@ -10,13 +10,13 @@ export default class CombatScene extends SceneBase {
   create(){
     this.enemy=this.state.enemy;this.time.paused=false;this.tweens.resumeAll();
     this.reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    this.lastPublishedDodge='';this.lastAction='';this.jumpLessonShown=false;
+    this.lastPublishedDodge='';this.lastAction='';this.jumpLessonShown=false;this.attackLessonShown=false;
     const arenaKey=this.enemy.id==='buba'||this.state.tutorial?'buba-arena':this.state.roomIndex===2?'lagoon-arena':'forest-arena';
     const arena=this.add.image(600,400,arenaKey).setDepth(-100);
     const cover=Math.max(1200/arena.width,800/arena.height);
     arena.setScale(cover);
     backdrop(this,this.state.tutorial?'village':this.enemy.id==='puffy'?'lagoon':'battle',{image:false});
-    this.bindScene('combat','PLAYER_FOCUS','Take a breath. Choose your next move.',{enemyCard:null,selectedAttack:0});
+    this.bindScene('combat','PLAYER_FOCUS','Take a breath. Choose your next move.',{enemyCard:null,selectedAttack:0,jumpTutorial:false,jumpLocked:false,attackTutorial:false});
     this.player=fighter(this,320,460,this.state.activeCharacter,1.35).setDepth(8);
     this.enemySprite=fighter(this,890,445,this.enemy.id,1.35,'left');
     this.enemySprite.setCorrupted?.(this.enemy.id==='puffy');
@@ -24,29 +24,50 @@ export default class CombatScene extends SceneBase {
     this.hazardGraphics=this.add.graphics().setDepth(12);
     this.bubaProjectiles=new BubaProjectiles(this);this.tongueVisual=new TongueVisual(this);
     this.dodge=new DodgeSystem(this,{bonus:this.state.bonus,onUpdate:view=>this.onDodgeUpdate(view),
-      onTutorial:waiting=>{this.freezeWorld(waiting);this.session.patch({jumpTutorial:waiting});},
+      onTutorial:waiting=>{this.freezeWorld(waiting);this.session.patch({jumpTutorial:waiting,jumpLocked:false});},
       onHit:hit=>this.takeHit(hit),onResolve:result=>this.resolveDodge(result),
       onLaunch:kind=>!['puff','frog'].includes(this.enemy.id)&&this.enemySprite.playAction(kind==='buba-dash'?'dash':kind==='mushroom'?'mushroom':this.enemyCard?.ultimate?'ultimate':'attack')});
-    this.state.cards.forEach((card,i)=>this.bindKey('keydown-'+['ONE','TWO','THREE','FOUR'][i],()=>this.playCard(card.id)));
-    this.bindKey('keydown-X',()=>this.playCard(this.state.cards[this.state.selectedAttack||0].id));
+    this.state.cards.forEach((card,i)=>this.bindKey('keydown-'+['ONE','TWO','THREE','FOUR'][i],e=>{if(!e?.repeat)this.playCard(card.id);}));
+    this.bindKey('keydown-X',e=>{
+      if(e?.repeat)return;
+      if(this.state.attackTutorial)this.finishAttackLesson();
+      else this.playCard(this.state.cards[this.state.selectedAttack||0].id);
+    });
     ['A','LEFT'].forEach(key=>this.bindKey('keydown-'+key,()=>this.selectAttack((this.state.selectedAttack+this.state.cards.length-1)%this.state.cards.length)));
     ['D','RIGHT'].forEach(key=>this.bindKey('keydown-'+key,()=>this.selectAttack((this.state.selectedAttack+1)%this.state.cards.length)));
     this.events.once('shutdown',()=>{this.cameraTween?.stop();this.bubaProjectiles.clear();this.dodge.destroy();this.time.paused=false;});
     this.beginEncounter();
   }
   beginEncounter(){
-    if(this.state.tutorial&&this.enemy.id==='buba')this.telegraph(true);
+    if(this.state.tutorial&&this.enemy.id==='buba'){
+      if(!this.reducedMotion)this.cameras.main.setZoom(1.25).centerOn(525,420);
+      this.telegraph(true);
+    }
     else this.beginPlayerTurn();
   }
-  cameraMove(x,y,zoom,duration,ease='Cubic.easeOut'){
+  cameraMove(x,y,zoom,duration,ease='Cubic.easeOut',onComplete=()=>{}){
     const camera=this.cameras.main;
     this.cameraTween?.stop();
     const pose={x:camera.scrollX+camera.width/2,y:camera.scrollY+camera.height/2,zoom:camera.zoom};
     const apply=()=>{
       camera.setZoom(pose.zoom).centerOn(pose.x,pose.y);
     };
-    if(this.reducedMotion){Object.assign(pose,{x,y,zoom:1});apply();return;}
-    this.cameraTween=this.tweens.add({targets:pose,x,y,zoom,duration,ease,onUpdate:apply,onComplete:apply});
+    if(this.reducedMotion){Object.assign(pose,{x,y,zoom:1});apply();onComplete();return;}
+    this.cameraTween=this.tweens.add({targets:pose,x,y,zoom,duration,ease,onUpdate:apply,onComplete:()=>{apply();onComplete();}});
+  }
+  moveFighter(actor,x,y,scale,duration){
+    this.tweens.killTweensOf(actor);
+    if(this.reducedMotion){actor.setPosition(x,y).setScale(scale).setAngle(0).setAlpha(1);return;}
+    this.tweens.add({targets:actor,x,y,scaleX:scale,scaleY:scale,angle:0,alpha:1,duration,ease:'Sine.easeInOut'});
+  }
+  prepareTurnPose(pose,transition){
+    this.cameraTween?.stop();
+    [this.player,this.enemySprite].forEach(actor=>{this.tweens.killTweensOf(actor);actor.setAngle(0).setAlpha(1);});
+    this.player.playAction(pose);this.enemySprite.playAction('idle');
+    if(this.player.setFacing)this.player.setFacing('right');else this.player.sprite?.setFlipX(true);
+    this.enemySprite.setFacing?.('left');
+    // Let the destination pose read at the current size before moving the shot.
+    if(this.reducedMotion)transition();else this.time.delayedCall(120,transition);
   }
   freezeWorld(frozen){
     this.time.paused=frozen;
@@ -58,35 +79,43 @@ export default class CombatScene extends SceneBase {
   beginPlayerTurn(){
     this.dodge.stop();this.arenaGraphics.clear();this.hazardGraphics.clear();
     this.bubaProjectiles?.clear();this.tongueVisual?.clear();this.mushroomInFlight=false;
-    this.tweens.killTweensOf(this.player);this.tweens.killTweensOf(this.enemySprite);
-    this.player.setPosition(320,460).setScale(1.35).setAngle(0).setAlpha(1);this.player.playAction('stance');
-    if(this.player.setFacing)this.player.setFacing('right');else this.player.sprite?.setFlipX(true);
-    this.enemySprite.setPosition(890,445).setScale(1.35).setAngle(0);this.enemySprite.playAction('idle');
-    this.enemySprite.setFacing?.('left');
+    const duration=this.reducedMotion?0:760;
     this.session.patch({phase:'PLAYER_FOCUS',dodgeActive:false,enemyCard:null,guard:0,selectedAttack:0,message:'Take a breath. Your move.'});
     this.freezeWorld(false);
-    const duration=this.reducedMotion?0:620;
-    this.cameraMove(510,420,1.32,240);
-    if(!this.reducedMotion)this.time.delayedCall(240,()=>this.cameraMove(525,420,1.25,380,'Sine.easeOut'));
-    if(!this.reducedMotion)[this.player,this.enemySprite].forEach((actor,i)=>this.tweens.add({targets:actor,y:actor.y-7,duration:1050+i*130,yoyo:true,repeat:-1,ease:'Sine.easeInOut'}));
-    this.time.delayedCall(duration,()=>{
-      this.session.patch({phase:'PLAYER_TURN',message:'Time is held. Choose a move, then press X or tap its card.'});
+    this.prepareTurnPose('stance',()=>{
+      this.moveFighter(this.player,320,460,1.35,duration);
+      this.moveFighter(this.enemySprite,890,445,1.35,duration);
+      this.cameraMove(525,420,1.25,duration,'Sine.easeInOut',()=>{
+        if(!this.reducedMotion)[this.player,this.enemySprite].forEach((actor,i)=>this.tweens.add({targets:actor,y:actor.y-7,duration:1050+i*130,yoyo:true,repeat:-1,ease:'Sine.easeInOut'}));
+        const attackTutorial=this.state.tutorial&&this.enemy.id==='buba'&&!this.attackLessonShown;
+        this.attackLessonShown=true;
+        this.session.patch({phase:'PLAYER_TURN',attackTutorial,message:attackTutorial?'Your turn. Learn your two attacks before choosing.':'Time is held. Choose a move, then press X or tap its card.'});
+      });
     });
   }
-  selectAttack(index){if(this.state.phase==='PLAYER_TURN'&&Number.isInteger(index)&&index>=0&&index<this.state.cards.length)this.session.patch({selectedAttack:index});}
+  finishAttackLesson(){
+    if(this.state.phase==='PLAYER_TURN'&&this.state.attackTutorial)this.session.patch({attackTutorial:false,message:'Choose with A / D, then press X. Or press 1 / 2 or tap a card. Buba attacks next!'});
+  }
+  selectAttack(index){if(this.state.phase==='PLAYER_TURN'&&!this.state.attackTutorial&&Number.isInteger(index)&&index>=0&&index<this.state.cards.length)this.session.patch({selectedAttack:index});}
   playCard(id) {
-    if (this.state.phase !== 'PLAYER_TURN') return;
+    if (this.state.phase !== 'PLAYER_TURN' || this.state.attackTutorial) return;
     const card = this.state.cards.find(entry => entry.id === id);
     if (!card) return;
     this.freezeWorld(false);
     // Keep the selection framing fixed: attacks change magnification, not position.
     const camera=this.cameras.main;
     const attackFocus={x:camera.scrollX+camera.width/2,y:camera.scrollY+camera.height/2};
-    this.cameraMove(attackFocus.x,attackFocus.y,1.4,150,'Cubic.easeIn');
     this.session.patch({ phase: 'PLAYER_ATTACK_ANIM', message: card.name + '! ' + card.damage + ' damage.',
       guard: card.guard || 0, charge: 0,
       playerHP: Math.min(this.state.playerMaxHP, this.state.playerHP + (card.heal || 0)) });
-    // A fast tap may arrive during the previous return-to-position tween.
+    // Release the close selection framing before the attack rush. The fixed
+    // focus keeps the background from sliding sideways during player attacks.
+    this.moveFighter(this.player,320,460,1.35,280);
+    this.moveFighter(this.enemySprite,890,445,1.35,280);
+    this.cameraMove(attackFocus.x,attackFocus.y,1.08,280,'Sine.easeInOut',()=>this.animatePlayerAttack(card,attackFocus));
+  }
+  animatePlayerAttack(card,attackFocus){
+    this.cameraMove(attackFocus.x,attackFocus.y,1.4,150,'Cubic.easeIn');
     this.tweens.killTweensOf(this.player);
     this.tweens.killTweensOf(this.enemySprite);this.enemySprite.setPosition(890,445);
     this.player.setPosition(320,460).setScale(1.35).setAngle(0);
@@ -128,17 +157,27 @@ export default class CombatScene extends SceneBase {
         :this.enemy.name+' readies '+this.enemyCard.name+'. Get ready to move!';
     const hints={'puff-spin':'Puff spins up, then pursues briefly. Move away or jump past it!','puff-slam':'Two slams! Leave each glowing circle before Puff drops.','frog-bubble':'Frog opens its mouth. Jump or dash past the bubbles!','frog-tongue':'Dodge the tongue! If it catches you, Frog follows with a dash.'};
     this.session.patch({phase:'BOSS_TELEGRAPH',enemyCard:this.enemyCard,message:hints[this.enemyCard.pattern]||message});
-    this.cameraMove(600,400,1,420,'Sine.easeInOut');
-    this.tweens.add({targets:this.enemySprite,angle:-6,duration:120,yoyo:true,repeat:1});
-    this.time.delayedCall(650,()=>this.startDodge());
+    // Keep the same actors on screen while the shot opens into the dodge arena.
+    // These are the exact initial poses emitted by DodgeSystem.start().
+    this.prepareTurnPose('idle',()=>{
+      this.moveFighter(this.player,330,ARENA.floor-57,.75,850);
+      this.moveFighter(this.enemySprite,1040,540,.82,850);
+      drawArena(this.arenaGraphics,this.enemy.id==='puffy');
+      this.arenaGraphics.setAlpha(this.reducedMotion?1:0);
+      if(!this.reducedMotion)this.tweens.add({targets:this.arenaGraphics,alpha:1,duration:850,ease:'Sine.easeInOut'});
+      const portrait=window.innerHeight>window.innerWidth;
+      this.cameraMove(portrait?330:600,portrait?440:400,1,850,'Sine.easeInOut',()=>{
+        // No attacks or dodge countdown run while the camera is still moving.
+        this.time.delayedCall(this.reducedMotion?650:150,()=>this.startDodge());
+      });
+    });
   }
   startDodge(){
     this.lastPublishedDodge='';this.lastAction='';this.lastEnemyAction='';
     this.tweens.killTweensOf(this.player);this.tweens.killTweensOf(this.enemySprite);
-    this.player.setScale(.75).setAngle(0);this.enemySprite.setPosition(1040,540).setScale(.82).setAngle(0);
     drawArena(this.arenaGraphics,this.enemy.id==='puffy');
-    this.session.patch({phase:'DODGE_PHASE',dodgeActive:true,dodgeDuration:6.5,jumpTutorial:false,message:'Move freely. Jump over low attacks; dash through danger.'});
     const tutorialJump=this.state.tutorial&&this.enemy.id==='buba'&&!this.jumpLessonShown;
+    this.session.patch({phase:'DODGE_PHASE',dodgeActive:true,dodgeDuration:6.5,jumpTutorial:false,jumpLocked:tutorialJump,message:tutorialJump?'Watch Buba. Jump unlocks when the tutorial appears.':'Move freely. Jump over low attacks; dash through danger.'});
     this.jumpLessonShown=true;
     this.dodge.start({pattern:this.enemyCard.pattern,damage:this.enemyCard.damage,tutorialJump,platforms:this.enemy.id==='puffy'});
   }
@@ -208,6 +247,7 @@ export default class CombatScene extends SceneBase {
     });
   }
   onCommand(action,payload){
+    if(action==='finishAttackLesson')this.finishAttackLesson();
     if(action==='playCard')this.playCard(typeof payload==='object'?payload.id:payload);
     if(action==='selectAttack')this.selectAttack(Number(payload));
     if(action==='dodgeInput')this.dodge.setControl(payload.control,payload.pressed,payload.source);

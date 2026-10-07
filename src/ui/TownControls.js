@@ -9,7 +9,7 @@ export default function TownControls({game,command}){
       <div className="town-status" role="status">{game.message}</div>
       <div className="town-actions"><button className="small-button town-interact" disabled={!place} onClick={()=>command('townInteract')}>{place?'F · '+place.name:'Approach a place to interact'}</button><nav className="town-shortcuts" aria-label="Town destinations and menus">
         <button className="small-button" onClick={()=>command('openPanel','team')}>Team</button>
-        <button className="small-button" onClick={()=>command('openPanel','amulet')}>Amulet</button>
+        <button className="small-button" aria-label="Open Buba’s inventory" onClick={()=>command('openPanel','amulet')}>Inventory</button>
         <button className="small-button" aria-label="Rewards" onClick={()=>command('townTravel','tent')}>Buba’s tent{game.availableRewards>0?' · '+game.availableRewards:''}</button>
         {puffy&&<button className="small-button" aria-label="Visit Puffy" onClick={()=>command('townTravel','spring')}>Puffy</button>}
         <button className="small-button" onClick={()=>command('townTravel','well')}>Save fountain</button>

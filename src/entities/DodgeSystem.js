@@ -27,9 +27,10 @@ export function attackPlan(pattern='thorns'){
 export default class DodgeSystem {
   constructor(scene,{onUpdate=()=>{},onHit=()=>{},onResolve=()=>{},onLaunch=()=>{},onTutorial=()=>{},bonus=0}={}){
     Object.assign(this,{scene,onUpdate,onHit,onResolve,onLaunch,onTutorial,bonus,active:false,destroyed:false});
-    this.inputs=new Map();this.captures=[];this.keyboard=scene.input?.keyboard;
+    this.inputs=new Map();this.blockedTutorialJumps=new Set();this.captures=[];this.keyboard=scene.input?.keyboard;
     this.updateHandler=(_time,delta)=>this.update(delta);
     this.clearControls=()=>{this.inputs.clear();this.jumpBuffer=0;};
+    this.pauseControls=()=>{this.clearControls();this.blockedTutorialJumps.clear();};
     this.shutdown=()=>this.destroy();this.keyHandlers=[];
     KEYS.forEach(([key,,control])=>{for(const down of [true,false]){
       const event=(down?'keydown-':'keyup-')+key;
@@ -40,7 +41,7 @@ export default class DodgeSystem {
       };
       this.keyboard?.on(event,handler);this.keyHandlers.push([event,handler]);
     }});
-    scene.events.on('pause',this.clearControls);scene.events.once('shutdown',this.shutdown);
+    scene.events.on('pause',this.pauseControls);scene.events.once('shutdown',this.shutdown);
   }
   start({pattern='thorns',damage=14,tutorialJump=false,platforms=false}={}){
     if(this.destroyed)return false;
@@ -56,12 +57,17 @@ export default class DodgeSystem {
     this.scene.events.on('update',this.updateHandler);this.emit();return true;
   }
   setControl(control,pressed,source='touch-'+control){
-    if(!pressed){this.inputs.delete(source);return true;}
+    if(!pressed){this.inputs.delete(source);this.blockedTutorialJumps.delete(source);return true;}
+    if(!this.active||!['left','right','jump','dash'].includes(control))return false;
+    // An early held jump must be released before it can acknowledge the lesson.
+    if(control==='jump'&&(this.tutorialPending||this.blockedTutorialJumps.has(source))){
+      this.blockedTutorialJumps.add(source);return false;
+    }
     if(this.active&&this.tutorialWaiting){
       if(control!=='jump')return false;
       this.tutorialWaiting=false;this.clearControls();this.onTutorial(false);
     }
-    if(!this.active||!['left','right','jump','dash'].includes(control)||this.inputs.has(source))return false;
+    if(!this.active||this.inputs.has(source))return false;
     this.inputs.set(source,control);
     if(control==='jump')this.jumpBuffer=140;
     if(control==='dash'&&this.player.cooldown<=0){
@@ -104,6 +110,7 @@ export default class DodgeSystem {
       if(this.tutorialPending&&shot.kind==='buba-dash'&&shot.vx<0&&shot.x<=p.x+210){
         this.tutorialPending=false;this.tutorialWaiting=true;shot.tutorialSafe=true;
         this.clearControls();p.y=ARENA.floor;p.vx=0;p.vy=0;p.grounded=true;
+        p.dash=0;p.invulnerable=0;this.coyote=100;
         this.onTutorial(true);return;
       }
       if(shot.kind==='buba-dash'&&shot.age>=shot.travelDuration)shot.dead=true;
@@ -206,8 +213,8 @@ export default class DodgeSystem {
       const shot=this.shots.find(s=>s.kind===this.pattern);
       opponent={x:1040,y:540,facing:-1,action:'idle'};
       if(this.pattern==='puff-spin'&&(shot||warnings.length))opponent.action='spin';
-      if(shot&&shot.kind.startsWith('puff-')){opponent.x=shot.x;opponent.y=shot.y;opponent.action=shot.kind==='puff-spin'?'spin':'slam';}
-      if(this.pattern==='puff-slam'&&warnings.length){opponent.x=warnings[0].target.x;opponent.y=240;opponent.action='slam';}
+      if(shot&&shot.kind.startsWith('puff-')){opponent.x=shot.x;opponent.y=shot.y;opponent.action=shot.kind==='puff-spin'?'spin':shot.stage==='rising'?'slam-fall':'slam-impact';}
+      if(this.pattern==='puff-slam'&&warnings.length){opponent.x=warnings[0].target.x;opponent.y=240;opponent.action='slam-ready';}
       if(this.pattern.startsWith('frog-')&&(warnings.length||shot))opponent.action='open';
       if(shot?.stage==='caught')opponent.action='caught';
       if(shot?.stage==='followup'){
@@ -220,9 +227,10 @@ export default class DodgeSystem {
     this.onUpdate({player:{...this.player},shots:this.shots,warnings,opponent,
     dodgeRemaining:Math.max(0,(this.timing.duration-this.elapsed)/1000),duration:this.timing.duration/1000,hits:this.hits});}
   resolve(){if(!this.active)return;const result={hits:this.hits,damage:this.totalDamage,player:{...this.player}};this.stop();this.onResolve(result);}
-  stop(){this.active=false;this.clearControls();this.shots=[];this.scene.events.off('update',this.updateHandler);
+  stop(){this.active=false;this.tutorialPending=false;this.tutorialWaiting=false;
+    this.clearControls();this.blockedTutorialJumps.clear();this.shots=[];this.scene.events.off('update',this.updateHandler);
     if(this.captures.length)this.keyboard?.removeCapture?.(this.captures);this.captures=[];}
   destroy(){if(this.destroyed)return;this.stop();this.destroyed=true;
     this.keyHandlers.forEach(([event,handler])=>this.keyboard?.off(event,handler));
-    this.scene.events.off('pause',this.clearControls);this.scene.events.off('shutdown',this.shutdown);}
+    this.scene.events.off('pause',this.pauseControls);this.scene.events.off('shutdown',this.shutdown);}
 }

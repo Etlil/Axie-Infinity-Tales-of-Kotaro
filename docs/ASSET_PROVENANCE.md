@@ -98,6 +98,10 @@ The previous Buba sheet and avatar are retired. Current user-supplied Buba sprit
 
 `public/assets/atia/buba-arena.png` is the user-supplied `codex-clipboard-0923ecb0-d649-433c-a8e0-70e72ddabe6e.png`, copied unchanged for the Buba–Kotaro battle. The visible floor platform is removed; floor collisions remain, and only Puffy retains raised platforms.
 
+## Sun pendant — 2026-09-28
+
+`public/assets/prologue/sun-amulet.png` is built-in image-generation output edited from the approved local moon pendant. It replaces only Buba’s gift, shown as a large acceptance overlay and later in Buba’s inventory. The opening moon art is unchanged. Original generated path and exact prompt: [SUN_PENDANT.md](../public/assets/prologue/SUN_PENDANT.md). No external assets were imported.
+
 ## Aqua Cave floor layouts
 
 The three-floor tile layout in `src/game/dungeonLayout.js` follows the user's marked sketches supplied on 2026-09-21:
@@ -120,3 +124,11 @@ Replaced the former slime encounters with Floating Puff and Frog. Supplied local
 - `C:/Users/admin/Downloads/Untitled18.png` → `tongue-tip.png`
 
 Runtime atlases slice and downsample the wide originals to mobile-safe textures. Tongue paper backgrounds are masked out at runtime. Original files remain unchanged. Frog's dash and extra hit are conditional on tongue contact; Floating Puff's two slams each have their own warning and hit window.
+
+## Modular village and entry scenery — 2026-09-27
+
+Built-in image-generation output, saved as `public/assets/town/modular-props.png` and separated into `public/assets/town/props/*.png`. See `docs/TOWN_SCENERY.md` for source path, prompts, layer details and replacement guidance. The original user town painting remains intact. These new modular interpretations are generated artwork, not claimed to be hand-drawn assets or exact extractions. Shared ground/roads and shadows are rendered in Phaser.
+
+### Active reference-style replacement
+
+The current loader uses `public/assets/town/props-v3/*.png`: green trees, bushes, grass, stones, stumps, fences, ruined house, well, tent, dungeon arch and pool. Built-in image generation used the user's `codex-clipboard-a13753d8-830a-47f0-b32f-210c6b05f10d.png` as a style reference; no external URL was provided. Originals are `public/assets/town/modular-props-v3.png` and `public/assets/town/pool-v3-original.png`. Full prompts and output provenance are recorded in [TOWN_SCENERY.md](TOWN_SCENERY.md). Sunny grass and sandy paths are rendered by code in `terrainTexture.js`. Earlier scenery sources are retained. Changes remain local; no push or tests/builds.

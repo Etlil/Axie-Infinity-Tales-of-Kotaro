@@ -3,6 +3,7 @@ import {fighter} from '../game/world';
 import {dungeonRooms} from '../data/bosses';
 import {overworldKotaro} from '../game/kotaroSprites';
 import {overworldBuba} from '../game/bubaSprites';
+import GridWalk from '../game/gridWalk';
 import {TILE,dungeonFor,isFloor,nextStep,moveExplorer,sameTile,createDungeonRun} from '../game/dungeonLayout';
 
 export default class DungeonMapScene extends SceneBase{
@@ -11,7 +12,7 @@ export default class DungeonMapScene extends SceneBase{
   create(){
     if(!this.run){this.scene.start('LevelSelectScene');return;}
     this.dungeon=dungeonFor(this.run);const d=this.dungeon,c=d.colors;
-    this.busy=false;this.steps=0;this.held={};this.nextMove=0;
+    this.busy=false;this.steps=0;this.held={};this.queuedDirection=null;this.pendingRun=null;
     this.bindScene('dungeon','EXPLORING',d.clue);
     this.cameras.main.setBackgroundColor(c.wall);
     this.cameras.main.setBounds(-600,-400,45*TILE+1200,28*TILE+800);
@@ -44,6 +45,19 @@ export default class DungeonMapScene extends SceneBase{
     this.hero.add(this.add.ellipse(0,0,32,12,0x000000,.3));
     this.actor=this.state.activeCharacter==='buba'?overworldBuba(this,0,0,76):overworldKotaro(this,0,0,76);
     this.hero.add(this.actor);this.facing='down';
+    this.walker=new GridWalk(this.hero,{
+      tileSize:TILE,stepMs:180,position:{x:this.run.x,y:this.run.y},
+      canEnter:tile=>{
+        if(!this.run||this.busy)return false;
+        return moveExplorer(this.run,tile.x-this.run.x,tile.y-this.run.y)!==this.run;
+      },
+      onStart:(from,to)=>{
+        this.pendingRun=moveExplorer(this.run,to.x-from.x,to.y-from.y);
+        this.facing=to.x<from.x?'left':to.x>from.x?'right':to.y<from.y?'up':'down';
+        this.animateWalk(true);
+      },
+      onArrive:()=>this.finishStep(),
+    });
     this.enemyPos=d.spawns[this.run.defeated]?{...d.spawns[this.run.defeated]}:null;
     this.isBoss=d.encounters[this.run.defeated]===2;
     if(this.enemyPos){
@@ -53,12 +67,12 @@ export default class DungeonMapScene extends SceneBase{
       if(enemy.id==='puff')this.tweens.add({targets:this.foeActor,y:-28,duration:800,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
       this.foe.add(label(this,0,-70,enemy.name,12,'#bdeef3').setOrigin(.5));
     }
-    this.cameras.main.startFollow(this.hero,true,.22,.22);
+    this.cameras.main.startFollow(this.hero,false,.22,.22);
     this.cameras.main.centerOn(this.hero.x,this.hero.y);
     this.keys=this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT');
     this.bindKey('keydown-E',e=>{if(!e.repeat)this.interact();});
     this.events.on('update',this.tick,this);
-    const clear=()=>{this.held={};};this.input.keyboard.on('blur',clear);
+    const clear=()=>{this.held={};this.queuedDirection=null;};this.input.keyboard.on('blur',clear);
     this.events.once('shutdown',()=>{this.events.off('update',this.tick,this);this.input.keyboard.off('blur',clear);});
   }
   drawPuzzle(){
@@ -73,27 +87,41 @@ export default class DungeonMapScene extends SceneBase{
     if(d.exit)mark(d.exit,'↓',0x287fb3);
   }
 
-  tick(time){
+  tick(time,delta){
     if(!this.run)return;
-    if(this.state.panel||!this.game.input.enabled){this.held={};Object.values(this.keys).forEach(key=>key.reset());return;}
-    if(this.busy||time<this.nextMove)return;
+    if(this.state.panel||!this.game.input.enabled){
+      this.held={};this.queuedDirection=null;Object.values(this.keys).forEach(key=>key.reset());
+      this.animateWalk(false);return;
+    }
+    if(this.busy)return;
+    this.walker.update(delta,tile=>{
+      if(this.busy||!this.run)return null;
+      const direction=this.queuedDirection||this.inputDirection();
+      this.queuedDirection=null;
+      const offset={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[direction];
+      return offset?{x:tile.x+offset[0],y:tile.y+offset[1]}:null;
+    });
+    this.animateWalk(this.walker.moving&&!this.busy);
+  }
+  inputDirection(){
     const k=this.keys,h=this.held;
-    const dir=h.up||k.W.isDown||k.UP.isDown?'up':h.down||k.S.isDown||k.DOWN.isDown?'down':h.left||k.A.isDown||k.LEFT.isDown?'left':h.right||k.D.isDown||k.RIGHT.isDown?'right':null;
-    if(dir){this.nextMove=time+180;this.move(dir);}
-    else {this.actor.walk?.(this.facing,false);this.actor.playAction?.('idle');}
+    return h.up||k.W.isDown||k.UP.isDown?'up':h.down||k.S.isDown||k.DOWN.isDown?'down':h.left||k.A.isDown||k.LEFT.isDown?'left':h.right||k.D.isDown||k.RIGHT.isDown?'right':null;
+  }
+  animateWalk(moving){
+    this.actor.walk?.(this.facing,moving);this.actor.playAction?.(moving?'run':'idle');
+    if(!this.actor.walk)this.actor.sprite?.setFlipX(this.facing==='right');
   }
   move(direction){
     if(!this.run||this.busy||this.state.panel||!this.game.input.enabled)return;
-    const delta={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[direction];if(!delta)return;
-    const before=this.run,next=moveExplorer(before,...delta);
-    if(next===before)return;
-    this.facing=direction;this.actor.walk?.(direction,true);this.actor.playAction?.('run');
-    if(!this.actor.walk)this.actor.sprite?.setFlipX(direction==='right');
+    if(['up','down','left','right'].includes(direction))this.queuedDirection=direction;
+  }
+  finishStep(){
+    const before=this.run,next=this.pendingRun;this.pendingRun=null;
+    if(!before||!next)return;
     const picked=next.puzzle.collected.length>before.puzzle.collected.length;
     const opened=next.puzzle.unlocked.length>before.puzzle.unlocked.length;
     this.session.patch({dungeonRun:next,...(picked?{message:'Key found! Walk into a lock to use it.'}:opened?{message:'Lock opened. The way is clear.'}:{})});
-    this.steps++;this.drawPuzzle();
-    this.tweens.add({targets:this.hero,x:(next.x+.5)*TILE,y:(next.y+.5)*TILE,duration:140});
+    this.steps++;if(picked||opened)this.drawPuzzle();
     if(this.dungeon.exit&&sameTile(next,this.dungeon.exit)){
       this.busy=true;this.held={};this.cameras.main.fadeOut(220);
       this.time.delayedCall(220,()=>{this.session.patch({dungeonRun:createDungeonRun(0,next.floor+1),message:'You descend deeper into Aqua Cave.'});this.scene.restart();});

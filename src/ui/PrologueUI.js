@@ -6,6 +6,8 @@ import {RUINED_SIGN,bubaDialogue} from '../data/story';
 export default function PrologueUI({game,command,paused}){
   const phase=game.phase,cinematic=game.introStage==='pendant',sign=phase==='INTRO_SIGN_TEXT';
   const moving=['INTRO_MOVE','INTRO_SIGN','INTRO_PATH','INTRO_VILLAGE'].includes(phase);
+  if(phase==='INTRO_BLACKOUT')return <div className="intro-blackout" aria-hidden="true"/>;
+  if(phase==='INTRO_FADE_OUT')return null;
   return <>
     {cinematic?<><div className="prologue-caption"><small>CHAPTER I</small><h1>A light in the silence</h1></div><button className="small-button skip-cinematic" onClick={()=>command('skipCinematic')} disabled={paused}>Skip scene</button></>:<section className="prologue-objective" data-x={game.introPosition?.x} data-y={game.introPosition?.y}>
       <small>{phase==='INTRO_MOVE'?'FIND YOUR FOOTING':'THE ROAD TO ATIA'}</small>
@@ -22,6 +24,12 @@ export function BubaConversation({game,command,paused}){
   const line=bubaDialogue[game.dialogueIndex]||bubaDialogue[0],name=game.playerName||'Kotaro';
   const [draft,setDraft]=useState(game.playerName||'');
   if(game.phase==='DIALOGUE_END')return null;
+  if(line.type==='pendant')return <div className="pendant-reveal">
+    <section className="pendant-reveal-card" role="dialog" aria-modal="true" aria-labelledby="pendant-title" aria-describedby="pendant-description" onKeyDown={e=>{e.stopPropagation();if(e.key==='Tab'){e.preventDefault();e.currentTarget.querySelector('button')?.focus();}}}>
+      <div className="pendant-reveal-art"><img src="/assets/prologue/sun-amulet.png" alt="A gold sun pendant with matching sun charms on a burgundy cord"/></div>
+      <div className="pendant-reveal-copy"><small>A GIFT FROM BUBA</small><h2 id="pendant-title">Sun pendant</h2><p id="pendant-description">“{line.text}”</p><span>Accept to add it to Buba’s inventory.</span><button className="gold-button" autoFocus disabled={paused} onClick={()=>command('acceptPendant')}>Accept pendant</button></div>
+    </section>
+  </div>;
   if(line.type==='name')return <section className="story-choice name-card" aria-label="Introduce yourself">
     <img src="/assets/buba/avatar.png" alt="Buba"/><div><small>BUBA</small><p>{line.text}</p>
     <form onSubmit={e=>{e.preventDefault();if(!paused&&draft.trim())command('namePlayer',draft);}}><label htmlFor="traveler-name">Your name</label><div className="name-entry"><input id="traveler-name" value={draft} maxLength={20} autoComplete="off" autoFocus onKeyDown={e=>e.stopPropagation()} onKeyUp={e=>e.stopPropagation()} onChange={e=>setDraft(e.target.value)} placeholder="Kotaro" disabled={paused}/><button className="gold-button" disabled={paused||!draft.trim()} type="submit">Confirm name</button></div><small>Up to 20 characters · Saved with this adventure</small></form></div>

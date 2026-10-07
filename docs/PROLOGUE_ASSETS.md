@@ -1,5 +1,13 @@
 # September 2026 prologue assets
 
+## Current approved intro revision
+
+The user approved the v4 indoor room, gold moon amulet, and corrected short horned girl, then requested animation. Active runtime artwork is `public/assets/prologue/stone-room.png`, `moon-amulet.png`, and `girl-pickup-sheet.png`. The standalone `horned-girl.png`, copied from `preview-v4/horned-girl-chibi.png`, is retained as an archived source/reference and is no longer loaded. Sources and exact generation prompts are preserved in [the v4 asset record](../public/assets/prologue/preview-v4/README.md) and [girl pickup record](../public/assets/prologue/GIRL_PICKUP.md).
+
+The generated transparent pickup sheet is 1448×1086 with 12 poses, loaded as `intro-girl-pickup`. `src/game/introCinematic.js` uses measured `POSES` rectangles and boot pivots at fixed `SIZE=1.22` to stage the approach, then crouch, reach, grasp, and lift. Pickup frames play in order 3, 5, 4, 6–11; at frame 6 the separate tabletop amulet hides, and the necklace drawn into frames 6–11 remains in her hand. Edit that module for sequencing, timing, placement, and alignment. The `moon-pendant` key is now exclusive to the opening. Buba offers the separate `sun-amulet.png` in a large React overlay: Accept closes it and stores the item in Buba’s inventory. See [SUN_PENDANT.md](../public/assets/prologue/SUN_PENDANT.md) for the art, exact prompt, and integration. `IntroScene.js` retains Skip, and Skip/shutdown cancels pending cinematic motion. Old assets and menu artwork remain intact. Changes stay local; no tests/builds, browser playtesting, or push were run.
+
+The following sections record the original, superseded cutscene assets.
+
 All new generated raster assets use the built-in ImageGen tool, not the API/CLI fallback. The original uploads are preserved unchanged. No remote artwork was imported in this update; the existing [Axie reference sources](ASSET_REFERENCES.md) remain available for future work.
 
 ## User-supplied files
@@ -56,3 +64,7 @@ Invariants: retain the straight vertical tan road at exactly the same relative w
 Add only carefully drawn leaf texture, soft grass texture, wood texture, and sharper outlines. Keep the map visually simple and readable, with natural clean hand-drawn outlines and flat shadows.
 Output a high resolution version of the same approximately 1.10:1 canvas. No people, characters, sign, building, bridge, new obstacles, UI, text, grid, labels, border or watermark. Do not change road connections or composition.
 ```
+
+## Current transition and sign update
+
+After the completed pickup fades out, INTRO_BLACKOUT holds for five seconds before gameplay. The timer begins at camera fade completion. The updated transparent roadside sign is documented in [RUINED_SIGN.md](../public/assets/prologue/RUINED_SIGN.md). Existing sign dialogue is preserved. No tests or push.

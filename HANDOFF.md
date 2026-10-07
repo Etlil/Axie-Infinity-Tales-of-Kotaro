@@ -13,7 +13,7 @@ This is **Axie Infinity: Tales of Kotaro**, a React + Phaser browser game target
 - Install dependencies with `npm install`; start the development server with `npm start` from the repository root.
 - The user prefers small, focused changes and concise explanations to conserve credits.
 - **Do not run tests, builds, browser QA, or install testing tools unless the user requests them.** The user wants to playtest personally. Source inspection is fine. Never claim an untested change is verified.
-- The user has repeatedly requested committing and pushing completed changes to the designated repository. Preserve unrelated changes and do not force-push.
+- **Do not push to GitHub.** The user's latest instructions supersede earlier push requests. Preserve unrelated local changes.
 - Read `docs/ASSET_REFERENCES.md` before asset work. Record imported asset sources in `docs/ASSET_PROVENANCE.md`.
 - Preserve user-drawn sprites and maps. Simple shapes are acceptable for dungeon geometry until replacement art arrives.
 - Earlier requests for four body-part cards, multiple separate dungeons, and slime enemies are superseded. See current design below.
@@ -27,11 +27,11 @@ If the AI cannot access your repository, attach this guide **and the relevant fi
 ## Current game flow
 
 1. Main menu → Start → five save slots.
-2. New game: glowing moon pendant on a stone table, hand pickup, then the approach road.
+2. New game: glowing gold moon amulet on an indoor stone table, horned girl's animated pickup, then the approach road.
 3. Movement tutorial checks directions (WASD / mobile joystick), then sign interaction (F / mobile button). The damaged sign reads `A\_/a VXlxg/`.
 4. Enter Atia; camera introduces Buba near the well, followed by the ambush battle.
-5. Buba's first rushing attack pauses for a jump tutorial. Battle ends at half his HP, not at zero.
-6. Buba tells the village story, asks the player's name, asks for help, and points to his tent. Kotaro receives the pendant and Buba becomes playable.
+5. Buba's first rushing attack locks jumping until the jump tutorial appears, then pauses for a fresh jump press. The first player turn explains Slash and Bash before card selection. Battle ends at half his HP, not at zero.
+6. Buba tells the village story, asks the player's name, asks for help, and presents a sun pendant in a large overlay. Accept closes the overlay and stores it in Buba’s inventory. He points to his tent and becomes playable. The opening pendant stays moon-shaped.
 7. Walk around Atia: tent for dialogue/rewards, well for saving, spring for Puffy's healing after rescue, gate for dungeon selection.
 8. One dungeon: **Aqua Cave, three floors**. Walk onto keys to collect them; walk into locks to spend them. Blue stairs lead down. Floor three has two keys/two locks and Puffy's northern boss room.
 9. Cave enemies appear sequentially, chase through corridors, and start battles on contact. Defeating normal enemies returns to the same floor; it does not clear the dungeon. Puffy's defeat/purification completes Aqua Cave.
@@ -45,7 +45,8 @@ Paths below are relative to the repository root.
 |---|---|---|
 | Player damage, shield, card names | `src/data/playerCards.js` | Current Slash: 20 damage. Bash: 5 damage + 20 shield. Both playable characters use these two cards. |
 | Card UI and shield badge | `src/App.js` | `src/cinematic-game.css`, `src/mobile-game.css`; the green shield-shaped badge displays guard amount. |
-| Battle turn flow, camera, attack animation | `src/scenes/CombatScene.js` | `beginPlayerTurn`, `playCard`, `telegraph`, `startDodge`, `cameraMove`, `onDodgeUpdate`. |
+| Battle turn flow, camera, attack animation | `src/scenes/CombatScene.js` | `beginPlayerTurn`, `playCard`, `animatePlayerAttack`, `telegraph`, `startDodge`, `cameraMove`, `moveFighter`, `onDodgeUpdate`. |
+| Buba jump / attack tutorials | `src/entities/DodgeSystem.js`, `src/scenes/CombatScene.js` | `src/ui/DodgeControls.js`, `src/ui/AttackTutorial.js`, `src/cinematic-game.css`. Tutorial flags reset per encounter, not saved. |
 | Enemy HP, names, attack rotation | `src/data/bosses.js` | `dungeonRooms[0]` = Floating Puff, `[1]` = Frog, `[2]` = Puffy. Preserve index mappings or update floor encounters. |
 | Attack timing / collision / movement / jumping | `src/entities/DodgeSystem.js` | `attackPlan`, `launch`, `step`, `moveCaveAttack`, `emit`. |
 | Warnings, bubbles, impact shapes | `src/game/dodgeWorld.js` | `drawHazards`; visual geometry should agree with collision geometry. |
@@ -60,8 +61,9 @@ Paths below are relative to the repository root.
 | Village walkable areas, barriers, destinations | `src/game/townLayout.js` | `ROADS`, `BUILDINGS`, `TOWN_PLACES`, `townWalkable`, `townPath`. |
 | Village NPCs, interactions, movement | `src/scenes/VillageScene.js` | `src/ui/TownControls.js`, `src/town.css`. |
 | Village painting / camera bounds | `src/game/townArt.js` | `public/assets/town/atia-official.png`, `docs/TOWN_ART_LAYOUT.md`. |
-| Intro animation / navigation tutorial | `src/scenes/IntroScene.js` | `src/ui/PrologueUI.js`, `src/prologue.css`, `public/assets/prologue/`. |
+| Intro animation / navigation tutorial | `src/game/introCinematic.js`, `src/scenes/IntroScene.js` | `src/ui/PrologueUI.js`, `src/prologue.css`, `public/assets/prologue/`, `docs/PROLOGUE_ASSETS.md`. |
 | Buba story, dialogue, rank rewards | `src/data/story.js` | `src/scenes/DialogueScene.js`, `src/ui/DialogueBox.js`. |
+| Sun pendant preview / Buba inventory | `src/ui/PrologueUI.js`, `src/game/state.js` | Dialogue type `pendant`, `acceptPendant`, derived `bubaInventory`, `src/prologue.css`, App.js inventory panel; art/provenance in `public/assets/prologue/SUN_PENDANT.md`. |
 | Player name entry | `src/ui/PrologueUI.js` | `BubaConversation`: input stops keydown/keyup propagation so Phaser cannot swallow WASD. Validation in `state.js`. |
 | Save slots, autosave, progression, rewards | `src/game/state.js`, `src/game/saveSlots.js` | `src/ui/SaveIndicator.js`, `src/ui/MainMenu.js`. |
 | Settings, reset save, antialiasing | `src/ui/SettingsContent.js` | Commands wired in `src/main.js`; `src/settings.css`. |
@@ -170,3 +172,61 @@ Paths below are relative to the repository root.
 - `9a69522`: background moved into Phaser to share the cinematic camera.
 
 Recent changes above were committed and pushed, **without tests or builds at the user's request**. Gameplay tuning, visual alignment, and device behavior need the user's playtest feedback. Do not describe them as fully verified. If something fails, inspect the relevant implementation, fix the focused issue, and state exactly what was and was not checked.
+
+## 2026-09-27 — shared village and entry scenery (local changes)
+
+The latest instruction is **do not push to GitHub**. Keep these changes local unless the user explicitly changes that instruction. Tests/builds were not run.
+
+`src/game/townArt.js` now draws both the village and approach road using the same palette and road renderer. `addTownArtwork` is shared by village scenes; `addApproachArtwork` is used by the entry tutorial. The old flattened paintings are retained in assets but no longer draw these exploration areas.
+
+Props live in `public/assets/town/props/`: tree, bush, ruins, tent, well, gate, pond and grass. Each is an independent transparent PNG. Ground, road, cast shadows and props are separate Phaser objects/layers. Change `SCENERY` for colors, `ground` for ground detail, `prop` for size/shadow behavior, and placement arrays for foliage. Building positions continue to come from `townLayout.js`; road geometry is exported there as `ROADS`. Do not move interaction zones without updating their corresponding props. Prop aspect ratios are preserved.
+
+The new art was created with the built-in image-generation tool, aiming for crisp outlines and restrained cel shading; it is not claimed to be human-drawn. The source atlas and prompt record are documented in `docs/TOWN_SCENERY.md`. Menu and battle artwork were outside this scenery change.
+
+### Grass and path texture update
+
+The shared ground renderer is now `src/game/terrainTexture.js` (`addTerrain`), called by `townArt.js`. It paints grass patches/blades, sparse flowers, worn soil, pebbles, scuffs and uneven road verges into a cached texture per location. Props/shadows stay separate, and collision roads are unchanged. Changes remain local; no tests/builds or push requested.
+
+### Latest: reference-style village scenery
+
+Active props now live in `public/assets/town/props-v3/` and load in `BootScene.js` under the existing `town-*` keys. The old `props/` directory is retained as a previous version. Thirteen separate transparent sprites cover green broadleaf/conifer trees, bushes, stones, stumps, horizontal/side fences, grass, ruins, well, tent, gate and pool. Entry fence wings and roadside fencing are placed in `townArt.js`; they leave the walking road open. Shadows use the fitted sprite dimensions.
+
+The latest terrain palette is sunny moss-green (#b2c355) and pale sand (#f4d891), with soft color patches and feathered irregular path edges. Edit `terrainTexture.js` for grass/path appearance and `townArt.js` for prop placement, scale and shadows. Ground is cached once per location. Original collision geometry and interaction positions remain in `townLayout.js`.
+
+See `docs/TOWN_SCENERY.md` for the screenshot reference, exact generation prompts, saved source images and replacement instructions. No tests, builds, browser playtesting or GitHub push were run. Keep these changes local unless the user explicitly requests otherwise.
+
+## 2026-09-28 — smoother exploration movement
+
+Village and dungeon player walking use `src/game/gridWalk.js` instead of independent per-tile tweens and input cooldowns. Movement runs at constant speed, carrying unused frame time into the next tile without an idle gap; `stepMs` (default 180 ms per 48px tile) controls speed. Held keyboard/touch directions and village auto-walk share it. The logical grid still controls walls, keys, locks, encounters and saved positions. Arrival callbacks commit each reached tile. Opening a panel freezes an in-progress step and resumes it on closing. The intro already uses continuous pixel movement; all exploration follow cameras now allow subpixel positions.
+
+Scene integration lives in `VillageScene.js` and `DungeonMapScene.js`. Village automatic interactions happen on arrival rather than a delayed timer. No tests/builds or gameplay checks were run at the user's request. Do not push these changes to GitHub.
+
+## Earlier intro artwork proposal — superseded
+
+Older previews remain in `public/assets/prologue/preview-v3/` for provenance. They have been superseded by the approved v4 room, amulet and corrected chibi girl below. Their original pending-approval notes are historical.
+
+### Latest revision — v4 artwork with girl pickup spritesheet
+
+The user approved the v4 artwork, then requested a girl pickup spritesheet. Active assets are `public/assets/prologue/stone-room.png`, `moon-amulet.png`, and the generated transparent `girl-pickup-sheet.png` (1448×1086, 12 poses; texture key `intro-girl-pickup`). The standalone `horned-girl.png` is retained as an archived source/reference and is no longer loaded. The sheet adds crouch, reach, grasp, and lift poses to the indoor amulet pickup before the existing movement tutorial. Buba's dialogue also uses the gold amulet. Menu art and original source files remain intact.
+
+Edit `src/game/introCinematic.js` for frame sequencing, timing, figure placement, and amulet alignment. Measured `POSES` rectangles and boot pivots use fixed `SIZE=1.22`; pickup frames play 3, 5, 4, 6–11. The tabletop amulet hides at frame 6, when the necklace drawn into the remaining poses takes over. `IntroScene.js` starts/stops the sequence; Skip and shutdown cancel pending cinematic motion. See [the girl pickup record](public/assets/prologue/GIRL_PICKUP.md) for its exact prompt and runtime notes, [the v4 asset record](public/assets/prologue/preview-v4/README.md) for the original artwork, and `docs/PROLOGUE_ASSETS.md` for active intro notes. No tests/builds/browser playtesting were run at the user's request. **Do not push.**
+
+The completed intro now holds a black screen for five seconds after fade-out completes (IntroScene.leaveCinematic). INTRO_FADE_OUT/INTRO_BLACKOUT hide story UI; Skip bypasses the hold. The roadside sign uses public/assets/prologue/ruined-sign.png instead of a drawn polygon, with its existing interaction and dialogue. Art source and prompt: [RUINED_SIGN.md](public/assets/prologue/RUINED_SIGN.md). No tests or GitHub push.
+
+Village labels are now hover-only cards in src/game/townHover.js (name, description, action hint); touch taps reveal them briefly. VillageScene binds them to the landmark sprites returned by addTownArtwork. Static DUNGEONS/BUBA/SPRING/SAVE markers are removed. townArt.js keeps full grass sprite bounds 12 px clear of roads. See docs/TOWN_SCENERY.md. No tests or push.
+
+### Smooth battle framing
+
+CombatScene now pulls back for 280 ms after card confirmation before the attack rush, retaining the fixed camera focus during attacks. Enemy telegraph pulls back for 850 ms while both fighters smoothly move/scale to the exact dodge starting poses; DodgeSystem starts only after camera completion plus a 150 ms settling beat, preserving the full dodge timer and warnings. The return to card selection uses a synchronized 760 ms camera/actor transition, with stance bobbing and card input enabled afterward. Buba's opening also pulls back. Reduced-motion preferences retain instant framing and the existing 650 ms telegraph. No tests/builds or browser playtesting run, and no push.
+
+Pose order: `prepareTurnPose` switches Kotaro to stance before the zoom into card selection, and idle before the pullback into dodging. A 120 ms beat shows the new pose at the existing scale, then actor and camera movement start together. The stance no longer switches at zoom completion. Reduced motion skips the beat. No tests/builds/browser QA or push.
+
+### Buba lessons and stronger hits
+
+The opening Buba rush rejects keyboard/touch jumps until its pause lesson appears; early presses are not buffered. The touch Jump button reads WAIT while locked. A fresh jump resumes the protected first crossing, with any active dash cleared. Later jumps work normally. On the first player turn, AttackTutorial explains Slash (20 damage) and Bash (5 damage + 20 shield through the next dodge phase). Click “Got it” or press X to unlock card selection; attacks cannot fire while the lesson is open. Repeated X/number key events are ignored. Both lessons restart on a retry.
+
+Buba's enemy card damage is now 50 for sword rush and 60 for mushroom: the existing 45% collision multiplier yields **23 / 27 damage per hit**, before shield. Other enemies and playable Buba's cards are unchanged. Tutorial flags live in session state and are not save-profile fields. Source inspected only; no tests/build/browser playtesting or GitHub push.
+
+### Sun and moon pendants
+
+The opening girl keeps the moon pendant. Buba’s gift is now the matching gold sun pendant (`public/assets/prologue/sun-amulet.png`). At dialogue index 13 (`type: 'pendant'`), PrologueUI shows a large responsive preview over a dark backdrop; no handover sprite or tween remains. Only Accept advances this step. `acceptPendant` atomically saves `amulet: true` and the next dialogue index; restoreProfile retains acceptance during the unfinished conversation. `derive` maps that existing flag to `bubaInventory: ['sun-pendant']`, so older completed saves retain the item and no duplicate save field is needed. The town Inventory button opens Buba’s inventory with the pendant artwork and description. Purification still uses the existing amulet flag. Generated art was visually reviewed; no tests/build/browser QA or push.
